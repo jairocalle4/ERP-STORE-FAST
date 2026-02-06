@@ -1,0 +1,888 @@
+{
+    "categories": [
+        {
+            "id": 2,
+            "name": "LIBRERIA",
+            "isActive": true
+        },
+        {
+            "id": 3,
+            "name": "TINTAS",
+            "isActive": true
+        },
+        {
+            "id": 5,
+            "name": "CÁMARAS",
+            "isActive": true
+        },
+        {
+            "id": 7,
+            "name": "VAPES",
+            "isActive": true
+        },
+        {
+            "id": 8,
+            "name": "DISP. ALMACENAMIENTO",
+            "isActive": true
+        },
+        {
+            "id": 10,
+            "name": "COLECCIO",
+            "isActive": true
+        },
+        {
+            "id": 13,
+            "name": "MASCARAS",
+            "isActive": true
+        },
+        {
+            "id": 14,
+            "name": "CONSOLAS",
+            "isActive": true
+        },
+        {
+            "id": 16,
+            "name": "PROYECTORES",
+            "isActive": true
+        },
+        {
+            "id": 17,
+            "name": "AUDIFONOS",
+            "isActive": true
+        },
+        {
+            "id": 18,
+            "name": "ACCESORIOS PC/LAPTOP",
+            "isActive": true
+        },
+        {
+            "id": 19,
+            "name": "PALANCAS",
+            "isActive": true
+        }
+    ],
+    "subcategories": [
+        {
+            "id": 1,
+            "name": "EPSO",
+            "categoryId": 3,
+            "isActive": true
+        },
+        {
+            "id": 4,
+            "name": "HP",
+            "categoryId": 3,
+            "isActive": true
+        },
+        {
+            "id": 5,
+            "name": "CANO",
+            "categoryId": 3,
+            "isActive": true
+        },
+        {
+            "id": 6,
+            "name": "CÁMARA FOCO",
+            "categoryId": 5,
+            "isActive": true
+        },
+        {
+            "id": 7,
+            "name": "LIBRERIA",
+            "categoryId": 2,
+            "isActive": true
+        },
+        {
+            "id": 8,
+            "name": "TP-LINK",
+            "categoryId": 5,
+            "isActive": true
+        },
+        {
+            "id": 9,
+            "name": "VARIOS LENTES",
+            "categoryId": 5,
+            "isActive": true
+        },
+        {
+            "id": 10,
+            "name": "LAVIE",
+            "categoryId": 7,
+            "isActive": true
+        },
+        {
+            "id": 11,
+            "name": "BANG",
+            "categoryId": 7,
+            "isActive": true
+        },
+        {
+            "id": 12,
+            "name": "MICRO SD",
+            "categoryId": 8,
+            "isActive": true
+        },
+        {
+            "id": 13,
+            "name": "UN LENTE GIRATORIAS",
+            "categoryId": 5,
+            "isActive": true
+        },
+        {
+            "id": 17,
+            "name": "SPIDER-MA",
+            "categoryId": 13,
+            "isActive": true
+        },
+        {
+            "id": 18,
+            "name": "GAME STICK",
+            "categoryId": 14,
+            "isActive": true
+        },
+        {
+            "id": 19,
+            "name": "PROYECTOR",
+            "categoryId": 16,
+            "isActive": true
+        },
+        {
+            "id": 20,
+            "name": "INALAMBRICOS",
+            "categoryId": 17,
+            "isActive": true
+        },
+        {
+            "id": 21,
+            "name": "BANGKING",
+            "categoryId": 7,
+            "isActive": true
+        },
+        {
+            "id": 22,
+            "name": "CABLES",
+            "categoryId": 18,
+            "isActive": true
+        },
+        {
+            "id": 23,
+            "name": "PLAYSTATIO",
+            "categoryId": 19,
+            "isActive": true
+        },
+        {
+            "id": 24,
+            "name": "PROYECTOR ANDROID",
+            "categoryId": 16,
+            "isActive": true
+        },
+        {
+            "id": 25,
+            "name": "MOUSE",
+            "categoryId": 18,
+            "isActive": true
+        }
+    ],
+    "products": [
+        {
+            "id": 4,
+            "name": "Camara Doble Lente Exterior",
+            "categoryId": 5,
+            "stock": 1,
+            "price": 55.0,
+            "date": "2026-01-06T14:32:27.300",
+            "isActive": true,
+            "description": "IP66",
+            "subcategoryId": 9,
+            "imageUrl": "https://res.cloudinary.com/ddw9fdcnt/image/upload/v1767796781/1GSM41-_fznbww.png",
+            "cost": 25.0,
+            "videoUrl": "https://www.youtube.com/shorts/ck3gpHfF84M"
+        },
+        {
+            "id": 5,
+            "name": "Cámara Giratoria KOS-11005",
+            "categoryId": 5,
+            "stock": 2,
+            "price": 37.5,
+            "date": "2026-01-08T08:59:11.907",
+            "isActive": true,
+            "description": "MARCA: KOUVOLSEN   /   APP V380PRO –COMPATIBLE CON DISPOSITIVOS MÓVILES: ANDROID/IOS -VISIÓN NOCTURNA (8 POTENTES LED’S) – NIVEL DE PROTECCIÓN IP66 A PRUEBA DE AGUA CONFIABLE EN CUALQUIER CONDICIÓN CLIMÁTICA",
+            "subcategoryId": 13,
+            "imageUrl": "https://res.cloudinary.com/ddw9fdcnt/image/upload/v1767884271/71mg_Rol-pL._AC_UF894_1000_QL80__vhr5vv.jpg",
+            "cost": 18.5,
+            "videoUrl": null
+        },
+        {
+            "id": 6,
+            "name": "Airpods Pro 2G (Black)",
+            "categoryId": 17,
+            "stock": 1,
+            "price": 28.5,
+            "date": "2026-01-08T09:28:35.103",
+            "isActive": true,
+            "description": "- Cuenta con la tecnología True Wireless. - Cuenta con cancelación de ruido. - Con funda de carga. - Incluye micrófono. - Almohadillas",
+            "subcategoryId": 20,
+            "imageUrl": "https://res.cloudinary.com/ddw9fdcnt/image/upload/v1767885327/auri-eb90c5c789cc32e5df17068837804883-1024-1024_qcp1e9.jpg",
+            "cost": 11.0,
+            "videoUrl": "https://youtube.com/shorts/jTgERSepN6g"
+        },
+        {
+            "id": 7,
+            "name": "Airpods Pro 2G (White)",
+            "categoryId": 17,
+            "stock": 2,
+            "price": 28.0,
+            "date": "2026-01-08T09:39:19.797",
+            "isActive": true,
+            "description": "Tecnología True Wireless. - Cuenta con cancelación de ruido. - Con funda de carga. - Incluye micrófono. - Almohadillas de repuesto.",
+            "subcategoryId": 20,
+            "imageUrl": "https://res.cloudinary.com/ddw9fdcnt/image/upload/v1767886690/D_NQ_NP_2X_982746-MLA87770498480_072025-F_tgybyi.webp",
+            "cost": 10.5,
+            "videoUrl": "https://res.cloudinary.com/ddw9fdcnt/video/upload/v1768415329/Aud_fonos_Aripro_2G_Black_720P_arrrds.mp4"
+        },
+        {
+            "id": 8,
+            "name": "Vapes Desechables Bang King 35000mil Caladas Vape Doble Sabor",
+            "categoryId": 7,
+            "stock": 2,
+            "price": 30.0,
+            "date": "2026-01-09T08:44:33.037",
+            "isActive": true,
+            "description": "Bang King 35000 Puffs viene con cápsulas dobles y sabores dobles. Hay 0%, 2%, 3% y 5% de nicotina, 56 ml de líquido. Resistencia de malla doble de 1.0 Ω / Batería recargable tipo C de 650 mAh",
+            "subcategoryId": 21,
+            "imageUrl": "https://res.cloudinary.com/ddw9fdcnt/image/upload/v1767969463/bang-king-35000-12-768x768_slss1h.jpg",
+            "cost": 8.0,
+            "videoUrl": null
+        },
+        {
+            "id": 9,
+            "name": "Vape desechable Bang 28000 Puffs -  con nivel de hielo ajustable",
+            "categoryId": 7,
+            "stock": 1,
+            "price": 25.0,
+            "date": "2026-01-09T08:53:25.757",
+            "isActive": true,
+            "description": "Bang 28000 Puffs - Vape desechable con nivel de hielo ajustableDiseñado para quienes buscan un rendimiento duradero y experiencias de vapeo personalizadas, este dispositivo combina características de vanguardia con una comodidad incomparable.",
+            "subcategoryId": 11,
+            "imageUrl": "https://res.cloudinary.com/ddw9fdcnt/image/upload/v1767970291/bang-28000-puffs-grape-ice_orlkum.jpg",
+            "cost": 7.0,
+            "videoUrl": null
+        },
+        {
+            "id": 10,
+            "name": "Micro SD 64GB (Tarjeta de meomoria)",
+            "categoryId": 8,
+            "stock": 1,
+            "price": 15.0,
+            "date": "2026-01-09T14:16:39.883",
+            "isActive": true,
+            "description": "Capacidad de 64 GB para almacenar fotos y videos.",
+            "subcategoryId": 12,
+            "imageUrl": "https://res.cloudinary.com/ddw9fdcnt/image/upload/v1767989133/D_NQ_NP_627651-MLA99855629837_112025-O_rfaqhf.webp",
+            "cost": 5.0,
+            "videoUrl": null
+        },
+        {
+            "id": 11,
+            "name": "CABLE HDMI 3 METROS 2.0",
+            "categoryId": 18,
+            "stock": 2,
+            "price": 6.0,
+            "date": "2026-01-09T14:27:42.687",
+            "isActive": true,
+            "description": "Largo del cable:  3m. Formato de venta: Unidad. Cable HDMI versión 1.4 que soporta Full HD Conectores enchapados para mejor calidad de señal. Diseño mallado que protege de interferencias. Doble filtro que garantiza transmisión sin interrupciones. Diámetro del cable de 1.3 mm que asegura resistencia. Longitud de 1 metros ideal para conexiones cómodas.",
+            "subcategoryId": 22,
+            "imageUrl": "https://res.cloudinary.com/ddw9fdcnt/image/upload/v1767990119/D_Q_NP_665929-MLA100089121319_122025-O_wfwn69.webp",
+            "cost": 2.0,
+            "videoUrl": null
+        },
+        {
+            "id": 12,
+            "name": "CABLE HDMI 5 METROS 2.0",
+            "categoryId": 18,
+            "stock": 1,
+            "price": 8.0,
+            "date": "2026-01-09T14:29:19.113",
+            "isActive": true,
+            "description": "Largo del cable: 5 m Unidades por pack: 1 Formato de venta: Unidad Con entrada HDMI y salida HDMI.",
+            "subcategoryId": 22,
+            "imageUrl": "https://res.cloudinary.com/ddw9fdcnt/image/upload/v1767990119/D_NQ_NP_2X_736248-MLA84539548884_052025-F_ij4scx.webp",
+            "cost": 3.0,
+            "videoUrl": null
+        },
+        {
+            "id": 13,
+            "name": "CÁMARA GIRATORIA EXTERIOR IP66",
+            "categoryId": 5,
+            "stock": 1,
+            "price": 30.0,
+            "date": "2026-01-09T14:40:54.737",
+            "isActive": true,
+            "description": "APP YILOT / –COMPATIBLE CON DISPOSITIVOS MÓVILES: ANDROID/IOS -VISIÓN NOCTURNA (8 POTENTES LED''S) – NIVEL DE PROTECCIÓN IP66 A PRUEBA DE AGUA CONFIABLE EN CUALQUIER CONDICIÓN CLIMÁTICA",
+            "subcategoryId": 13,
+            "imageUrl": "https://res.cloudinary.com/ddw9fdcnt/image/upload/v1767991215/D_NQ_NP_652001-MEC70181282524_062023-O_xu3coj.webp",
+            "cost": 12.0,
+            "videoUrl": null
+        },
+        {
+            "id": 14,
+            "name": "Camara Negra DOBLE V380 4G",
+            "categoryId": 5,
+            "stock": 1,
+            "price": 45.0,
+            "date": "2026-01-09T14:48:27.503",
+            "isActive": true,
+            "description": "La Cámara de Seguridad Inteligente WiFi V380 es una solución completa de videovigilancia para exteriores. Integra un sensor HD de hasta 2.0 MP con resolución 1080p, visión nocturna avanzada y conectividad WiFi para que puedas monitorear tu propiedad en tiempo real desde la app V380/V380 Pro en tu teléfono o Tablet. Su cabezal motorizado permite rotación horizontal cercana a 355° y vertical de hasta 90°, cubriendo grandes espacios como patios, entradas o parqueaderos. La combinación de LEDs infrarrojos y luz blanca ofrece visión nocturna a color o en blanco y negro según el modo configurado, mientras que el audio bidireccional te permite escuchar y hablar con visitantes, familiares o intrusos desde cualquier lugar. La cámara incorpora detección inteligente de movimiento, enviando notificaciones al móvil y permitiendo grabación en tarjeta microSD o en la nube, según la configuración. Es ideal para quienes buscan un sistema de seguridad moderno, fácil de instalar y manejar desde el celular.",
+            "subcategoryId": 9,
+            "imageUrl": "https://res.cloudinary.com/ddw9fdcnt/image/upload/v1767991632/Camara-de-seguridad-inteligente-WiFi-V380-1_wrfaza.png",
+            "cost": 19.5,
+            "videoUrl": null
+        },
+        {
+            "id": 15,
+            "name": "Cámara Tapo C500 Exterior Full HD de 1080p",
+            "categoryId": 5,
+            "stock": 1,
+            "price": 69.99,
+            "date": "2026-01-09T15:01:32.063",
+            "isActive": true,
+            "description": "Vista en vivo Full HD de 1080p: Revela imágenes claras y nítidas con más detalles. / Definición de la cámara: 4MP. /Protección IP65: Ofrece un excelente rendimiento a prueba de agua y polvo para escenarios al aire libre. Incluye visión nocturna. Ideal para control y seguridad de hogares, oficinas y edificios.",
+            "subcategoryId": 8,
+            "imageUrl": "https://res.cloudinary.com/ddw9fdcnt/image/upload/v1767992401/Tapo_C500_EU_1.0_overview_normal_20230413025303g_psqryc.png",
+            "cost": 40.0,
+            "videoUrl": null
+        },
+        {
+            "id": 16,
+            "name": "Palanca PlayStation 3",
+            "categoryId": 19,
+            "stock": 1,
+            "price": 15.0,
+            "date": "2026-01-11T12:18:59.743",
+            "isActive": true,
+            "description": "– Mando inalámbrico. – Batería recargable. – Recargable a través de puerto USB. – Tecnología vía bluetooth.",
+            "subcategoryId": 23,
+            "imageUrl": "https://res.cloudinary.com/ddw9fdcnt/image/upload/v1768155432/0100544305-000000000004795043-0-c515Wx515H_yfxksy.jpg",
+            "cost": 5.0,
+            "videoUrl": null
+        },
+        {
+            "id": 17,
+            "name": "Palanca Playstation 4 AAA",
+            "categoryId": 19,
+            "stock": 1,
+            "price": 29.99,
+            "date": "2026-01-11T12:24:03.923",
+            "isActive": true,
+            "description": "Compatible con PS 4/PS 4 Slim/PS 4 Pro Precisión inigualable con cada movimiento. Funcionamiento más suave e impecable Tecnología de comunicación inalámbrica 2,5 horas de tiempo de carga y hasta 10 horas de uso",
+            "subcategoryId": 23,
+            "imageUrl": "https://res.cloudinary.com/ddw9fdcnt/image/upload/v1768155665/D_NQ_NP_744476-MEC92271883318_092025-O_xnbgcc.webp",
+            "cost": 7.0,
+            "videoUrl": null
+        },
+        {
+            "id": 18,
+            "name": "Proyector Gamer Ultra HD + Controles incluidos",
+            "categoryId": 16,
+            "stock": 1,
+            "price": 69.99,
+            "date": "2026-01-11T12:46:04.930",
+            "isActive": true,
+            "description": "El MEJOR PROYECTOR GAMER EN TU HOGAR! 🏠🎬 Y CON MAS DE 15000 🎮 JUEGOS PARA TU DIVERSIÓN Sistema Operativo: Android 11 📡 Android TV integrado: Accede a Netflix, YouTube, Disney+, Prime Video, y más aplicaciones. 📺 Pantalla de 4K y soporta hasta 8K Enfoque automático con corrección trapezoidal Proyecta imagen hasta de 130 pulgadas 📱 Chromecast incorporado: Transmite contenido desde tu teléfono o tablet al instante. 🎮 Más de 15000 juegos preinstalados: Disfruta horas de diversión con los 2 controles inalámbricos incluidos. 💡 Luminosidad de 8000 lúmenes Brillo: 120 ANSI 🔊 Sonido Estéreo DSP con altavoces en alta fidelidad 🔌Conectividad versátil: WIFI y Bluetooth y puertos HDMI, USB  para conectar todos tus dispositivos Compatible con Android e IOS para compartir contenido desde tu celular, tablet o PC 🛒 Incluye: ✅ Proyector Android Gamer ✅ 2 controles inalámbricos ergonómicos. ✅ Memory Stick con micro SD con 15000 juegos preinstalados ✅ Control remoto ✅ Caja original y manual de usuario.",
+            "subcategoryId": 24,
+            "imageUrl": "https://res.cloudinary.com/ddw9fdcnt/image/upload/v1768157132/PROYECTORGAME_Ma28_11zon_grande_of8mre.webp",
+            "cost": 46.0,
+            "videoUrl": null
+        },
+        {
+            "id": 19,
+            "name": "Auriculares ONIKUMA X25 con cable y micrófono",
+            "categoryId": 17,
+            "stock": 1,
+            "price": 29.99,
+            "date": "2026-01-11T12:55:46.317",
+            "isActive": true,
+            "description": "✔️Audífonos con luz RGB  degradada🌈 ✔️ Para ordenador portátil, PC, PS4, 5, Xbox🫧 ✔️Super cómodos y con luces llamativas 💫 YZK",
+            "subcategoryId": 20,
+            "imageUrl": "https://res.cloudinary.com/ddw9fdcnt/image/upload/v1768157661/5157046341766066528_dvpqzj.jpg",
+            "cost": 14.0,
+            "videoUrl": "https://res.cloudinary.com/ddw9fdcnt/video/upload/v1768157673/IMG_5152_qbnryj.mp4"
+        },
+        {
+            "id": 20,
+            "name": "Audifonos Inalámbricos M90",
+            "categoryId": 17,
+            "stock": 1,
+            "price": 11.99,
+            "date": "2026-01-11T13:02:54.263",
+            "isActive": true,
+            "description": "Color: Negro Bluetooth 5.3 15 Metros Carga tipo USB C USB para Power Bank Batería con 1200 mAh Pantalla led con indicador de carga Resistencia IPX7  1 metro de profundidad por 30 minutos",
+            "subcategoryId": 20,
+            "imageUrl": "https://res.cloudinary.com/ddw9fdcnt/image/upload/v1768158108/D_NQ_NP_929341-MEC84016695172_052025-O_tgykff.webp",
+            "cost": 3.5,
+            "videoUrl": null
+        },
+        {
+            "id": 21,
+            "name": "Micro SD 128GB (Tarjeta de meomoria)",
+            "categoryId": 8,
+            "stock": 1,
+            "price": 20.0,
+            "date": "2026-01-20T07:59:27.907",
+            "isActive": true,
+            "description": null,
+            "subcategoryId": 12,
+            "imageUrl": "https://res.cloudinary.com/ddw9fdcnt/image/upload/v1768917554/micro-sd-128-gb-kingston-cs2_g5gzfx.jpg",
+            "cost": 10.0,
+            "videoUrl": null
+        },
+        {
+            "id": 23,
+            "name": "CABLE HDMI 1 METRO 2.0",
+            "categoryId": 18,
+            "stock": 0,
+            "price": 5.0,
+            "date": "2026-01-22T09:54:55.150",
+            "isActive": true,
+            "description": null,
+            "subcategoryId": 22,
+            "imageUrl": "https://res.cloudinary.com/ddw9fdcnt/image/upload/v1767990120/cable-hdmi-15-metros_ozgpck.webp",
+            "cost": 1.0,
+            "videoUrl": null
+        },
+        {
+            "id": 24,
+            "name": "Mouse Color Negro USB cable",
+            "categoryId": 18,
+            "stock": 1,
+            "price": 6.5,
+            "date": "2026-01-22T10:01:21.307",
+            "isActive": true,
+            "description": "Cable: 1.5m Conexion: USB Tipo: con cable Aclaracion: Se apaga la luz cuando se apaga la computadora",
+            "subcategoryId": 25,
+            "imageUrl": "https://res.cloudinary.com/ddw9fdcnt/image/upload/v1769097499/Mouse-Color-Negro-con-cable-para-Pc-de-Escritorio-comprar-venta-quito_pvarpk.jpg",
+            "cost": 1.5,
+            "videoUrl": null
+        }
+    ],
+    "product_images": [
+        {
+            "id": 3,
+            "productId": 4,
+            "url": "https://res.cloudinary.com/ddw9fdcnt/image/upload/v1767796781/1GSM41-_fznbww.png"
+        },
+        {
+            "id": 4,
+            "productId": 4,
+            "url": "https://res.cloudinary.com/ddw9fdcnt/image/upload/v1767797108/3bb7afccd1c3e2b67e4a2020dde840e4548a87df_original_pmrhz5.jpg"
+        },
+        {
+            "id": 5,
+            "productId": 4,
+            "url": "https://res.cloudinary.com/ddw9fdcnt/image/upload/v1767797108/525745944_1466721571149698_6996934762023862895_n_pr0jgc.jpg"
+        },
+        {
+            "id": 6,
+            "productId": 4,
+            "url": "https://res.cloudinary.com/ddw9fdcnt/image/upload/v1767797121/515493935_1466721547816367_7370414575066808438_n_dd1myu.jpg"
+        },
+        {
+            "id": 7,
+            "productId": 4,
+            "url": "https://res.cloudinary.com/ddw9fdcnt/image/upload/v1767797128/S6755f16e1c37465a931bd0e9715437a6a_svuvhv.avif"
+        },
+        {
+            "id": 8,
+            "productId": 5,
+            "url": "https://res.cloudinary.com/ddw9fdcnt/image/upload/v1767884271/71mg_Rol-pL._AC_UF894_1000_QL80__vhr5vv.jpg"
+        },
+        {
+            "id": 9,
+            "productId": 5,
+            "url": "https://res.cloudinary.com/ddw9fdcnt/image/upload/v1767884271/71R4KMkVdkL_jzkj8z.jpg"
+        },
+        {
+            "id": 10,
+            "productId": 5,
+            "url": "https://res.cloudinary.com/ddw9fdcnt/image/upload/v1767884271/71Yza1faCpL._AC_UF350_350_QL80__wamuqc.jpg"
+        },
+        {
+            "id": 11,
+            "productId": 5,
+            "url": "https://res.cloudinary.com/ddw9fdcnt/image/upload/v1767884271/1739637867716370_a5wlth.png"
+        },
+        {
+            "id": 12,
+            "productId": 5,
+            "url": "https://res.cloudinary.com/ddw9fdcnt/image/upload/v1767884271/640_ee5fn1.webp"
+        },
+        {
+            "id": 13,
+            "productId": 5,
+            "url": "https://res.cloudinary.com/ddw9fdcnt/image/upload/v1767884271/61pqyz-cCtL._AC_UF350_350_QL80__okzk34.jpg"
+        },
+        {
+            "id": 14,
+            "productId": 6,
+            "url": "https://res.cloudinary.com/ddw9fdcnt/image/upload/v1767885327/auri-eb90c5c789cc32e5df17068837804883-1024-1024_qcp1e9.jpg"
+        },
+        {
+            "id": 15,
+            "productId": 6,
+            "url": "https://res.cloudinary.com/ddw9fdcnt/image/upload/v1767885372/A2931.BLACK__ce4tam.jpg"
+        },
+        {
+            "id": 16,
+            "productId": 6,
+            "url": "https://res.cloudinary.com/ddw9fdcnt/image/upload/v1767885969/cn-11134207-7qukw-ljdka4bxeoome2_dmkskq.jpg"
+        },
+        {
+            "id": 17,
+            "productId": 6,
+            "url": "https://res.cloudinary.com/ddw9fdcnt/image/upload/v1767885969/1736298309Capturadepantalla20250107alas185004png_aajxjh.png"
+        },
+        {
+            "id": 18,
+            "productId": 7,
+            "url": "https://res.cloudinary.com/ddw9fdcnt/image/upload/v1767886690/D_NQ_NP_2X_982746-MLA87770498480_072025-F_tgybyi.webp"
+        },
+        {
+            "id": 19,
+            "productId": 7,
+            "url": "https://res.cloudinary.com/ddw9fdcnt/image/upload/v1767886689/D_NQ_NP_2X_910698-MLA87770262824_072025-F_icrkcf.webp"
+        },
+        {
+            "id": 20,
+            "productId": 7,
+            "url": "https://res.cloudinary.com/ddw9fdcnt/image/upload/v1767886689/D_NQ_NP_2X_998731-MLA87770684834_072025-F_jbogab.webp"
+        },
+        {
+            "id": 21,
+            "productId": 7,
+            "url": "https://res.cloudinary.com/ddw9fdcnt/image/upload/v1767886689/D_NQ_NP_2X_696907-MLA87770183794_072025-F_vq0jgc.webp"
+        },
+        {
+            "id": 22,
+            "productId": 7,
+            "url": "https://res.cloudinary.com/ddw9fdcnt/image/upload/v1767886689/D_NQ_NP_2X_716880-MLA99937762653_112025-F_lkt8re.webp"
+        },
+        {
+            "id": 23,
+            "productId": 8,
+            "url": "https://res.cloudinary.com/ddw9fdcnt/image/upload/v1767969463/bang-king-35000-12-768x768_slss1h.jpg"
+        },
+        {
+            "id": 24,
+            "productId": 8,
+            "url": "https://res.cloudinary.com/ddw9fdcnt/image/upload/v1767969955/bang-king-35000-4_wyc5zp.jpg"
+        },
+        {
+            "id": 25,
+            "productId": 9,
+            "url": "https://res.cloudinary.com/ddw9fdcnt/image/upload/v1767970291/bang-28000-puffs-grape-ice_orlkum.jpg"
+        },
+        {
+            "id": 26,
+            "productId": 9,
+            "url": "https://res.cloudinary.com/ddw9fdcnt/image/upload/v1767970291/6f282742aa386f29b9de70ed36_rvuijg.jpg"
+        },
+        {
+            "id": 27,
+            "productId": 10,
+            "url": "https://res.cloudinary.com/ddw9fdcnt/image/upload/v1767989133/D_NQ_NP_627651-MLA99855629837_112025-O_rfaqhf.webp"
+        },
+        {
+            "id": 28,
+            "productId": 11,
+            "url": "https://res.cloudinary.com/ddw9fdcnt/image/upload/v1767990119/D_Q_NP_665929-MLA100089121319_122025-O_wfwn69.webp"
+        },
+        {
+            "id": 29,
+            "productId": 11,
+            "url": "https://res.cloudinary.com/ddw9fdcnt/image/upload/v1767990119/D_NQ_NP_2X_622446-MLA84837720645_052025-F_wvisth.webp"
+        },
+        {
+            "id": 30,
+            "productId": 11,
+            "url": "https://res.cloudinary.com/ddw9fdcnt/image/upload/v1767990119/D_NQ_NP_2X_736248-MLA84539548884_052025-F_ij4scx.webp"
+        },
+        {
+            "id": 31,
+            "productId": 11,
+            "url": "https://res.cloudinary.com/ddw9fdcnt/image/upload/v1767990120/cable-hdmi-15-metros_ozgpck.webp"
+        },
+        {
+            "id": 32,
+            "productId": 12,
+            "url": "https://res.cloudinary.com/ddw9fdcnt/image/upload/v1767990119/D_NQ_NP_2X_736248-MLA84539548884_052025-F_ij4scx.webp"
+        },
+        {
+            "id": 33,
+            "productId": 12,
+            "url": "https://res.cloudinary.com/ddw9fdcnt/image/upload/v1767990119/D_Q_NP_665929-MLA100089121319_122025-O_wfwn69.webp"
+        },
+        {
+            "id": 34,
+            "productId": 12,
+            "url": "https://res.cloudinary.com/ddw9fdcnt/image/upload/v1767990119/D_NQ_NP_2X_622446-MLA84837720645_052025-F_wvisth.webp"
+        },
+        {
+            "id": 35,
+            "productId": 13,
+            "url": "https://res.cloudinary.com/ddw9fdcnt/image/upload/v1767991215/D_NQ_NP_652001-MEC70181282524_062023-O_xu3coj.webp"
+        },
+        {
+            "id": 36,
+            "productId": 13,
+            "url": "https://res.cloudinary.com/ddw9fdcnt/image/upload/v1767991216/1701284768893_1701284766340_1701284765794_1_uiwu0o.webp"
+        },
+        {
+            "id": 37,
+            "productId": 13,
+            "url": "https://res.cloudinary.com/ddw9fdcnt/image/upload/v1767991215/camara-wifi-tptz-ip66-cla_nzqosa.jpg"
+        },
+        {
+            "id": 38,
+            "productId": 14,
+            "url": "https://res.cloudinary.com/ddw9fdcnt/image/upload/v1767991632/Camara-de-seguridad-inteligente-WiFi-V380-1_wrfaza.png"
+        },
+        {
+            "id": 39,
+            "productId": 14,
+            "url": "https://res.cloudinary.com/ddw9fdcnt/image/upload/v1767991630/Camara-de-seguridad-inteligente-WiFi-V380-5_v9urzg.png"
+        },
+        {
+            "id": 40,
+            "productId": 14,
+            "url": "https://res.cloudinary.com/ddw9fdcnt/image/upload/v1767991629/Camara-de-seguridad-inteligente-WiFi-V380-4_fqwxvl.png"
+        },
+        {
+            "id": 41,
+            "productId": 14,
+            "url": "https://res.cloudinary.com/ddw9fdcnt/image/upload/v1767991623/Camara-de-seguridad-inteligente-WiFi-V380-7_jdq7fb.png"
+        },
+        {
+            "id": 42,
+            "productId": 14,
+            "url": "https://res.cloudinary.com/ddw9fdcnt/image/upload/v1767991622/Camara-de-seguridad-inteligente-WiFi-V380-3_e0oq4w.png"
+        },
+        {
+            "id": 43,
+            "productId": 15,
+            "url": "https://res.cloudinary.com/ddw9fdcnt/image/upload/v1767992401/Tapo_C500_EU_1.0_overview_normal_20230413025303g_psqryc.png"
+        },
+        {
+            "id": 44,
+            "productId": 15,
+            "url": "https://res.cloudinary.com/ddw9fdcnt/image/upload/v1767992399/D_NQ_NP_654601-MLU77337134092_072024-O_e6eqvl.webp"
+        },
+        {
+            "id": 45,
+            "productId": 15,
+            "url": "https://res.cloudinary.com/ddw9fdcnt/image/upload/v1767992400/05_normal_20221223095855g_kgrecn.jpg"
+        },
+        {
+            "id": 46,
+            "productId": 15,
+            "url": "https://res.cloudinary.com/ddw9fdcnt/image/upload/v1767992401/01_normal_20221223095419u_dyynor.jpg"
+        },
+        {
+            "id": 47,
+            "productId": 15,
+            "url": "https://res.cloudinary.com/ddw9fdcnt/image/upload/v1767992400/02_normal_20221223095434z_trg2bt.jpg"
+        },
+        {
+            "id": 48,
+            "productId": 15,
+            "url": "https://res.cloudinary.com/ddw9fdcnt/image/upload/v1767992400/04_normal_20221223095731t_kcrkbg.jpg"
+        },
+        {
+            "id": 49,
+            "productId": 15,
+            "url": "https://res.cloudinary.com/ddw9fdcnt/image/upload/v1767992400/06_normal_20221223100035x_ojitri.jpg"
+        },
+        {
+            "id": 50,
+            "productId": 16,
+            "url": "https://res.cloudinary.com/ddw9fdcnt/image/upload/v1768155432/0100544305-000000000004795043-0-c515Wx515H_yfxksy.jpg"
+        },
+        {
+            "id": 51,
+            "productId": 16,
+            "url": "https://res.cloudinary.com/ddw9fdcnt/image/upload/v1768155432/D_NQ_NP_833125-MEC81412780843_122024-O_q3xprg.webp"
+        },
+        {
+            "id": 52,
+            "productId": 16,
+            "url": "https://res.cloudinary.com/ddw9fdcnt/image/upload/v1768155432/51OWGgMpEXL._AC_UF894_1000_QL80__qtwrk2.jpg"
+        },
+        {
+            "id": 53,
+            "productId": 16,
+            "url": "https://res.cloudinary.com/ddw9fdcnt/image/upload/v1768155432/efb1af35-01b0-46a5-9498-50424fb2fb02_oqpu1y.webp"
+        },
+        {
+            "id": 54,
+            "productId": 17,
+            "url": "https://res.cloudinary.com/ddw9fdcnt/image/upload/v1768155665/D_NQ_NP_744476-MEC92271883318_092025-O_xnbgcc.webp"
+        },
+        {
+            "id": 55,
+            "productId": 17,
+            "url": "https://res.cloudinary.com/ddw9fdcnt/image/upload/v1768155665/descarga_1_lxovt9.jpg"
+        },
+        {
+            "id": 56,
+            "productId": 17,
+            "url": "https://res.cloudinary.com/ddw9fdcnt/image/upload/v1768155665/1VSM54_gsshuy.webp"
+        },
+        {
+            "id": 57,
+            "productId": 17,
+            "url": "https://res.cloudinary.com/ddw9fdcnt/image/upload/v1768155665/mando-control-palanca-dualshock-4-ps4-inalambrico-generico-D_NQ_NP_978818-MEC40637131859_022020-Q_tfsmxo.jpg"
+        },
+        {
+            "id": 58,
+            "productId": 18,
+            "url": "https://res.cloudinary.com/ddw9fdcnt/image/upload/v1768157132/PROYECTORGAME_Ma28_11zon_grande_of8mre.webp"
+        },
+        {
+            "id": 59,
+            "productId": 18,
+            "url": "https://res.cloudinary.com/ddw9fdcnt/image/upload/v1768157101/83dc70c2-388d-42c2-a87b-03b8ccfb16e7_gayu1l.webp"
+        },
+        {
+            "id": 60,
+            "productId": 18,
+            "url": "https://res.cloudinary.com/ddw9fdcnt/image/upload/v1768157101/PROYECTORGAME_31_11zon_grande_xibxf8.webp"
+        },
+        {
+            "id": 61,
+            "productId": 18,
+            "url": "https://res.cloudinary.com/ddw9fdcnt/image/upload/v1768157101/6526f311-fbee-43d0-a438-5d5b78519b57_kumxw1.webp"
+        },
+        {
+            "id": 62,
+            "productId": 19,
+            "url": "https://res.cloudinary.com/ddw9fdcnt/image/upload/v1768157661/5157046341766066528_dvpqzj.jpg"
+        },
+        {
+            "id": 63,
+            "productId": 19,
+            "url": "https://res.cloudinary.com/ddw9fdcnt/image/upload/v1768157661/5157046341766066525_bw6kza.jpg"
+        },
+        {
+            "id": 64,
+            "productId": 19,
+            "url": "https://res.cloudinary.com/ddw9fdcnt/image/upload/v1768157661/5157046341766066529_c0ku8b.jpg"
+        },
+        {
+            "id": 65,
+            "productId": 19,
+            "url": "https://res.cloudinary.com/ddw9fdcnt/image/upload/v1768157661/5157046341766066526_j9gvft.jpg"
+        },
+        {
+            "id": 66,
+            "productId": 20,
+            "url": "https://res.cloudinary.com/ddw9fdcnt/image/upload/v1768158108/D_NQ_NP_929341-MEC84016695172_052025-O_tgykff.webp"
+        },
+        {
+            "id": 67,
+            "productId": 20,
+            "url": "https://res.cloudinary.com/ddw9fdcnt/image/upload/v1768158109/351359450_1978175672521064_7936416946878561419_n_drhhng.webp"
+        },
+        {
+            "id": 68,
+            "productId": 20,
+            "url": "https://res.cloudinary.com/ddw9fdcnt/image/upload/v1768158104/D_NQ_NP_616787-MLA93961652713_102025-O_wfzk0u.webp"
+        },
+        {
+            "id": 69,
+            "productId": 20,
+            "url": "https://res.cloudinary.com/ddw9fdcnt/image/upload/v1768158107/D_NQ_NP_2X_985610-MEC84016695170_052025-F_dvzfys.webp"
+        },
+        {
+            "id": 70,
+            "productId": 21,
+            "url": "https://res.cloudinary.com/ddw9fdcnt/image/upload/v1768917554/micro-sd-128-gb-kingston-cs2_g5gzfx.jpg"
+        },
+        {
+            "id": 71,
+            "productId": 23,
+            "url": "https://res.cloudinary.com/ddw9fdcnt/image/upload/v1767990120/cable-hdmi-15-metros_ozgpck.webp"
+        },
+        {
+            "id": 72,
+            "productId": 23,
+            "url": "https://res.cloudinary.com/ddw9fdcnt/image/upload/v1767990119/D_NQ_NP_2X_736248-MLA84539548884_052025-F_ij4scx.webp"
+        },
+        {
+            "id": 73,
+            "productId": 24,
+            "url": "https://res.cloudinary.com/ddw9fdcnt/image/upload/v1769097499/Mouse-Color-Negro-con-cable-para-Pc-de-Escritorio-comprar-venta-quito_pvarpk.jpg"
+        },
+        {
+            "id": 74,
+            "productId": 24,
+            "url": "https://res.cloudinary.com/ddw9fdcnt/image/upload/v1769097498/images_dzwapm.jpg"
+        }
+    ],
+    "clients": [
+        {
+            "id": 1,
+            "name": "CONSUMIDOR FINAL",
+            "cedulaRuc": "9999999999",
+            "phone": "/A",
+            "address": "La Troncal",
+            "email": null,
+            "registeredAt": null
+        }
+    ],
+    "employees": [
+        {
+            "id": 1,
+            "name": "Jairo Calle",
+            "role": "Administrador",
+            "isActive": true
+        }
+    ],
+    "company_settings": [
+        {
+            "id": 1,
+            "name": "JC TECH",
+            "ruc": "0929433514001",
+            "address": "Calle Manabi y El Artesano",
+            "phone": "0991693863",
+            "email": "jairocalle4@gmail.com",
+            "legalMessage": "Contribuyente Negocio Popular – Régimen RIMPE.",
+            "sriAuth": "9999999999",
+            "establishment": "001",
+            "pointOfIssue": "001",
+            "currentSequence": 10,
+            "expirationDate": "2025-11-17",
+            "socialReason": "Jairo Leonardo Calle Maldonado"
+        }
+    ],
+    "sales": [
+        {
+            "id": 1,
+            "date": "2026-01-22T09:56:39.557",
+            "employeeId": 1,
+            "total": 5.0,
+            "observation": null,
+            "clientId": 1,
+            "noteNumber": "001-001-000000010",
+            "isVoid": false
+        }
+    ],
+    "sale_details": [
+        {
+            "id": 1,
+            "saleId": 1,
+            "productId": 23,
+            "quantity": 1,
+            "subtotal": 5.0,
+            "unitPrice": 5.0
+        }
+    ]
+}

@@ -1,0 +1,36 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="9.0.1" />
+    <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="9.0.10" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="9.0.1">
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
+    <PackageReference Include="Swashbuckle.AspNetCore" Version="6.6.2" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Remove="ErpStore.Domain\**" />
+    <Compile Remove="ErpStore.Application\**" />
+    <Compile Remove="ErpStore.Infrastructure\**" />
+    <EmbeddedResource Remove="ErpStore.Domain\**" />
+    <EmbeddedResource Remove="ErpStore.Application\**" />
+    <EmbeddedResource Remove="ErpStore.Infrastructure\**" />
+    <None Remove="ErpStore.Domain\**" />
+    <None Remove="ErpStore.Application\**" />
+    <None Remove="ErpStore.Infrastructure\**" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="ErpStore.Infrastructure\ErpStore.Infrastructure.csproj" />
+    <ProjectReference Include="ErpStore.Application\ErpStore.Application.csproj" />
+  </ItemGroup>
+
+</Project>
