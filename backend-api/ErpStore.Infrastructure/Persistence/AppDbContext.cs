@@ -79,6 +79,8 @@ public class AppDbContext : DbContext
                 Id = 1, 
                 Username = "admin", 
                 Email = "admin@erpstore.com", 
+                FirstName = "Admin",
+                LastName = "User",
                 Role = Role.Admin, 
                 PasswordHash = "admin123", // In real app, this must be BCrypt hash
                 CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc)

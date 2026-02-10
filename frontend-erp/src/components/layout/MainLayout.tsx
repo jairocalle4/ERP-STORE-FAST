@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Outlet, NavLink, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Package, Layers, LogOut, Menu, User, Briefcase, FileText, ShoppingCart, X, Settings, DollarSign, BarChart2 } from 'lucide-react';
+import { LayoutDashboard, Package, Layers, LogOut, Menu, User, Briefcase, FileText, ShoppingCart, X, Settings, DollarSign, BarChart2, Plus } from 'lucide-react';
 import { useAuthStore } from '../../store/useAuthStore';
 import { Toast } from '../common/Toast';
 import { companyService } from '../../services/company.service';
@@ -8,6 +8,7 @@ import { companyService } from '../../services/company.service';
 export default function MainLayout() {
     const { logout, user } = useAuthStore();
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+    const [isUserMenuOpen, setIsUserMenuOpen] = useState(false); // Controlled dropdown state
     const [companyName, setCompanyName] = useState('ERP-STORE-FAST');
     const location = useLocation();
 
@@ -74,37 +75,7 @@ export default function MainLayout() {
                 ))}
             </nav>
 
-            <div className="p-4 mt-auto">
-                <div className="relative group">
-                    <button
-                        className="w-full bg-white/5 rounded-2xl p-4 flex items-center gap-3 border border-white/10 backdrop-blur-md hover:bg-white/10 transition-all text-left"
-                    >
-                        <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-indigo-400 to-cyan-400 flex items-center justify-center text-white font-bold shadow-lg">
-                            {user?.username?.substring(0, 2).toUpperCase() || 'AD'}
-                        </div>
-                        <div className="overflow-hidden flex-1">
-                            <p className="text-sm font-bold text-white truncate">{user?.username || 'Admin'}</p>
-                            <p className="text-xs text-indigo-200 truncate font-medium">{user?.role || 'Superuser'}</p>
-                        </div>
-                        <Settings size={16} className="text-indigo-200 group-hover:rotate-90 transition-transform" />
 
-                        {/* Dropdown Menu - Simple CSS hover for now, or onClick state if preferred */}
-                        <div className="absolute bottom-full left-0 w-full mb-2 bg-slate-900/95 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl p-2 hidden group-focus-within:block group-hover:block animate-scale-in origin-bottom">
-                            <NavLink to="/settings" className="flex items-center gap-2 text-slate-300 hover:text-white hover:bg-white/10 px-3 py-2.5 rounded-xl transition-all text-sm font-medium mb-1">
-                                <Settings size={16} />
-                                Configuración
-                            </NavLink>
-                            <button
-                                onClick={logout}
-                                className="w-full flex items-center gap-2 text-rose-300 hover:text-white hover:bg-rose-500/20 px-3 py-2.5 rounded-xl transition-all text-sm font-medium"
-                            >
-                                <LogOut size={16} />
-                                Cerrar Sesión
-                            </button>
-                        </div>
-                    </button>
-                </div>
-            </div>
         </>
     );
 
@@ -145,27 +116,89 @@ export default function MainLayout() {
                         </span>
                     </div>
 
-                    {/* Desktop Title (Optional, or Breadcrumbs) */}
-                    <div className="hidden md:block">
-                        <h2 className="text-2xl font-bold text-slate-800 tracking-tight">
-                            {navItems.find(i => i.path === location.pathname)?.label || 'Dashboard'}
-                        </h2>
+                    <div className="hidden md:flex items-center gap-3">
+                        <NavLink
+                            to="/pos"
+                            className="flex items-center gap-2 bg-emerald-500 hover:bg-emerald-600 text-white px-5 py-2.5 rounded-full font-bold shadow-lg shadow-emerald-500/30 transition-all hover:scale-105 active:scale-95"
+                        >
+                            <ShoppingCart size={18} strokeWidth={2.5} />
+                            <span>Nueva Venta</span>
+                        </NavLink>
+                        <NavLink
+                            to="/products/new"
+                            className="flex items-center gap-2 bg-white text-indigo-600 border border-indigo-100 hover:bg-indigo-50 px-5 py-2.5 rounded-full font-bold shadow-sm transition-all hover:scale-105 active:scale-95"
+                        >
+                            <Plus size={18} strokeWidth={2.5} />
+                            <span>Nuevo Producto</span>
+                        </NavLink>
                     </div>
 
                     <div className="flex items-center gap-4">
-                        <button
-                            className="md:hidden p-2 text-indigo-600 bg-indigo-50 rounded-xl active:scale-95 transition-transform"
-                            onClick={() => setIsMobileMenuOpen(true)}
-                        >
-                            <Menu size={24} />
-                        </button>
+                        <span className="text-sm font-medium text-slate-500 hidden md:inline-block">{new Date().toLocaleDateString()}</span>
 
-                        {/* Profile/Notification Placeholder for Desktop Header */}
-                        <div className="hidden md:flex items-center gap-3">
-                            <span className="text-sm font-medium text-slate-500">{new Date().toLocaleDateString()}</span>
-                            <div className="w-10 h-10 rounded-full bg-white shadow-sm flex items-center justify-center text-indigo-600 ring-2 ring-indigo-50 cursor-pointer hover:ring-indigo-200 transition-all">
-                                <User size={20} />
-                            </div>
+                        {/* User Menu Dropdown */}
+                        <div className="relative">
+                            <button
+                                onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
+                                className="w-10 h-10 rounded-full bg-gradient-to-tr from-indigo-500 to-violet-500 flex items-center justify-center text-white font-bold shadow-lg ring-2 ring-indigo-50 hover:ring-indigo-200 transition-all cursor-pointer"
+                            >
+                                {user?.username?.substring(0, 2).toUpperCase() || 'AD'}
+                            </button>
+
+                            {/* Overlay to close menu when clicking outside */}
+                            {isUserMenuOpen && (
+                                <div
+                                    className="fixed inset-0 z-40 bg-transparent"
+                                    onClick={() => setIsUserMenuOpen(false)}
+                                />
+                            )}
+
+                            {/* Dropdown Content */}
+                            {isUserMenuOpen && (
+                                <div className="absolute right-0 top-full mt-3 w-72 bg-white rounded-2xl shadow-xl border border-slate-100 p-2 animate-scale-in origin-top-right z-50">
+                                    <div className="p-4 border-b border-slate-100 flex items-center gap-4">
+                                        <div className="w-12 h-12 rounded-full bg-gradient-to-tr from-indigo-500 to-violet-500 flex items-center justify-center text-white font-bold text-lg shadow-md">
+                                            {user?.username?.substring(0, 2).toUpperCase() || 'AD'}
+                                        </div>
+                                        <div className="flex-1 overflow-hidden">
+                                            <p className="font-bold text-slate-800 truncate">{user?.username || 'Admin'}</p>
+                                            <p className="text-xs text-slate-500 truncate">{user?.role || 'Administrator'}</p>
+                                        </div>
+                                    </div>
+
+                                    <div className="py-2">
+                                        <NavLink
+                                            to="/settings"
+                                            onClick={() => setIsUserMenuOpen(false)}
+                                            className="flex items-center gap-3 px-4 py-3 text-slate-600 hover:bg-slate-50 hover:text-indigo-600 rounded-xl transition-all text-sm font-medium"
+                                        >
+                                            <Settings size={18} />
+                                            Configuración
+                                        </NavLink>
+                                        <NavLink
+                                            to="/profile"
+                                            onClick={() => setIsUserMenuOpen(false)}
+                                            className="w-full flex items-center gap-3 px-4 py-3 text-slate-600 hover:bg-slate-50 hover:text-indigo-600 rounded-xl transition-all text-sm font-medium"
+                                        >
+                                            <User size={18} />
+                                            Mi Perfil
+                                        </NavLink>
+                                    </div>
+
+                                    <div className="border-t border-slate-100 py-2">
+                                        <button
+                                            onClick={() => {
+                                                setIsUserMenuOpen(false);
+                                                logout();
+                                            }}
+                                            className="w-full flex items-center gap-3 px-4 py-3 text-rose-500 hover:bg-rose-50 rounded-xl transition-all text-sm font-medium"
+                                        >
+                                            <LogOut size={18} />
+                                            Cerrar Sesión
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
                         </div>
                     </div>
                 </header>

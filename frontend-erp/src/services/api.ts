@@ -14,9 +14,7 @@ api.interceptors.request.use((config) => {
             const parsed = JSON.parse(storageData);
             const token = parsed?.state?.token;
             if (token) {
-                // For Axios 1.x, the recommended way to set headers in interceptors:
                 config.headers.set('Authorization', `Bearer ${token}`);
-                // config.headers['Authorization'] = `Bearer ${token}`; // Fallback if set() fails
             }
         }
     } catch (err) {
@@ -24,5 +22,16 @@ api.interceptors.request.use((config) => {
     }
     return config;
 });
+
+api.interceptors.response.use(
+    (response) => response,
+    (error) => {
+        if (error.response && error.response.status === 401) {
+            localStorage.removeItem('auth-storage');
+            window.location.href = '/login';
+        }
+        return Promise.reject(error);
+    }
+);
 
 export default api;

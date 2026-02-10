@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Building2, Save, MapPin, Phone, Mail, Hash, FileText, Calendar, ShieldCheck } from 'lucide-react';
+import { Building2, Save, MapPin, Phone, Mail, Hash, Calendar, ShieldCheck } from 'lucide-react';
 import { GlassCard } from '../components/common/GlassCard';
 import { companyService } from '../services/company.service';
 import type { CompanySetting } from '../services/company.service';

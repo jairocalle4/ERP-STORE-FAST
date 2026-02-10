@@ -1,11 +1,11 @@
 import { useEffect, useState } from 'react';
 import {
     BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
-    PieChart, Pie, Cell, Legend, AreaChart, Area, ComposedChart, Line
+    PieChart, Pie, Cell, Legend, ComposedChart, Line
 } from 'recharts';
 import {
-    Download, FileText, TrendingUp, Package, DollarSign, Calendar, Filter,
-    ArrowUpRight, ArrowDownRight, CreditCard, Activity
+    FileText, TrendingUp, Package, DollarSign, Calendar,
+    ArrowDownRight, CreditCard, Activity
 } from 'lucide-react';
 import { GlassCard } from '../components/common/GlassCard';
 import {
@@ -218,7 +218,7 @@ export default function ReportsPage() {
                                 <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#94a3b8' }} />
                                 <Tooltip
                                     contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)' }}
-                                    formatter={(value: number, name: string) => [formatCurrency(value), name]}
+                                    formatter={(value: any, name: any) => [formatCurrency(Number(value)), name]}
                                     labelStyle={{ color: '#64748b', marginBottom: '0.5rem' }}
                                 />
                                 <Legend verticalAlign="top" height={36} iconType="circle" />
@@ -278,7 +278,7 @@ export default function ReportsPage() {
                                         <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} strokeWidth={0} />
                                     ))}
                                 </Pie>
-                                <Tooltip formatter={(value: number) => formatCurrency(value)} />
+                                <Tooltip formatter={(value: any) => formatCurrency(Number(value))} />
                                 <Legend
                                     verticalAlign="bottom"
                                     height={36}
@@ -300,7 +300,7 @@ export default function ReportsPage() {
                                 <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#f1f5f9" />
                                 <XAxis type="number" hide />
                                 <YAxis dataKey="productName" type="category" width={120} tick={{ fontSize: 11 }} />
-                                <Tooltip formatter={(value: number) => formatCurrency(value)} />
+                                <Tooltip formatter={(value: any) => formatCurrency(Number(value))} />
                                 <Bar dataKey="totalRevenue" fill="#4f46e5" radius={[0, 4, 4, 0]} barSize={20} name="Ingresos Generados" />
                             </BarChart>
                         </ResponsiveContainer>

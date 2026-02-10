@@ -11,6 +11,7 @@ interface AuthState {
     token: string | null;
     user: User | null;
     login: (token: string, username: string, role: string) => void;
+    updateUser: (user: Partial<User>) => void;
     logout: () => void;
 }
 
@@ -23,6 +24,9 @@ export const useAuthStore = create<AuthState>()(
                 set({ token, user: { username, role } });
                 // Configure axios default header
                 axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+            },
+            updateUser: (updatedUser) => {
+                set((state) => ({ user: state.user ? { ...state.user, ...updatedUser } : null }));
             },
             logout: () => {
                 set({ token: null, user: null });
