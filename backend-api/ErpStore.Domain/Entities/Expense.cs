@@ -13,4 +13,7 @@ public class Expense : BaseEntity
     public DateTime Date { get; set; }
     public string PaymentMethod { get; set; } = "Efectivo";
     public string? Notes { get; set; }
+
+    public int? CashRegisterSessionId { get; set; }
+    public CashRegisterSession? CashRegisterSession { get; set; }
 }

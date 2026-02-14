@@ -22,7 +22,14 @@ public class AppDbContext : DbContext
     public DbSet<User> Users { get; set; }
     public DbSet<ProductImage> ProductImages { get; set; }
     public DbSet<Expense> Expenses { get; set; }
-    public DbSet<ExpenseCategory> ExpenseCategories { get; set; } // Added Expense DbSet
+    public DbSet<ExpenseCategory> ExpenseCategories { get; set; } 
+    public DbSet<CashRegisterSession> CashRegisterSessions { get; set; }
+    public DbSet<CashTransaction> CashTransactions { get; set; }
+    public DbSet<Supplier> Suppliers { get; set; }
+    public DbSet<Purchase> Purchases { get; set; }
+    public DbSet<PurchaseDetail> PurchaseDetails { get; set; }
+    public DbSet<Notification> Notifications { get; set; }
+    public DbSet<InventoryMovement> InventoryMovements { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -44,6 +51,18 @@ public class AppDbContext : DbContext
         // Expense configuration
         modelBuilder.Entity<Expense>()
             .Property(e => e.Amount)
+            .HasColumnType("decimal(18,2)");
+
+        modelBuilder.Entity<Purchase>()
+            .Property(p => p.Total)
+            .HasColumnType("decimal(18,2)");
+
+        modelBuilder.Entity<PurchaseDetail>()
+            .Property(pd => pd.UnitPrice)
+            .HasColumnType("decimal(18,2)");
+
+        modelBuilder.Entity<PurchaseDetail>()
+            .Property(pd => pd.Subtotal)
             .HasColumnType("decimal(18,2)");
             
         // Seed Expense Categories

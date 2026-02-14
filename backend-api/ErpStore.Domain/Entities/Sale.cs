@@ -12,6 +12,9 @@ public class Sale : BaseEntity
     public string? NoteNumber { get; set; }
     public bool IsVoid { get; set; }
     public string PaymentMethod { get; set; } = "Efectivo";
+    
+    public int? CashRegisterSessionId { get; set; }
+    public CashRegisterSession? CashRegisterSession { get; set; }
 
     // Relationships
     public Employee? Employee { get; set; }

@@ -16,4 +16,10 @@ public class CompanySetting : BaseEntity
     public int CurrentSequence { get; set; }
     public DateTime? ExpirationDate { get; set; }
     public string? SocialReason { get; set; }
+
+    // SMTP Configuration for Alerts
+    public string? SmtpServer { get; set; }
+    public int SmtpPort { get; set; } = 587;
+    public string? SmtpUser { get; set; }
+    public string? SmtpPass { get; set; }
 }

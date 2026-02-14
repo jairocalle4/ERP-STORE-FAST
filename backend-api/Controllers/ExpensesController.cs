@@ -71,6 +71,22 @@ public class ExpensesController : ControllerBase
             return BadRequest("Categoría inválida.");
         }
 
+        var userId = GetCurrentUserId();
+        int? activeSessionId = null;
+
+        // ENFORCE CASH REGISTER SESSION FOR CASH EXPENSES
+        if (dto.PaymentMethod == "Efectivo")
+        {
+            var session = await _context.CashRegisterSessions
+                .FirstOrDefaultAsync(s => s.UserId == userId && s.Status == "Open");
+
+            if (session == null)
+            {
+                return BadRequest("NO_OPEN_SESSION: Debe abrir caja antes de registrar egresos de Efectivo (Caja Chica).");
+            }
+            activeSessionId = session.Id;
+        }
+
         var expense = new Expense
         {
             Description = dto.Description,
@@ -79,7 +95,8 @@ public class ExpensesController : ControllerBase
             Date = dto.Date,
             PaymentMethod = dto.PaymentMethod,
             Notes = dto.Notes,
-            CreatedAt = DateTime.UtcNow
+            CreatedAt = DateTime.UtcNow,
+            CashRegisterSessionId = activeSessionId
         };
 
         _context.Expenses.Add(expense);
@@ -122,5 +139,12 @@ public class ExpensesController : ControllerBase
         await _context.SaveChangesAsync();
 
         return NoContent();
+    }
+
+    private int GetCurrentUserId()
+    {
+        var claim = User.FindFirst("id")?.Value;
+        if (int.TryParse(claim, out int id)) return id;
+        return 0;
     }
 }

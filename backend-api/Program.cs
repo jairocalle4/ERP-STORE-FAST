@@ -1,6 +1,7 @@
 using ErpStore.Infrastructure;
 using ErpStore.Infrastructure.Services;
 using ErpStore.Application.Services;
+using ErpStore.Application.Interfaces;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
@@ -18,6 +19,8 @@ builder.Services.AddInfrastructureServices(builder.Configuration);
 // Register Services
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<ICloudinaryService, CloudinaryService>();
+builder.Services.AddScoped<IEmailService, EmailService>();
+builder.Services.AddScoped<IInventoryService, InventoryService>();
 
 // Configure JWT Authentication
 var jwtSettings = builder.Configuration.GetSection("JwtSettings");

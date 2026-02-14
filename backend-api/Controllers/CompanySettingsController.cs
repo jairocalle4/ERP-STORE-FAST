@@ -65,6 +65,10 @@ public class CompanySettingsController : ControllerBase
         settings.CurrentSequence = dto.CurrentSequence;
         settings.ExpirationDate = dto.ExpirationDate;
         settings.SocialReason = dto.SocialReason;
+        settings.SmtpServer = dto.SmtpServer;
+        settings.SmtpPort = dto.SmtpPort;
+        settings.SmtpUser = dto.SmtpUser;
+        settings.SmtpPass = dto.SmtpPass;
         settings.UpdatedAt = DateTime.UtcNow;
 
         await _context.SaveChangesAsync();

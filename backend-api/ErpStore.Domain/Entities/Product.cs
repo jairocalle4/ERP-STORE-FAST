@@ -12,6 +12,7 @@ public class Product : BaseEntity
     public decimal Price { get; set; }
     public decimal Cost { get; set; } // For ERP only
     public int Stock { get; set; }
+    public int MinStock { get; set; } = 3; // Default minimum stock level
     public string SKU { get; set; } = string.Empty;
     public string? Barcode { get; set; } // Codigo de barras
     public bool IsActive { get; set; } = true;

@@ -16,6 +16,7 @@ export interface Product {
     cost: number;
     price: number;
     stock: number;
+    minStock: number;
     isActive: boolean;
     videoUrl: string;
     categoryId: number;

@@ -34,7 +34,7 @@ public class DashboardController : ControllerBase
         var totalSalesCount = await _context.Sales.CountAsync(s => !s.IsVoid);
         
         // Low stock products
-        var lowStockCount = await _context.Products.CountAsync(p => p.Stock > 0 && p.Stock <= 5);
+        var lowStockCount = await _context.Products.CountAsync(p => p.Stock > 0 && p.Stock <= p.MinStock);
         var outOfStockCount = await _context.Products.CountAsync(p => p.Stock <= 0);
 
         // Chart data (last 7 days)

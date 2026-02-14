@@ -14,6 +14,10 @@ import ExpensesPage from './pages/ExpensesPage';
 import ReportsPage from './pages/ReportsPage';
 import SettingsPage from './pages/SettingsPage';
 import ProfilePage from './pages/ProfilePage';
+import CashRegisterPage from './pages/CashRegisterPage';
+import SupplierListPage from './pages/SupplierListPage';
+import PurchaseListPage from './pages/PurchaseListPage';
+import PurchaseFormPage from './pages/PurchaseFormPage';
 import MainLayout from './components/layout/MainLayout'; // Import Layout
 import { useAuthStore } from './store/useAuthStore';
 
@@ -95,6 +99,10 @@ function App() {
             <Route path="/reports" element={<ReportsPage />} />
             <Route path="/settings" element={<SettingsPage />} />
             <Route path="/profile" element={<ProfilePage />} />
+            <Route path="/cash-register" element={<CashRegisterPage />} />
+            <Route path="/suppliers" element={<SupplierListPage />} />
+            <Route path="/purchases" element={<PurchaseListPage />} />
+            <Route path="/purchases/new" element={<PurchaseFormPage />} />
             <Route path="/" element={<Navigate to="/dashboard" replace />} />
           </Route>
 

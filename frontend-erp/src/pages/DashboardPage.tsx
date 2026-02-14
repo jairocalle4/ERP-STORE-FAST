@@ -214,13 +214,13 @@ export default function DashboardPage() {
                             <AlertCircle size={28} />
                         </div>
                         <div>
-                            <h4 className="text-2xl font-bold text-slate-800">19</h4>
+                            <h4 className="text-2xl font-bold text-slate-800">{statsData?.lowStockCount || 0}</h4>
                             <p className="text-sm font-medium text-slate-500">Prod. con Poco Stock</p>
                         </div>
                     </div>
-                    <button className="px-4 py-2 bg-white text-slate-600 font-bold rounded-lg shadow-sm border border-slate-100 text-sm hover:bg-slate-50">
+                    <Link to="/products?stock=low" className="px-4 py-2 bg-white text-slate-600 font-bold rounded-lg shadow-sm border border-slate-100 text-sm hover:bg-slate-50 text-center">
                         Gestionar
-                    </button>
+                    </Link>
                 </div>
 
                 {/* Out of Stock Summary */}
@@ -230,13 +230,13 @@ export default function DashboardPage() {
                             <Package size={28} />
                         </div>
                         <div>
-                            <h4 className="text-2xl font-bold text-slate-800">1</h4>
+                            <h4 className="text-2xl font-bold text-slate-800">{statsData?.outOfStockCount || 0}</h4>
                             <p className="text-sm font-medium text-slate-500">Agotados</p>
                         </div>
                     </div>
-                    <button className="px-4 py-2 bg-white text-slate-600 font-bold rounded-lg shadow-sm border border-slate-100 text-sm hover:bg-slate-50">
+                    <Link to="/products?stock=out" className="px-4 py-2 bg-white text-slate-600 font-bold rounded-lg shadow-sm border border-slate-100 text-sm hover:bg-slate-50 text-center">
                         Reponer
-                    </button>
+                    </Link>
                 </div>
             </div>
 

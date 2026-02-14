@@ -17,6 +17,92 @@ namespace ErpStore.Infrastructure.Migrations
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "9.0.1");
 
+            modelBuilder.Entity("ErpStore.Domain.Entities.CashRegisterSession", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<decimal>("CalculatedAmount")
+                        .HasColumnType("TEXT");
+
+                    b.Property<decimal>("CloseAmount")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime?>("CloseTime")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Notes")
+                        .HasColumnType("TEXT");
+
+                    b.Property<decimal>("OpenAmount")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("OpenTime")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("CashRegisterSessions");
+                });
+
+            modelBuilder.Entity("ErpStore.Domain.Entities.CashTransaction", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<decimal>("Amount")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("CashRegisterSessionId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("Date")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<int?>("ReferenceId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("ReferenceType")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Type")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CashRegisterSessionId");
+
+                    b.ToTable("CashTransactions");
+                });
+
             modelBuilder.Entity("ErpStore.Domain.Entities.Category", b =>
                 {
                     b.Property<int>("Id")
@@ -140,6 +226,18 @@ namespace ErpStore.Infrastructure.Migrations
                         .IsRequired()
                         .HasColumnType("TEXT");
 
+                    b.Property<string>("SmtpPass")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("SmtpPort")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("SmtpServer")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("SmtpUser")
+                        .HasColumnType("TEXT");
+
                     b.Property<string>("SocialReason")
                         .HasColumnType("TEXT");
 
@@ -190,6 +288,9 @@ namespace ErpStore.Infrastructure.Migrations
                     b.Property<decimal>("Amount")
                         .HasColumnType("decimal(18,2)");
 
+                    b.Property<int?>("CashRegisterSessionId")
+                        .HasColumnType("INTEGER");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("TEXT");
 
@@ -214,6 +315,8 @@ namespace ErpStore.Infrastructure.Migrations
                         .HasColumnType("TEXT");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("CashRegisterSessionId");
 
                     b.HasIndex("ExpenseCategoryId");
 
@@ -305,6 +408,95 @@ namespace ErpStore.Infrastructure.Migrations
                         });
                 });
 
+            modelBuilder.Entity("ErpStore.Domain.Entities.InventoryMovement", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("ProductId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int?>("PurchaseId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("Quantity")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Reason")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<int?>("SaleId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("StockAfter")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("StockBefore")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Type")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ProductId");
+
+                    b.HasIndex("PurchaseId");
+
+                    b.HasIndex("SaleId");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("Kardex");
+                });
+
+            modelBuilder.Entity("ErpStore.Domain.Entities.Notification", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<bool>("IsRead")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Link")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Message")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Type")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Notificaciones");
+                });
+
             modelBuilder.Entity("ErpStore.Domain.Entities.Product", b =>
                 {
                     b.Property<int>("Id")
@@ -328,6 +520,9 @@ namespace ErpStore.Infrastructure.Migrations
                         .HasColumnType("TEXT");
 
                     b.Property<bool>("IsActive")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("MinStock")
                         .HasColumnType("INTEGER");
 
                     b.Property<string>("Name")
@@ -373,6 +568,7 @@ namespace ErpStore.Infrastructure.Migrations
                             CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Laptop de alto rendimiento",
                             IsActive = true,
+                            MinStock = 3,
                             Name = "Laptop Gamer",
                             Price = 1200.00m,
                             SKU = "LAP-001",
@@ -386,6 +582,7 @@ namespace ErpStore.Infrastructure.Migrations
                             CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Teléfono inteligente",
                             IsActive = true,
+                            MinStock = 3,
                             Name = "Smartphone X",
                             Price = 800.00m,
                             SKU = "PHN-001",
@@ -399,6 +596,7 @@ namespace ErpStore.Infrastructure.Migrations
                             CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Cafetera automática",
                             IsActive = true,
+                            MinStock = 3,
                             Name = "Cafetera",
                             Price = 50.00m,
                             SKU = "CAF-001",
@@ -436,10 +634,92 @@ namespace ErpStore.Infrastructure.Migrations
                     b.ToTable("ProductoImagenes");
                 });
 
+            modelBuilder.Entity("ErpStore.Domain.Entities.Purchase", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("Date")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("InvoiceNumber")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Notes")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("PaymentMethod")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("SupplierId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<decimal>("Total")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("SupplierId");
+
+                    b.ToTable("Purchases");
+                });
+
+            modelBuilder.Entity("ErpStore.Domain.Entities.PurchaseDetail", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("ProductId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("PurchaseId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("Quantity")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<decimal>("Subtotal")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("UnitPrice")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ProductId");
+
+                    b.HasIndex("PurchaseId");
+
+                    b.ToTable("PurchaseDetails");
+                });
+
             modelBuilder.Entity("ErpStore.Domain.Entities.Sale", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int?>("CashRegisterSessionId")
                         .HasColumnType("INTEGER");
 
                     b.Property<int?>("ClientId")
@@ -474,6 +754,8 @@ namespace ErpStore.Infrastructure.Migrations
                         .HasColumnType("TEXT");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("CashRegisterSessionId");
 
                     b.HasIndex("ClientId");
 
@@ -547,6 +829,45 @@ namespace ErpStore.Infrastructure.Migrations
                     b.ToTable("Subcategories");
                 });
 
+            modelBuilder.Entity("ErpStore.Domain.Entities.Supplier", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Address")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ContactName")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Email")
+                        .HasColumnType("TEXT");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Phone")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("TaxId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Suppliers");
+                });
+
             modelBuilder.Entity("ErpStore.Domain.Entities.User", b =>
                 {
                     b.Property<int>("Id")
@@ -600,15 +921,74 @@ namespace ErpStore.Infrastructure.Migrations
                         });
                 });
 
+            modelBuilder.Entity("ErpStore.Domain.Entities.CashRegisterSession", b =>
+                {
+                    b.HasOne("ErpStore.Domain.Entities.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("ErpStore.Domain.Entities.CashTransaction", b =>
+                {
+                    b.HasOne("ErpStore.Domain.Entities.CashRegisterSession", "CashRegisterSession")
+                        .WithMany()
+                        .HasForeignKey("CashRegisterSessionId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("CashRegisterSession");
+                });
+
             modelBuilder.Entity("ErpStore.Domain.Entities.Expense", b =>
                 {
+                    b.HasOne("ErpStore.Domain.Entities.CashRegisterSession", "CashRegisterSession")
+                        .WithMany()
+                        .HasForeignKey("CashRegisterSessionId");
+
                     b.HasOne("ErpStore.Domain.Entities.ExpenseCategory", "ExpenseCategory")
                         .WithMany()
                         .HasForeignKey("ExpenseCategoryId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.Navigation("CashRegisterSession");
+
                     b.Navigation("ExpenseCategory");
+                });
+
+            modelBuilder.Entity("ErpStore.Domain.Entities.InventoryMovement", b =>
+                {
+                    b.HasOne("ErpStore.Domain.Entities.Product", "Product")
+                        .WithMany()
+                        .HasForeignKey("ProductId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("ErpStore.Domain.Entities.Purchase", "Purchase")
+                        .WithMany()
+                        .HasForeignKey("PurchaseId");
+
+                    b.HasOne("ErpStore.Domain.Entities.Sale", "Sale")
+                        .WithMany()
+                        .HasForeignKey("SaleId");
+
+                    b.HasOne("ErpStore.Domain.Entities.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Product");
+
+                    b.Navigation("Purchase");
+
+                    b.Navigation("Sale");
+
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("ErpStore.Domain.Entities.Product", b =>
@@ -639,8 +1019,42 @@ namespace ErpStore.Infrastructure.Migrations
                     b.Navigation("Product");
                 });
 
+            modelBuilder.Entity("ErpStore.Domain.Entities.Purchase", b =>
+                {
+                    b.HasOne("ErpStore.Domain.Entities.Supplier", "Supplier")
+                        .WithMany("Purchases")
+                        .HasForeignKey("SupplierId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Supplier");
+                });
+
+            modelBuilder.Entity("ErpStore.Domain.Entities.PurchaseDetail", b =>
+                {
+                    b.HasOne("ErpStore.Domain.Entities.Product", "Product")
+                        .WithMany()
+                        .HasForeignKey("ProductId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("ErpStore.Domain.Entities.Purchase", "Purchase")
+                        .WithMany("Details")
+                        .HasForeignKey("PurchaseId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Product");
+
+                    b.Navigation("Purchase");
+                });
+
             modelBuilder.Entity("ErpStore.Domain.Entities.Sale", b =>
                 {
+                    b.HasOne("ErpStore.Domain.Entities.CashRegisterSession", "CashRegisterSession")
+                        .WithMany()
+                        .HasForeignKey("CashRegisterSessionId");
+
                     b.HasOne("ErpStore.Domain.Entities.Client", "Client")
                         .WithMany()
                         .HasForeignKey("ClientId");
@@ -650,6 +1064,8 @@ namespace ErpStore.Infrastructure.Migrations
                         .HasForeignKey("EmployeeId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.Navigation("CashRegisterSession");
 
                     b.Navigation("Client");
 
@@ -698,6 +1114,11 @@ namespace ErpStore.Infrastructure.Migrations
                     b.Navigation("Images");
                 });
 
+            modelBuilder.Entity("ErpStore.Domain.Entities.Purchase", b =>
+                {
+                    b.Navigation("Details");
+                });
+
             modelBuilder.Entity("ErpStore.Domain.Entities.Sale", b =>
                 {
                     b.Navigation("SaleDetails");
@@ -706,6 +1127,11 @@ namespace ErpStore.Infrastructure.Migrations
             modelBuilder.Entity("ErpStore.Domain.Entities.Subcategory", b =>
                 {
                     b.Navigation("Products");
+                });
+
+            modelBuilder.Entity("ErpStore.Domain.Entities.Supplier", b =>
+                {
+                    b.Navigation("Purchases");
                 });
 #pragma warning restore 612, 618
         }

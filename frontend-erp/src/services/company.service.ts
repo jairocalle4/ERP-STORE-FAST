@@ -14,6 +14,10 @@ export interface CompanySetting {
     currentSequence: number;
     expirationDate?: string;
     socialReason?: string;
+    smtpServer?: string;
+    smtpPort: number;
+    smtpUser?: string;
+    smtpPass?: string;
 }
 
 export interface CompanySettingDto {
@@ -29,6 +33,10 @@ export interface CompanySettingDto {
     currentSequence: number;
     expirationDate?: string;
     socialReason?: string;
+    smtpServer?: string;
+    smtpPort: number;
+    smtpUser?: string;
+    smtpPass?: string;
 }
 
 export const companyService = {

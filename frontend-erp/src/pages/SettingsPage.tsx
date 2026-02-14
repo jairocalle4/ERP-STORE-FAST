@@ -140,7 +140,7 @@ export default function SettingsPage() {
                                     </div>
                                 </div>
                                 <div>
-                                    <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-2 ml-1">Email</label>
+                                    <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-2 ml-1">Email Recibo</label>
                                     <div className="relative">
                                         <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
                                         <input
@@ -151,6 +151,102 @@ export default function SettingsPage() {
                                         />
                                     </div>
                                 </div>
+                            </div>
+                        </div>
+                    </GlassCard>
+
+                    {/* Email Alerts Config (SMTP) */}
+                    <GlassCard className="p-8 space-y-6 md:col-span-2">
+                        <div className="flex justify-between items-start mb-2">
+                            <h3 className="text-lg font-bold text-indigo-800 flex items-center gap-2">
+                                <Mail className="text-indigo-600" size={20} />
+                                Configuración de Envío de Alertas (Correo Saliente)
+                            </h3>
+                            <div className="bg-indigo-50 px-3 py-1 rounded-full border border-indigo-100 flex items-center gap-2">
+                                <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
+                                <span className="text-[10px] font-black text-indigo-600 uppercase tracking-widest">Sistema Activo</span>
+                            </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                            <div className="md:col-span-4 p-4 bg-indigo-50/50 rounded-2xl border border-indigo-100/50 mb-2">
+                                <label className="block text-xs font-black text-indigo-900/60 uppercase tracking-widest mb-3 ml-1">Seleccionar Proveedor Sugerido</label>
+                                <div className="flex flex-wrap gap-2">
+                                    {[
+                                        { name: 'Gmail', server: 'smtp.gmail.com', port: 587 },
+                                        { name: 'Outlook / Hotmail', server: 'smtp.office365.com', port: 587 },
+                                        { name: 'Yahoo', server: 'smtp.mail.yahoo.com', port: 465 },
+                                        { name: 'iCloud', server: 'smtp.mail.me.com', port: 587 }
+                                    ].map(prov => (
+                                        <button
+                                            key={prov.name}
+                                            type="button"
+                                            onClick={() => setSettings(s => s ? { ...s, smtpServer: prov.server, smtpPort: prov.port } : null)}
+                                            className="px-4 py-2 bg-white border border-indigo-200 rounded-xl text-xs font-bold text-indigo-600 hover:bg-indigo-600 hover:text-white transition-all shadow-sm active:scale-95"
+                                        >
+                                            {prov.name}
+                                        </button>
+                                    ))}
+                                    <button
+                                        type="button"
+                                        onClick={() => setSettings(s => s ? { ...s, smtpServer: '', smtpPort: 587 } : null)}
+                                        className="px-4 py-2 bg-slate-100 border border-slate-200 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-200 transition-all"
+                                    >
+                                        Personalizado
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div className="md:col-span-2">
+                                <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-2 ml-1">Servidor SMTP</label>
+                                <input
+                                    type="text"
+                                    placeholder="smtp.gmail.com"
+                                    value={settings?.smtpServer || ''}
+                                    onChange={e => setSettings(s => s ? { ...s, smtpServer: e.target.value } : null)}
+                                    className="w-full px-4 py-3 bg-white/50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500/50 outline-none transition-all font-mono text-sm"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-2 ml-1">Puerto</label>
+                                <input
+                                    type="number"
+                                    placeholder="587"
+                                    value={settings?.smtpPort || 587}
+                                    onChange={e => setSettings(s => s ? { ...s, smtpPort: parseInt(e.target.value) } : null)}
+                                    className="w-full px-4 py-3 bg-white/50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500/50 outline-none transition-all font-mono text-sm"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-2 ml-1">Seguridad</label>
+                                <div className="mt-3 flex items-center gap-2">
+                                    <div className="w-4 h-4 rounded-full bg-emerald-500 shadow-lg shadow-emerald-200"></div>
+                                    <span className="text-xs font-bold text-slate-500 uppercase">Siempre SSL/TLS</span>
+                                </div>
+                            </div>
+
+                            <div className="md:col-span-2">
+                                <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-2 ml-1">Usuario / Email de Envío</label>
+                                <input
+                                    type="email"
+                                    placeholder="tu-correo@empresa.com"
+                                    value={settings?.smtpUser || ''}
+                                    onChange={e => setSettings(s => s ? { ...s, smtpUser: e.target.value } : null)}
+                                    className="w-full px-4 py-3 bg-white/50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500/50 outline-none transition-all text-sm"
+                                />
+                            </div>
+                            <div className="md:col-span-2">
+                                <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-2 ml-1">Contraseña de Aplicación</label>
+                                <input
+                                    type="password"
+                                    placeholder="••••••••••••••••"
+                                    value={settings?.smtpPass || ''}
+                                    onChange={e => setSettings(s => s ? { ...s, smtpPass: e.target.value } : null)}
+                                    className="w-full px-4 py-3 bg-white/50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500/50 outline-none transition-all text-sm"
+                                />
+                                <p className="text-[10px] text-slate-400 mt-2 italic leading-relaxed">
+                                    <span className="font-bold text-indigo-600">⚠ Muy Importante:</span> En Gmail y Outlook no se usa su clave normal. Debe generar una <span className="underline">Contraseña de Aplicación</span> en la cuenta de Google/Microsoft.
+                                </p>
                             </div>
                         </div>
                     </GlassCard>

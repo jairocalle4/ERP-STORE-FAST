@@ -4,14 +4,14 @@ import {
     User, Check, Package, Tag,
     ChevronRight, CreditCard, X, LayoutGrid, Eye
 } from 'lucide-react';
-import { GlassCard } from '../components/common/GlassCard';
 import { productService, type Product } from '../services/product.service';
 import { clientService, type Client, type ClientCreateDto } from '../services/client.service';
 import { saleService, type CreateSaleDto, type Sale } from '../services/sale.service';
 import { useNotificationStore } from '../store/useNotificationStore';
 import ClientFormModal from '../components/modals/ClientFormModal';
 import SaleDetailsModal from '../components/modals/SaleDetailsModal';
-import axios from 'axios';
+import api from '../services/api';
+import ConfirmModal from '../components/modals/ConfirmModal';
 
 interface CartItem {
     product: Product;
@@ -43,27 +43,54 @@ export default function PointOfSalePage() {
     const [completedSale, setCompletedSale] = useState<Sale | null>(null);
     const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
     const [paymentMethod, setPaymentMethod] = useState<'Efectivo' | 'Transferencia'>('Efectivo');
+    const [isClosedSessionModalOpen, setIsClosedSessionModalOpen] = useState(false);
+
+    // Pagination / Infinite Scroll
+    const [visibleLimit, setVisibleLimit] = useState(24);
 
     useEffect(() => {
-        const fetchData = async () => {
-            try {
-                const [productsData, clientsData, categoriesRes] = await Promise.all([
-                    productService.getAll(false),
-                    clientService.getAll(),
-                    axios.get('http://localhost:5140/api/v1/categories')
-                ]);
-                setProducts(productsData);
-                setClients(clientsData);
-                setCategories(categoriesRes.data);
-            } catch (err) {
-                console.error('Error fetching POS data', err);
-                addNotification('Error al cargar datos del punto de venta', 'error');
-            } finally {
-                setLoading(false);
-            }
-        };
+        // Reset limit when searching or changing category
+        setVisibleLimit(24);
+    }, [searchTerm, selectedCategory]);
+
+    const fetchData = async () => {
+        try {
+            const [productsData, clientsData, categoriesRes] = await Promise.all([
+                productService.getAll(false),
+                clientService.getAll(),
+                api.get('/categories')
+            ]);
+            setProducts(productsData);
+            setClients(clientsData);
+            setCategories(categoriesRes.data);
+        } catch (err) {
+            console.error('Error fetching POS data', err);
+            addNotification('Error al cargar datos del punto de venta', 'error');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    useEffect(() => {
         fetchData();
     }, []);
+
+    // Intersection Observer for Infinite Scroll
+    useEffect(() => {
+        const observer = new IntersectionObserver(
+            (entries) => {
+                if (entries[0].isIntersecting) {
+                    setVisibleLimit(prev => prev + 24);
+                }
+            },
+            { threshold: 0.1 }
+        );
+
+        const target = document.querySelector('#pos-scroll-end');
+        if (target) observer.observe(target);
+
+        return () => observer.disconnect();
+    }, [products, searchTerm, selectedCategory]);
 
     const addToCart = (product: Product) => {
         if (product.stock <= 0) {
@@ -148,9 +175,14 @@ export default function PointOfSalePage() {
             // Refresh products to update stock
             const updatedProducts = await productService.getAll(false);
             setProducts(updatedProducts);
-        } catch (err) {
+        } catch (err: any) {
             console.error('Checkout error', err);
-            addNotification('Error al procesar la venta', 'error');
+
+            if (err.response?.status === 400 && err.response?.data?.includes('NO_OPEN_SESSION')) {
+                setIsClosedSessionModalOpen(true);
+            } else {
+                addNotification(err.response?.data || 'Error al procesar la venta', 'error');
+            }
         } finally {
             setIsProcessing(false);
         }
@@ -191,7 +223,7 @@ export default function PointOfSalePage() {
             <div className="h-[calc(100vh-40px)] grid grid-cols-12 gap-6 overflow-hidden p-4">
 
                 {/* LEFT COLUMN: HEADER + CATEGORIES + PRODUCTS */}
-                <div className="col-span-7 flex flex-col gap-6 h-full min-h-0">
+                <div className="col-span-12 lg:col-span-7 xl:col-span-8 2xl:col-span-9 flex flex-col gap-6 h-full min-h-0">
 
                     {/* Header Section (Moved inside left column) */}
                     <div className="flex justify-between items-center bg-white/40 backdrop-blur-md p-4 rounded-3xl border border-white/60 shadow-sm shrink-0">
@@ -199,19 +231,19 @@ export default function PointOfSalePage() {
                             <div className="h-12 w-12 bg-indigo-600 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-indigo-600/20">
                                 <ShoppingCart size={24} />
                             </div>
-                            <div>
+                            <div className="hidden sm:block">
                                 <h1 className="text-2xl font-black text-slate-800 tracking-tight">Caja Registradora</h1>
                                 <p className="text-slate-500 text-sm font-medium">Nueva transacción de venta</p>
                             </div>
                         </div>
 
                         <div className="flex items-center gap-3 flex-1 justify-end ml-4">
-                            <div className="relative group w-full max-w-[250px]">
+                            <div className="relative group w-full max-w-[350px]">
                                 <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 transition-colors group-focus-within:text-indigo-600" size={18} />
                                 <input
                                     type="text"
                                     className="w-full pl-11 pr-4 py-3 bg-white/80 border border-slate-200/60 rounded-2xl focus:ring-4 focus:ring-indigo-500/5 focus:border-indigo-500/50 outline-none text-slate-700 font-medium transition-all"
-                                    placeholder="Buscar..."
+                                    placeholder="Buscar producto por nombre o SKU..."
                                     value={searchTerm}
                                     onChange={e => setSearchTerm(e.target.value)}
                                 />
@@ -247,9 +279,9 @@ export default function PointOfSalePage() {
                         ))}
                     </div>
 
-                    {/* PRODUCTS GRID (STRICT 3 COLUMNS) */}
+                    {/* PRODUCTS GRID (RESPONSIVE) */}
                     <div className="grow overflow-y-auto pr-2 custom-scrollbar">
-                        <div className="grid grid-cols-3 gap-4 pb-4">
+                        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4 pb-4">
                             {loading ? (
                                 Array(6).fill(0).map((_, i) => (
                                     <div key={i} className="bg-white/40 h-48 rounded-3xl animate-pulse"></div>
@@ -260,61 +292,78 @@ export default function PointOfSalePage() {
                                     <p className="font-bold">No se encontraron productos</p>
                                 </div>
                             ) : (
-                                filteredProducts.map(product => {
-                                    const inCart = cart.find(item => item.product.id === product.id);
-                                    return (
-                                        <div
-                                            key={product.id}
-                                            onClick={() => addToCart(product)}
-                                            className={`group relative bg-white/60 border-2 rounded-3xl p-4 transition-all hover:-translate-y-1 cursor-pointer overflow-hidden ${product.stock <= 0
-                                                ? 'opacity-60 grayscale border-slate-100 cursor-not-allowed'
-                                                : inCart
-                                                    ? 'border-indigo-500 bg-white ring-4 ring-indigo-500/5'
-                                                    : 'border-white/60 hover:border-indigo-200 hover:bg-white hover:shadow-2xl hover:shadow-indigo-500/5'
-                                                }`}
-                                        >
-                                            {inCart && (
-                                                <div className="absolute top-2 right-2 h-7 w-7 bg-indigo-600 text-white rounded-full flex items-center justify-center text-xs font-black shadow-lg shadow-indigo-600/20 z-10 animate-scale-in">
-                                                    {inCart.quantity}
-                                                </div>
-                                            )}
-
-                                            <div className="aspect-square rounded-2xl bg-slate-50 mb-3 overflow-hidden flex items-center justify-center border border-slate-100 relative group-hover:bg-white transition-colors">
-                                                {product.images?.[0] ? (
-                                                    <img src={product.images[0].url} alt={product.name} className="w-full h-full object-contain p-2 mix-blend-multiply transition-transform duration-500 group-hover:scale-110" />
-                                                ) : (
-                                                    <Package className="text-slate-200" size={32} />
-                                                )}
-
-                                                {product.stock <= 5 && product.stock > 0 && (
-                                                    <div className="absolute bottom-2 left-2 px-2 py-0.5 bg-amber-500 text-white text-[10px] font-black rounded-lg uppercase tracking-wider">
-                                                        Stock Bajo
+                                <>
+                                    {filteredProducts.slice(0, visibleLimit).map(product => {
+                                        const inCart = cart.find(item => item.product.id === product.id);
+                                        return (
+                                            <div
+                                                key={product.id}
+                                                onClick={() => addToCart(product)}
+                                                className={`group relative bg-white/60 border-2 rounded-3xl p-4 transition-all hover:-translate-y-1 cursor-pointer overflow-hidden ${product.stock <= 0
+                                                    ? 'opacity-60 grayscale border-slate-100 cursor-not-allowed'
+                                                    : inCart
+                                                        ? 'border-indigo-500 bg-white ring-4 ring-indigo-500/5'
+                                                        : 'border-white/60 hover:border-indigo-200 hover:bg-white hover:shadow-2xl hover:shadow-indigo-500/5'
+                                                    }`}
+                                            >
+                                                {inCart && (
+                                                    <div className="absolute top-2 right-2 h-7 w-7 bg-indigo-600 text-white rounded-full flex items-center justify-center text-xs font-black shadow-lg shadow-indigo-600/20 z-10 animate-scale-in">
+                                                        {inCart.quantity}
                                                     </div>
                                                 )}
-                                            </div>
 
-                                            <div className="space-y-1">
-                                                <h3 className="font-bold text-slate-800 text-sm leading-tight h-10 line-clamp-2 transition-colors group-hover:text-indigo-600">{product.name}</h3>
-                                                <div className="flex justify-between items-end gap-2">
-                                                    <div>
-                                                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{product.sku}</p>
-                                                        <p className="text-lg font-black text-slate-900">${product.price.toFixed(2)}</p>
-                                                    </div>
-                                                    <div className={`p-2 rounded-xl transition-all ${inCart ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-400 group-hover:bg-indigo-50 group-hover:text-indigo-600'}`}>
-                                                        <Plus size={16} strokeWidth={3} />
+                                                <div className="aspect-square rounded-2xl bg-slate-50 mb-3 overflow-hidden flex items-center justify-center border border-slate-100 relative group-hover:bg-white transition-colors">
+                                                    {product.images?.[0] ? (
+                                                        <img src={product.images[0].url} alt={product.name} className="w-full h-full object-contain p-2 mix-blend-multiply transition-transform duration-500 group-hover:scale-110" />
+                                                    ) : (
+                                                        <Package className="text-slate-200" size={32} />
+                                                    )}
+
+                                                    {product.stock <= 5 && product.stock > 0 && (
+                                                        <div className="absolute bottom-2 left-2 px-2 py-0.5 bg-amber-500 text-white text-[10px] font-black rounded-lg uppercase tracking-wider">
+                                                            Stock Bajo
+                                                        </div>
+                                                    )}
+                                                </div>
+
+                                                <div className="space-y-1">
+                                                    <h3 className="font-bold text-slate-800 text-sm leading-tight h-10 line-clamp-2 transition-colors group-hover:text-indigo-600">{product.name}</h3>
+                                                    <div className="flex justify-between items-end gap-2">
+                                                        <div>
+                                                            <div className="flex items-center gap-1.5">
+                                                                <Package size={12} className={product.stock <= 5 ? 'text-rose-500' : 'text-emerald-500'} />
+                                                                <p className={`text-[11px] font-black uppercase tracking-tight ${product.stock <= 5 ? 'text-rose-500' : 'text-emerald-600'
+                                                                    }`}>
+                                                                    {product.stock} {product.stock === 1 ? 'Disponible' : 'Disponibles'}
+                                                                </p>
+                                                            </div>
+                                                            <p className="text-lg font-black text-slate-900">${product.price.toFixed(2)}</p>
+                                                        </div>
+                                                        <div className={`p-2 rounded-xl transition-all ${inCart ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-400 group-hover:bg-indigo-50 group-hover:text-indigo-600'}`}>
+                                                            <Plus size={16} strokeWidth={3} />
+                                                        </div>
                                                     </div>
                                                 </div>
                                             </div>
-                                        </div>
-                                    );
-                                })
+                                        );
+                                    })}
+                                    {/* Sentinel for Infinite Scroll */}
+                                    <div id="pos-scroll-end" className="col-span-full h-10 flex items-center justify-center">
+                                        {visibleLimit < filteredProducts.length && (
+                                            <div className="flex gap-2 items-center text-slate-400 text-xs font-bold animate-pulse">
+                                                <div className="w-2 h-2 bg-indigo-500 rounded-full"></div>
+                                                Cargando más productos...
+                                            </div>
+                                        )}
+                                    </div>
+                                </>
                             )}
                         </div>
                     </div>
                 </div>
 
                 {/* RIGHT COLUMN: CART & CHECKOUT (FULL HEIGHT) */}
-                <div className="col-span-5 flex flex-col h-full min-h-0">
+                <div className="col-span-12 lg:col-span-5 xl:col-span-4 2xl:col-span-3 flex flex-col h-full min-h-0">
                     <div className="h-full flex flex-col bg-white/60 backdrop-blur-xl rounded-[2.5rem] border border-white/60 shadow-2xl shadow-indigo-500/5 overflow-hidden min-h-0">
 
                         {/* Consumidor Final Toggle */}
@@ -556,6 +605,16 @@ export default function PointOfSalePage() {
                 isOpen={isDetailsModalOpen}
                 onClose={() => setIsDetailsModalOpen(false)}
                 sale={completedSale}
+            />
+
+            <ConfirmModal
+                isOpen={isClosedSessionModalOpen}
+                onClose={() => setIsClosedSessionModalOpen(false)}
+                onConfirm={() => window.location.href = '/cash-register'}
+                title="Caja Cerrada"
+                message="Debe abrir caja antes de realizar ventas en efectivo. ¿Desea ir al Arqueo de Caja ahora?"
+                confirmText="Ir a Arqueo de Caja"
+                cancelText="Cerrar"
             />
         </div>
     );

@@ -5,6 +5,8 @@ import { expensesService } from '../services/expenses.service';
 import type { Expense, CreateExpenseDto } from '../services/expenses.service';
 import { expenseCategoriesService, type ExpenseCategory } from '../services/expense-categories.service';
 import ExpenseCategoriesModal from '../components/modals/ExpenseCategoriesModal';
+import ConfirmModal from '../components/modals/ConfirmModal';
+import { useNotificationStore } from '../store/useNotificationStore';
 
 export default function ExpensesPage() {
     const [expenses, setExpenses] = useState<Expense[]>([]);
@@ -13,6 +15,9 @@ export default function ExpensesPage() {
     const [searchTerm, setSearchTerm] = useState('');
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isCategoriesModalOpen, setIsCategoriesModalOpen] = useState(false);
+    const [isClosedSessionModalOpen, setIsClosedSessionModalOpen] = useState(false);
+    const [deleteId, setDeleteId] = useState<number | null>(null);
+    const addNotification = useNotificationStore(s => s.addNotification);
 
     // Form State
     const [formData, setFormData] = useState<CreateExpenseDto>({
@@ -63,15 +68,25 @@ export default function ExpensesPage() {
                 notes: ''
             });
             fetchExpenses();
-        } catch (err) {
+        } catch (err: any) {
             console.error('Error creating expense', err);
+            if (err.response?.status === 400 && err.response?.data?.includes('NO_OPEN_SESSION')) {
+                setIsClosedSessionModalOpen(true);
+            } else {
+                addNotification('Error al registrar el egreso: ' + (err.response?.data || 'Desconocido'), 'error');
+            }
         }
     };
 
     const handleDelete = async (id: number) => {
-        if (!window.confirm('¿Estás seguro de eliminar este egreso?')) return;
+        setDeleteId(id);
+    };
+
+    const confirmDelete = async () => {
+        if (!deleteId) return;
         try {
-            await expensesService.delete(id);
+            await expensesService.delete(deleteId);
+            setDeleteId(null);
             fetchExpenses();
         } catch (err) {
             console.error('Error deleting expense', err);
@@ -301,7 +316,7 @@ export default function ExpensesPage() {
                                         onClick={() => setFormData({ ...formData, paymentMethod: 'Efectivo' })}
                                         className={`flex-1 py-2 rounded-xl text-sm font-bold border ${formData.paymentMethod === 'Efectivo' ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white text-slate-600 border-slate-200'}`}
                                     >
-                                        Efectivo
+                                        Efectivo (Caja Chica)
                                     </button>
                                     <button
                                         type="button"
@@ -336,6 +351,26 @@ export default function ExpensesPage() {
                 isOpen={isCategoriesModalOpen}
                 onClose={() => setIsCategoriesModalOpen(false)}
                 onUpdate={fetchCategories}
+            />
+
+            <ConfirmModal
+                isOpen={isClosedSessionModalOpen}
+                onClose={() => setIsClosedSessionModalOpen(false)}
+                onConfirm={() => window.location.href = '/cash-register'}
+                title="Caja Cerrada"
+                message="Debe abrir caja antes de registrar egresos de Efectivo (Caja Chica). ¿Desea ir al Arqueo de Caja ahora?"
+                confirmText="Ir a Arqueo de Caja"
+                cancelText="Cerrar"
+            />
+
+            <ConfirmModal
+                isOpen={deleteId !== null}
+                onClose={() => setDeleteId(null)}
+                onConfirm={confirmDelete}
+                title="Eliminar Egreso"
+                message="¿Estás seguro de que deseas eliminar este registro de egreso? Esta acción no se puede deshacer."
+                confirmText="Eliminar"
+                cancelText="Cancelar"
             />
         </div>
     );

@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react';
 import axios from 'axios';
-import { Plus, Edit2, Trash2, Search, Filter, Package, Eye, RefreshCw, ArrowUpDown } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Plus, Edit2, Trash2, Search, Filter, Package, Eye, RefreshCw, ArrowUpDown, History } from 'lucide-react';
+import { Link, useLocation } from 'react-router-dom';
 import { GlassCard } from '../components/common/GlassCard';
 import { productService, type Product } from '../services/product.service';
 import ConfirmModal from '../components/modals/ConfirmModal';
+import KardexModal from '../components/inventory/KardexModal';
 import { useNotificationStore } from '../store/useNotificationStore';
 
 interface Category {
@@ -19,6 +20,10 @@ interface Subcategory {
 }
 
 export default function ProductListPage() {
+    const location = useLocation();
+    const queryParams = new URLSearchParams(location.search);
+    const initialStockFilter = queryParams.get('stock') || 'all';
+
     const [products, setProducts] = useState<Product[]>([]);
     const [loading, setLoading] = useState(true);
     const addNotification = useNotificationStore(s => s.addNotification);
@@ -27,7 +32,7 @@ export default function ProductListPage() {
     const [searchTerm, setSearchTerm] = useState('');
     const [categoryId, setCategoryId] = useState<number>(0);
     const [subcategoryId, setSubcategoryId] = useState<number>(0);
-    const [stockFilter, setStockFilter] = useState<string>('all'); // all, low, out, available
+    const [stockFilter, setStockFilter] = useState<string>(initialStockFilter); // all, low, out, available
     const [statusFilter, setStatusFilter] = useState<string>('all'); // all, active, inactive
     const [sortConfig, setSortConfig] = useState<{ key: 'name' | 'price' | 'stock', direction: 'asc' | 'desc' }>({ key: 'name', direction: 'asc' });
 
@@ -39,6 +44,11 @@ export default function ProductListPage() {
     const [deleteId, setDeleteId] = useState<number | null>(null);
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
     const [isDeleting, setIsDeleting] = useState(false);
+
+    // Kardex Modal State
+    const [kardexProductId, setKardexProductId] = useState<number | null>(null);
+    const [kardexProductName, setKardexProductName] = useState<string>('');
+    const [isKardexOpen, setIsKardexOpen] = useState(false);
 
     useEffect(() => {
         fetchProducts();
@@ -113,6 +123,12 @@ export default function ProductListPage() {
         }
     };
 
+    const handleKardexClick = (id: number, name: string) => {
+        setKardexProductId(id);
+        setKardexProductName(name);
+        setIsKardexOpen(true);
+    };
+
     // Filter & Sort Logic
     const sortedProducts = [...products]
         .filter(p => {
@@ -133,7 +149,7 @@ export default function ProductListPage() {
 
             // Stock Filter
             let matchStock = true;
-            if (stockFilter === 'low') matchStock = p.stock > 0 && p.stock <= 5;
+            if (stockFilter === 'low') matchStock = p.stock > 0 && p.stock <= (p.minStock || 5);
             if (stockFilter === 'out') matchStock = p.stock === 0;
             if (stockFilter === 'available') matchStock = p.stock > 0;
 
@@ -253,7 +269,7 @@ export default function ProductListPage() {
                             >
                                 <option value="all">Todos</option>
                                 <option value="available">Disponible (&gt; 0)</option>
-                                <option value="low">Bajo Stock (1-5)</option>
+                                <option value="low">Bajo Stock (≤ Mínimo)</option>
                                 <option value="out">Agotado (0)</option>
                             </select>
                         </div>
@@ -367,14 +383,17 @@ export default function ProductListPage() {
                                             </td>
                                             <td className="font-bold text-slate-800 text-lg">${p.price.toFixed(2)}</td>
                                             <td>
-                                                <span className={`px-3 py-1 rounded-lg text-xs font-bold border ${p.stock > 5
+                                                <span className={`px-3 py-1 rounded-lg text-xs font-bold border ${p.stock > (p.minStock || 5)
                                                     ? 'bg-emerald-50 text-emerald-600 border-emerald-100'
                                                     : p.stock > 0
-                                                        ? 'bg-amber-50 text-amber-600 border-amber-100'
+                                                        ? 'bg-amber-50 text-amber-600 border-amber-100 animate-pulse'
                                                         : 'bg-rose-50 text-rose-600 border-rose-100'
                                                     }`}>
                                                     {p.stock}
                                                 </span>
+                                                {p.stock > 0 && p.stock <= (p.minStock || 5) && (
+                                                    <span className="block text-[8px] text-amber-600 font-black uppercase mt-1">Reponer pronto</span>
+                                                )}
                                             </td>
                                             <td>
                                                 <span className={`px-2.5 py-1 rounded-full text-xs font-bold ${p.isActive
@@ -396,6 +415,13 @@ export default function ProductListPage() {
                                                     <Link to={`/products/edit/${p.id}`} className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors">
                                                         <Edit2 size={16} />
                                                     </Link>
+                                                    <button
+                                                        onClick={() => handleKardexClick(p.id, p.name)}
+                                                        className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                                                        title="Ver Historial (Kardex)"
+                                                    >
+                                                        <History size={16} />
+                                                    </button>
                                                     <button
                                                         onClick={() => handleDeleteClick(p.id)}
                                                         className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors"
@@ -421,6 +447,13 @@ export default function ProductListPage() {
                 message="¿Estás seguro de que deseas eliminar este producto? Esta acción no se puede deshacer."
                 confirmText="Sí, Eliminar"
                 isLoading={isDeleting}
+            />
+
+            <KardexModal
+                isOpen={isKardexOpen}
+                onClose={() => setIsKardexOpen(false)}
+                productId={kardexProductId}
+                productName={kardexProductName}
             />
         </>
     );

@@ -14,4 +14,8 @@ public class CompanySettingDto
     public int CurrentSequence { get; set; }
     public DateTime? ExpirationDate { get; set; }
     public string? SocialReason { get; set; }
+    public string? SmtpServer { get; set; }
+    public int SmtpPort { get; set; }
+    public string? SmtpUser { get; set; }
+    public string? SmtpPass { get; set; }
 }

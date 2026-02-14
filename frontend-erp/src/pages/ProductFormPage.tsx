@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import api from '../services/api';
-import { ArrowLeft, Save, Loader2, Plus, Trash2, PlayCircle, Image as ImageIcon, Star, Info, Layers } from 'lucide-react';
+import { ArrowLeft, Save, Loader2, Plus, Trash2, PlayCircle, Image as ImageIcon, Star, Info } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { GlassCard } from '../components/common/GlassCard';
 import { useNotificationStore } from '../store/useNotificationStore';
@@ -49,7 +49,8 @@ export default function ProductFormPage() {
         categoryId: 0,
         subcategoryId: 0,
         isActive: true,
-        videoUrl: ''
+        videoUrl: '',
+        minStock: 3
     });
 
     const [images, setImages] = useState<ProductImage[]>([]);
@@ -106,7 +107,8 @@ export default function ProductFormPage() {
                 categoryId: data.categoryId,
                 subcategoryId: data.subcategoryId || 0,
                 isActive: data.isActive,
-                videoUrl: data.videoUrl || ''
+                videoUrl: data.videoUrl || '',
+                minStock: data.minStock || 3
             });
 
             if (data.categoryId) fetchSubcategories(data.categoryId);
@@ -197,6 +199,7 @@ export default function ProductFormPage() {
                 stock: Number(formData.stock),
                 categoryId: Number(formData.categoryId),
                 subcategoryId: formData.subcategoryId ? Number(formData.subcategoryId) : null,
+                minStock: Number(formData.minStock),
                 images: images
             };
 
@@ -366,19 +369,41 @@ export default function ProductFormPage() {
                                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                                     <div>
                                         <label className="block text-sm font-semibold text-indigo-900/70 mb-2">
-                                            Stock Inicial <span className="text-rose-500">*</span>
+                                            {isEdit ? 'Stock Actual' : 'Stock Inicial'} <span className="text-rose-500">*</span>
                                         </label>
                                         <input
                                             type="number"
                                             value={formData.stock}
+                                            readOnly={isEdit}
                                             onChange={e => {
+                                                if (isEdit) return;
                                                 const val = e.target.value === '' ? 0 : parseInt(e.target.value);
                                                 setFormData({ ...formData, stock: val });
                                                 if (errors.stock) setErrors({ ...errors, stock: '' });
                                             }}
-                                            className={`w-full px-4 py-3 bg-white/50 border rounded-xl focus:ring-2 outline-none transition-all text-indigo-950 font-mono ${errors.stock ? 'border-rose-400 focus:ring-rose-200' : 'border-indigo-100 focus:ring-indigo-500/50 focus:border-indigo-500'}`}
+                                            className={`w-full px-4 py-3 border rounded-xl focus:ring-2 outline-none transition-all font-mono ${isEdit ? 'bg-slate-100/50 text-slate-500 cursor-not-allowed border-slate-200' : 'bg-white/50 border-indigo-100 focus:ring-indigo-500/50 focus:border-indigo-500 text-indigo-950'} ${errors.stock ? 'border-rose-400 focus:ring-rose-200' : ''}`}
                                         />
-                                        {errors.stock && <p className="text-xs text-rose-500 font-bold mt-1 ml-1">{errors.stock}</p>}
+                                        {isEdit ? (
+                                            <p className="text-[10px] text-slate-400 mt-1 font-bold italic">* El stock se gestiona mediante Compras o Ajustes</p>
+                                        ) : errors.stock && (
+                                            <p className="text-xs text-rose-500 font-bold mt-1 ml-1">{errors.stock}</p>
+                                        )}
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-semibold text-indigo-900/70 mb-2">
+                                            Stock Mínimo <span className="text-rose-500">*</span>
+                                        </label>
+                                        <input
+                                            type="number"
+                                            value={formData.minStock}
+                                            onChange={e => {
+                                                const val = e.target.value === '' ? 0 : parseInt(e.target.value);
+                                                setFormData({ ...formData, minStock: val });
+                                            }}
+                                            className="w-full px-4 py-3 bg-white/50 border border-indigo-100 rounded-xl focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 outline-none transition-all text-indigo-950 font-mono"
+                                            placeholder="Ej: 3"
+                                        />
+                                        <p className="text-[10px] text-slate-400 mt-1 italic">Nivel para alerta de stock bajo</p>
                                     </div>
                                     <div>
                                         <label className="block text-sm font-semibold text-indigo-900/70 mb-2">Código Barras</label>
