@@ -114,4 +114,13 @@ public class NotificationsController : ControllerBase
         await _context.SaveChangesAsync();
         return NoContent();
     }
+
+    [HttpDelete("all")]
+    public async Task<IActionResult> DeleteAll()
+    {
+        var all = await _context.Notifications.ToListAsync();
+        _context.Notifications.RemoveRange(all);
+        await _context.SaveChangesAsync();
+        return NoContent();
+    }
 }

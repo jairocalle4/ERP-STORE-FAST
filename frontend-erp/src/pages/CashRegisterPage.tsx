@@ -1,7 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { cashRegisterService, type CashRegisterSession, type CashRegisterSummary } from '../services/cash-register.service';
 import { useNotificationStore } from '../store/useNotificationStore';
-import { Coins, ArrowUpCircle, ArrowDownCircle, Wallet, AlertCircle } from 'lucide-react';
+import {
+    Coins, ArrowUpCircle, ArrowDownCircle, Wallet,
+    AlertCircle, Clock, CheckCircle2, History,
+    Plus, Minus, Info, X, Calculator, ArrowRight
+} from 'lucide-react';
 
 const CashRegisterPage: React.FC = () => {
     const [status, setStatus] = useState<CashRegisterSession | null>(null);
@@ -18,15 +22,20 @@ const CashRegisterPage: React.FC = () => {
     const [transactionAmount, setTransactionAmount] = useState('');
     const [transactionDesc, setTransactionDesc] = useState('');
 
+    const [history, setHistory] = useState<CashRegisterSession[]>([]);
+
     const { addNotification } = useNotificationStore();
 
     useEffect(() => {
         fetchStatus();
+        fetchHistory();
     }, []);
 
     useEffect(() => {
         if (status?.status === 'Open') {
             fetchSummary();
+        } else {
+            setSummary(null);
         }
     }, [status]);
 
@@ -34,11 +43,20 @@ const CashRegisterPage: React.FC = () => {
         setLoading(true);
         try {
             const data = await cashRegisterService.getStatus();
-            setStatus(data || null); // API returns 204 NoContent which axios might treat as empty string or null
+            setStatus(data || null);
         } catch (error) {
             console.error(error);
         } finally {
             setLoading(false);
+        }
+    };
+
+    const fetchHistory = async () => {
+        try {
+            const data = await cashRegisterService.getHistory();
+            setHistory(data || []);
+        } catch (error) {
+            console.error(error);
         }
     };
 
@@ -55,8 +73,9 @@ const CashRegisterPage: React.FC = () => {
         e.preventDefault();
         try {
             await cashRegisterService.openSession(Number(openAmount));
-            addNotification('Caja abierta con éxito');
+            addNotification('Caja abierta correctamente', 'success');
             fetchStatus();
+            fetchHistory();
         } catch (error: any) {
             addNotification(error.response?.data || 'Error al abrir caja', 'error');
         }
@@ -64,14 +83,12 @@ const CashRegisterPage: React.FC = () => {
 
     const handleCloseSession = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!window.confirm('¿Está seguro de cerrar la caja? Esta acción no se puede deshacer.')) return;
-
         try {
             await cashRegisterService.closeSession(Number(closeAmount), closeNotes);
-            addNotification('Caja cerrada con éxito');
+            addNotification('Caja cerrada correctamente', 'success');
             setShowCloseModal(false);
             fetchStatus();
-            setSummary(null);
+            fetchHistory();
             setCloseAmount('');
             setCloseNotes('');
         } catch (error: any) {
@@ -83,7 +100,7 @@ const CashRegisterPage: React.FC = () => {
         e.preventDefault();
         try {
             await cashRegisterService.addTransaction(transactionType, Number(transactionAmount), transactionDesc);
-            addNotification('Movimiento registrado');
+            addNotification('Movimiento registrado satisfactoriamente', 'success');
             setShowTransactionModal(false);
             setTransactionAmount('');
             setTransactionDesc('');
@@ -93,244 +110,540 @@ const CashRegisterPage: React.FC = () => {
         }
     };
 
-    if (loading) return <div className="p-8 text-center">Cargando estado de caja...</div>;
-
-    if (!status || status.status !== 'Open') {
+    if (loading) {
         return (
-            <div className="flex items-center justify-center min-h-[80vh]">
-                <div className="bg-white p-8 rounded-xl shadow-lg max-w-md w-full text-center">
-                    <div className="bg-blue-100 p-4 rounded-full w-20 h-20 flex items-center justify-center mx-auto mb-6">
-                        <Wallet className="w-10 h-10 text-blue-600" />
-                    </div>
-                    <h2 className="text-2xl font-bold mb-2">Apertura de Caja</h2>
-                    <p className="text-gray-500 mb-6">Ingresa el monto inicial para comenzar las operaciones del día.</p>
-
-                    <form onSubmit={handleOpenSession} className="space-y-4">
-                        <div>
-                            <label className="block text-left text-sm font-medium text-gray-700 mb-1">Monto Inicial ($)</label>
-                            <input
-                                type="number"
-                                step="0.01"
-                                className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-lg"
-                                placeholder="0.00"
-                                value={openAmount}
-                                onChange={(e) => setOpenAmount(e.target.value)}
-                                required
-                            />
-                        </div>
-                        <button
-                            type="submit"
-                            className="w-full bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700 transition font-medium"
-                        >
-                            Abrir Caja
-                        </button>
-                    </form>
-                </div>
+            <div className="h-[80vh] flex flex-col items-center justify-center gap-4">
+                <div className="w-12 h-12 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin"></div>
+                <p className="font-bold text-slate-400 animate-pulse">Cargando estado de caja...</p>
             </div>
         );
     }
 
-    return (
-        <div className="p-6 max-w-6xl mx-auto">
-            <header className="flex justify-between items-center mb-8">
-                <div>
-                    <h1 className="text-3xl font-bold text-gray-800">Arqueo de Caja</h1>
-                    <p className="text-gray-500 mt-1">Sesión iniciada: {new Date(status.openTime).toLocaleString()}</p>
+    // STATE: CLOSED / NO SESSION
+    if (!status || status.status !== 'Open') {
+        return (
+            <div className="p-4 md:p-8 space-y-12 max-w-7xl mx-auto pb-20">
+                <div className="flex items-center justify-center pt-10">
+                    <div className="max-w-xl w-full">
+                        <div className="bg-white/40 backdrop-blur-xl p-8 md:p-12 rounded-[2.5rem] border border-white/60 shadow-2xl shadow-indigo-500/10 text-center animate-scale-in">
+                            <div className="w-24 h-24 bg-gradient-to-tr from-indigo-500 to-violet-600 rounded-[2rem] flex items-center justify-center mx-auto mb-8 shadow-xl shadow-indigo-200 relative">
+                                <Wallet className="w-12 h-12 text-white" />
+                                <div className="absolute -top-2 -right-2 w-8 h-8 bg-rose-500 rounded-full border-4 border-white flex items-center justify-center">
+                                    <Minus className="w-4 h-4 text-white" strokeWidth={4} />
+                                </div>
+                            </div>
+
+                            <h2 className="text-3xl font-black text-slate-800 tracking-tight mb-3">La caja está cerrada</h2>
+                            <p className="text-slate-500 font-medium mb-10 max-w-sm mx-auto">
+                                Para comenzar a procesar ventas en efectivo y registrar movimientos, primero debes abrir una nueva sesión de caja.
+                            </p>
+
+                            <form onSubmit={handleOpenSession} className="space-y-6">
+                                <div className="text-left group">
+                                    <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-3 pl-1">
+                                        Monto Inicial en Efectivo
+                                    </label>
+                                    <div className="relative">
+                                        <div className="absolute left-6 top-1/2 -translate-y-1/2 text-indigo-600 font-black text-xl">$</div>
+                                        <input
+                                            type="number"
+                                            step="0.01"
+                                            className="w-full pl-12 pr-6 py-5 bg-white border border-indigo-100 rounded-[1.5rem] focus:ring-8 focus:ring-indigo-500/5 focus:border-indigo-500 transition-all outline-none text-2xl font-black text-slate-800 placeholder:text-slate-200"
+                                            placeholder="0.00"
+                                            value={openAmount}
+                                            onChange={(e) => setOpenAmount(e.target.value)}
+                                            required
+                                            autoFocus
+                                        />
+                                    </div>
+                                </div>
+
+                                <button
+                                    type="submit"
+                                    className="w-full bg-slate-900 hover:bg-slate-800 text-white py-5 rounded-[1.5rem] font-black uppercase tracking-widest text-sm transition-all shadow-xl shadow-slate-900/20 active:scale-95 flex items-center justify-center gap-3"
+                                >
+                                    <CheckCircle2 size={20} className="text-emerald-400" />
+                                    Abrir Caja Ahora
+                                </button>
+                            </form>
+                        </div>
+                    </div>
                 </div>
-                <div className="flex gap-3">
+
+                {/* History section for closed state */}
+                <CashHistory history={history} />
+            </div>
+        );
+    }
+
+    // STATE: OPEN SESSION
+    return (
+        <div className="p-4 md:p-8 animate-fade-in max-w-7xl mx-auto space-y-8 pb-20">
+            {/* Header section */}
+            <header className="flex flex-col md:flex-row md:items-end justify-between gap-6">
+                <div className="space-y-2">
+                    <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 bg-emerald-100 text-emerald-600 rounded-xl flex items-center justify-center">
+                            <div className="w-3 h-3 bg-emerald-500 rounded-full animate-pulse"></div>
+                        </div>
+                        <h1 className="text-3xl md:text-4xl font-black text-slate-800 tracking-tighter">Sesión de Caja Activa</h1>
+                    </div>
+                    <div className="flex items-center gap-4 text-slate-500 font-medium">
+                        <div className="flex items-center gap-1.5 px-3 py-1 bg-white border border-slate-100 rounded-full text-xs">
+                            <Clock size={12} className="text-indigo-400" />
+                            Apertura: {new Date(status.openTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        </div>
+                        <div className="flex items-center gap-1.5 px-3 py-1 bg-white border border-slate-100 rounded-full text-xs">
+                            <Plus size={12} className="text-emerald-400" strokeWidth={3} />
+                            Inició con: ${status.openAmount.toFixed(2)}
+                        </div>
+                    </div>
+                </div>
+
+                <div className="flex flex-wrap gap-3">
                     <button
-                        onClick={() => setShowTransactionModal(true)}
-                        className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition"
+                        onClick={() => {
+                            setTransactionType('Income');
+                            setShowTransactionModal(true);
+                        }}
+                        className="flex-1 md:flex-none flex items-center justify-center gap-2 px-6 py-4 bg-white border border-slate-100 text-slate-700 rounded-2xl font-bold hover:bg-slate-50 transition-all shadow-sm active:scale-95 whitespace-nowrap"
                     >
-                        <ArrowUpCircle className="w-4 h-4" />
-                        Movimiento Manual
+                        <Plus size={18} className="text-indigo-600" strokeWidth={3} />
+                        Movimiento
                     </button>
                     <button
                         onClick={() => setShowCloseModal(true)}
-                        className="flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition"
+                        className="flex-1 md:flex-none flex items-center justify-center gap-2 px-8 py-4 bg-rose-500 text-white rounded-2xl font-black uppercase tracking-widest text-xs hover:bg-rose-600 transition-all shadow-lg shadow-rose-200 active:scale-95 whitespace-nowrap"
                     >
-                        <AlertCircle className="w-4 h-4" />
+                        <AlertCircle size={18} />
                         Cerrar Caja
                     </button>
                 </div>
             </header>
 
+            {/* Main Stats Summary */}
             {summary && (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
                     {/* Tarjeta Base */}
-                    <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-                        <div className="flex items-center gap-3 mb-2 text-gray-500">
-                            <Wallet className="w-5 h-5" />
-                            <span className="font-medium">Monto Inicial</span>
+                    <div className="group bg-white p-6 rounded-[2rem] shadow-sm border border-slate-100 hover:shadow-xl hover:shadow-indigo-500/5 transition-all">
+                        <div className="flex items-center gap-4 mb-4">
+                            <div className="w-12 h-12 bg-indigo-50 text-indigo-600 rounded-2xl flex items-center justify-center transition-transform group-hover:scale-110">
+                                <Wallet size={24} />
+                            </div>
+                            <div>
+                                <p className="text-xs font-black text-slate-300 uppercase tracking-widest">Base Inicial</p>
+                                <p className="text-2xl font-black text-slate-800">${summary.openAmount.toFixed(2)}</p>
+                            </div>
                         </div>
-                        <p className="text-2xl font-bold text-gray-800">${summary.openAmount.toFixed(2)}</p>
+                        <div className="h-1.5 w-full bg-slate-50 rounded-full overflow-hidden">
+                            <div className="h-full bg-indigo-500 w-full opacity-30"></div>
+                        </div>
                     </div>
 
                     {/* Ventas en Efectivo */}
-                    <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-                        <div className="flex items-center gap-3 mb-2 text-green-600">
-                            <ArrowUpCircle className="w-5 h-5" />
-                            <span className="font-medium">Ventas Efectivo</span>
+                    <div className="group bg-white p-6 rounded-[2rem] shadow-sm border border-slate-100 hover:shadow-xl hover:shadow-emerald-500/5 transition-all">
+                        <div className="flex items-center gap-4 mb-4">
+                            <div className="w-12 h-12 bg-emerald-50 text-emerald-600 rounded-2xl flex items-center justify-center transition-transform group-hover:scale-110">
+                                <ArrowUpCircle size={24} />
+                            </div>
+                            <div>
+                                <p className="text-xs font-black text-slate-300 uppercase tracking-widest">Ventas Efectivo</p>
+                                <p className="text-2xl font-black text-slate-800">+${summary.cashSales.toFixed(2)}</p>
+                            </div>
                         </div>
-                        <p className="text-2xl font-bold text-gray-800">+${summary.cashSales.toFixed(2)}</p>
+                        <div className="h-1.5 w-full bg-slate-50 rounded-full overflow-hidden">
+                            <div className="h-full bg-emerald-500 w-[60%]"></div>
+                        </div>
                     </div>
 
                     {/* Gastos / Salidas */}
-                    <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-                        <div className="flex items-center gap-3 mb-2 text-red-600">
-                            <ArrowDownCircle className="w-5 h-5" />
-                            <span className="font-medium">Gastos / Servicios</span>
+                    <div className="group bg-white p-6 rounded-[2rem] shadow-sm border border-slate-100 hover:shadow-xl hover:shadow-rose-500/5 transition-all">
+                        <div className="flex items-center gap-4 mb-4">
+                            <div className="w-12 h-12 bg-rose-50 text-rose-600 rounded-2xl flex items-center justify-center transition-transform group-hover:scale-110">
+                                <ArrowDownCircle size={24} />
+                            </div>
+                            <div>
+                                <p className="text-xs font-black text-slate-300 uppercase tracking-widest">Salidas / Gastos</p>
+                                <p className="text-2xl font-black text-slate-800">-${(summary.expenses + summary.manualExpense).toFixed(2)}</p>
+                            </div>
                         </div>
-                        <p className="text-2xl font-bold text-gray-800">-${(summary.expenses + summary.manualExpense).toFixed(2)}</p>
+                        <div className="h-1.5 w-full bg-slate-50 rounded-full overflow-hidden">
+                            <div className="h-full bg-rose-500 w-[20%]"></div>
+                        </div>
                     </div>
 
                     {/* Balance Calculado */}
-                    <div className="bg-blue-50 p-6 rounded-xl shadow-sm border border-blue-100">
-                        <div className="flex items-center gap-3 mb-2 text-blue-700">
-                            <Coins className="w-5 h-5" />
-                            <span className="font-medium">Balance Esperado</span>
+                    <div className="group bg-slate-900 p-6 rounded-[2rem] shadow-2xl shadow-slate-900/20 text-white transition-all transform hover:-translate-y-1">
+                        <div className="flex items-center gap-4 mb-4">
+                            <div className="w-12 h-12 bg-white/10 text-emerald-400 rounded-2xl flex items-center justify-center">
+                                <Coins size={24} />
+                            </div>
+                            <div>
+                                <p className="text-xs font-black text-white/40 uppercase tracking-widest italic">Efectivo Esperado</p>
+                                <p className="text-3xl font-black text-white tracking-tighter">${summary.calculatedBalance.toFixed(2)}</p>
+                            </div>
                         </div>
-                        <p className="text-3xl font-bold text-blue-800">${summary.calculatedBalance.toFixed(2)}</p>
-                        <p className="text-xs text-blue-600 mt-2">Monto que debería haber en caja</p>
+                        <p className="text-[10px] font-medium text-white/50 leading-tight">Monto total que debería existir físicamente en caja ahora.</p>
                     </div>
                 </div>
             )}
 
+            {/* Info Section */}
+            <div className="bg-indigo-600 rounded-[2.5rem] p-8 text-white relative overflow-hidden shadow-2xl">
+                <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2 blur-3xl"></div>
+                <div className="relative z-10 flex flex-col md:flex-row items-center gap-8">
+                    <div className="w-20 h-20 bg-white/20 rounded-3xl flex items-center justify-center backdrop-blur-md">
+                        <Info size={40} className="text-white" />
+                    </div>
+                    <div className="flex-1 text-center md:text-left">
+                        <h3 className="text-xl font-black mb-2 uppercase tracking-tight">Recordatorio de Seguridad</h3>
+                        <p className="text-indigo-100 font-medium">Recuerda contar el dinero físico periódicamente y registrar cualquier salida de efectivo (pagos a proveedores, cambio, etc.) para mantener el arqueo al día </p>
+                    </div>
+                    <button
+                        onClick={() => window.location.href = '/pos'}
+                        className="px-8 py-4 bg-white text-indigo-600 rounded-2xl font-black uppercase tracking-widest text-xs hover:bg-indigo-50 transition-all active:scale-95"
+                    >
+                        Ir al POS
+                    </button>
+                </div>
+            </div>
+
+            {/* History Section */}
+            <CashHistory history={history} />
+
             {/* Modal de Cierre */}
             {showCloseModal && (
-                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-                    <div className="bg-white rounded-xl shadow-2xl w-full max-w-md overflow-hidden">
-                        <div className="p-6 border-b">
-                            <h2 className="text-xl font-bold text-gray-800">Cerrar Caja</h2>
-                            <p className="text-sm text-gray-500">Ingresa el monto físico contado.</p>
+                <div className="fixed inset-0 z-[110] bg-slate-900/30 backdrop-blur-md flex items-center justify-center p-4">
+                    <div className="bg-white rounded-[3rem] shadow-[0_40px_100px_rgba(0,0,0,0.3)] w-full max-w-2xl overflow-hidden animate-scale-in border border-slate-100 max-h-[90vh] flex flex-col">
+                        <div className="p-8 pb-4 flex justify-between items-center shrink-0">
+                            <div>
+                                <h2 className="text-2xl font-black text-slate-800 tracking-tight">Cerrar Sesión</h2>
+                                <p className="text-sm font-bold text-slate-400">Cuenta el dinero físico por denominación.</p>
+                            </div>
+                            <button onClick={() => setShowCloseModal(false)} className="w-10 h-10 bg-slate-50 text-slate-400 rounded-full flex items-center justify-center hover:bg-slate-100 transition-colors">
+                                <X size={20} />
+                            </button>
                         </div>
-                        <form onSubmit={handleCloseSession} className="p-6 space-y-4">
-                            <div className="bg-gray-50 p-4 rounded-lg">
-                                <span className="block text-sm text-gray-500 mb-1">Balance Esperado</span>
-                                <span className="text-2xl font-bold text-gray-800">${summary?.calculatedBalance.toFixed(2)}</span>
+
+                        <div className="overflow-y-auto custom-scrollbar p-8 pt-2 space-y-6">
+                            <div className="bg-slate-50 p-6 rounded-[2rem] flex items-center justify-between border border-slate-100 shrink-0">
+                                <div>
+                                    <span className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 italic">Balance Esperado</span>
+                                    <span className="text-3xl font-black text-indigo-600">${summary?.calculatedBalance.toFixed(2)}</span>
+                                </div>
+                                <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center shadow-sm">
+                                    <Calculator size={20} className="text-slate-300" />
+                                </div>
                             </div>
 
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Dinero en Efectivo (Contado)</label>
-                                <input
-                                    type="number"
-                                    step="0.01"
-                                    className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-lg"
-                                    placeholder="0.00"
-                                    value={closeAmount}
-                                    onChange={(e) => setCloseAmount(e.target.value)}
-                                    required
-                                />
+                            <DenominationCounter
+                                onChange={(total) => setCloseAmount(total.toFixed(2))}
+                            />
+
+                            <div className="space-y-3">
+                                <label className="block text-xs font-black text-slate-400 uppercase tracking-widest pl-1">
+                                    Dinero Físico Total
+                                </label>
+                                <div className="relative">
+                                    <div className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-800 font-bold text-xl">$</div>
+                                    <input
+                                        type="number"
+                                        step="0.01"
+                                        className="w-full pl-10 pr-6 py-4 bg-white border-2 border-slate-100 rounded-2xl focus:ring-8 focus:ring-indigo-500/5 focus:border-indigo-500 transition-all outline-none text-3xl font-black text-slate-800"
+                                        placeholder="0.00"
+                                        value={closeAmount}
+                                        readOnly
+                                    />
+                                </div>
+                                <p className="text-[10px] text-slate-400 font-bold pl-1">
+                                    * Calculado automáticamente según las denominaciones ingresadas.
+                                </p>
                             </div>
 
                             {closeAmount && summary && (
-                                <div className={`p-3 rounded-lg text-sm font-medium ${Number(closeAmount) - summary.calculatedBalance === 0
-                                    ? 'bg-green-100 text-green-700'
-                                    : 'bg-red-100 text-red-700'
+                                <div className={`px-6 py-4 rounded-2xl flex items-center gap-3 animate-fade-in ${Math.abs(Number(closeAmount) - summary.calculatedBalance) < 0.01
+                                    ? 'bg-emerald-50 text-emerald-700'
+                                    : 'bg-rose-50 text-rose-700 font-black'
                                     }`}>
-                                    Diferencia: ${(Number(closeAmount) - summary.calculatedBalance).toFixed(2)}
+                                    {Math.abs(Number(closeAmount) - summary.calculatedBalance) < 0.01 ? (
+                                        <CheckCircle2 size={18} />
+                                    ) : (
+                                        <AlertCircle size={18} />
+                                    )}
+                                    <span className="text-sm">
+                                        Diferencia: <b>${(Number(closeAmount) - summary.calculatedBalance).toFixed(2)}</b>
+                                    </span>
                                 </div>
                             )}
 
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Notas / Observaciones</label>
+                            <div className="space-y-3">
+                                <label className="block text-xs font-black text-slate-400 uppercase tracking-widest pl-1">
+                                    Observaciones Finales
+                                </label>
                                 <textarea
-                                    className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
-                                    rows={3}
+                                    className="w-full p-4 bg-slate-50 border-2 border-transparent focus:border-indigo-100 focus:bg-white rounded-2xl outline-none transition-all text-sm font-medium min-h-[80px]"
                                     value={closeNotes}
                                     onChange={(e) => setCloseNotes(e.target.value)}
-                                    placeholder="Ej: Faltante de 0.50 por redondeo..."
+                                    placeholder="Detalla cualquier novedad en el cuadre..."
                                 ></textarea>
                             </div>
 
-                            <div className="flex gap-3 pt-2">
-                                <button
-                                    type="button"
-                                    onClick={() => setShowCloseModal(false)}
-                                    className="flex-1 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
-                                >
-                                    Cancelar
-                                </button>
-                                <button
-                                    type="submit"
-                                    className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
-                                >
-                                    Confirmar Cierre
-                                </button>
-                            </div>
-                        </form>
+                            <button
+                                onClick={handleCloseSession}
+                                className="w-full py-5 bg-rose-600 hover:bg-rose-700 text-white rounded-2xl font-black uppercase tracking-widest text-xs transition-all shadow-xl shadow-rose-200 active:scale-95 flex items-center justify-center gap-2"
+                            >
+                                Confirmar y Cerrar Caja
+                                <ArrowRight size={16} />
+                            </button>
+                        </div>
                     </div>
                 </div>
             )}
 
             {/* Modal Movimiento Manual */}
             {showTransactionModal && (
-                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-                    <div className="bg-white rounded-xl shadow-2xl w-full max-w-sm">
-                        <div className="p-6 border-b">
-                            <h2 className="text-xl font-bold">Registrar Movimiento</h2>
+                <div className="fixed inset-0 z-[110] bg-slate-900/30 backdrop-blur-md flex items-center justify-center p-4">
+                    <div className="bg-white rounded-[3rem] shadow-2xl w-full max-w-md overflow-hidden animate-scale-in">
+                        <div className="p-8 pb-4 flex justify-between items-center">
+                            <h2 className="text-2xl font-black text-slate-800 tracking-tight">Nuevo Movimiento</h2>
+                            <button onClick={() => setShowTransactionModal(false)} className="w-10 h-10 bg-slate-50 text-slate-400 rounded-full flex items-center justify-center hover:bg-slate-100 transition-colors">
+                                <X size={20} />
+                            </button>
                         </div>
-                        <form onSubmit={handleAddTransaction} className="p-6 space-y-4">
-                            <div className="flex bg-gray-100 p-1 rounded-lg">
+
+                        <form onSubmit={handleAddTransaction} className="p-8 pt-4 space-y-6">
+                            <div className="flex bg-slate-100 p-1.5 rounded-2xl">
                                 <button
                                     type="button"
                                     onClick={() => setTransactionType('Income')}
-                                    className={`flex-1 py-1 px-3 rounded-md text-sm font-medium transition ${transactionType === 'Income' ? 'bg-white shadow text-green-700' : 'text-gray-500'}`}
+                                    className={`flex-1 py-3 px-4 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${transactionType === 'Income' ? 'bg-white shadow text-emerald-600' : 'text-slate-400'}`}
                                 >
-                                    Ingreso
+                                    <div className="flex items-center justify-center gap-2">
+                                        <Plus size={14} strokeWidth={4} /> Ingreso
+                                    </div>
                                 </button>
                                 <button
                                     type="button"
                                     onClick={() => setTransactionType('Expense')}
-                                    className={`flex-1 py-1 px-3 rounded-md text-sm font-medium transition ${transactionType === 'Expense' ? 'bg-white shadow text-red-700' : 'text-gray-500'}`}
+                                    className={`flex-1 py-3 px-4 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${transactionType === 'Expense' ? 'bg-white shadow text-rose-600' : 'text-slate-400'}`}
                                 >
-                                    Egreso / Retiro
+                                    <div className="flex items-center justify-center gap-2">
+                                        <Minus size={14} strokeWidth={4} /> Egreso
+                                    </div>
                                 </button>
                             </div>
 
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Monto ($)</label>
-                                <input
-                                    type="number"
-                                    step="0.01"
-                                    className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
-                                    value={transactionAmount}
-                                    onChange={(e) => setTransactionAmount(e.target.value)}
-                                    required
-                                />
+                            <div className="space-y-3">
+                                <label className="block text-xs font-black text-slate-400 uppercase tracking-widest pl-1">Monto ($)</label>
+                                <div className="relative">
+                                    <div className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-800 font-bold text-lg">$</div>
+                                    <input
+                                        type="number"
+                                        step="0.01"
+                                        className="w-full pl-10 pr-6 py-4 bg-slate-50 border-2 border-transparent focus:border-indigo-100 focus:bg-white rounded-2xl outline-none transition-all text-xl font-black text-slate-800"
+                                        value={transactionAmount}
+                                        onChange={(e) => setTransactionAmount(e.target.value)}
+                                        required
+                                        placeholder="0.00"
+                                        autoFocus
+                                    />
+                                </div>
                             </div>
 
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Descripción</label>
+                            <div className="space-y-3">
+                                <label className="block text-xs font-black text-slate-400 uppercase tracking-widest pl-1">Descripción</label>
                                 <input
                                     type="text"
-                                    className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
-                                    placeholder="Ej: Cambio, Pago proveedor menor..."
+                                    className="w-full p-4 bg-slate-50 border-2 border-transparent focus:border-indigo-100 focus:bg-white rounded-2xl outline-none transition-all text-sm font-medium"
+                                    placeholder="Ej: Pago de almuerzos, cambio inicial..."
                                     value={transactionDesc}
                                     onChange={(e) => setTransactionDesc(e.target.value)}
                                     required
                                 />
                             </div>
 
-                            <div className="flex gap-3 pt-4">
-                                <button
-                                    type="button"
-                                    onClick={() => setShowTransactionModal(false)}
-                                    className="flex-1 px-4 py-2 border hover:bg-gray-50 rounded-lg"
-                                >
-                                    Cancelar
-                                </button>
-                                <button
-                                    type="submit"
-                                    className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-                                >
-                                    Guardar
-                                </button>
-                            </div>
+                            <button
+                                type="submit"
+                                className="w-full py-5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl font-black uppercase tracking-widest text-xs transition-all shadow-xl shadow-indigo-200 active:scale-95"
+                            >
+                                Registrar Movimiento
+                            </button>
                         </form>
                     </div>
                 </div>
             )}
+        </div>
+    );
+};
+
+// Sub-component for history table to keep main component clean
+const CashHistory = ({ history }: { history: CashRegisterSession[] }) => {
+    return (
+        <div className="space-y-6">
+            <div className="flex items-center gap-3">
+                <div className="p-2.5 bg-white border border-slate-100 rounded-xl shadow-sm text-indigo-600">
+                    <History size={20} />
+                </div>
+                <h2 className="text-xl font-black text-slate-800 tracking-tight uppercase tracking-widest text-sm">Historial de Sesiones</h2>
+            </div>
+
+            <div className="bg-white/40 backdrop-blur-md rounded-[2rem] border border-white/60 shadow-xl shadow-indigo-500/5 overflow-hidden">
+                <div className="overflow-x-auto">
+                    <table className="w-full transition-all table-clean">
+                        <thead>
+                            <tr className="bg-slate-900/5 border-b border-slate-100">
+                                <th className="px-6 py-5 text-left text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Fecha</th>
+                                <th className="px-6 py-5 text-left text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Usuario</th>
+                                <th className="px-6 py-5 text-left text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Base</th>
+                                <th className="px-6 py-5 text-left text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Cierre</th>
+                                <th className="px-6 py-5 text-left text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Diferencia</th>
+                                <th className="px-6 py-5 text-left text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Estado</th>
+                            </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-50">
+                            {history.length === 0 ? (
+                                <tr>
+                                    <td colSpan={6} className="px-6 py-12 text-center">
+                                        <div className="flex flex-col items-center gap-2 opacity-30">
+                                            <Calculator size={40} />
+                                            <p className="font-bold text-sm">No hay sesiones registradas todavía</p>
+                                        </div>
+                                    </td>
+                                </tr>
+                            ) : (
+                                history.map((session) => (
+                                    <tr key={session.id} className="hover:bg-white/60 transition-colors group">
+                                        <td className="px-6 py-5">
+                                            <div className="flex flex-col">
+                                                <span className="text-sm font-black text-slate-700">{new Date(session.openTime).toLocaleDateString()}</span>
+                                                <span className="text-[10px] font-bold text-slate-400">{new Date(session.openTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                                            </div>
+                                        </td>
+                                        <td className="px-6 py-5">
+                                            <div className="flex items-center gap-2" title={session.user?.username || 'Sistema'}>
+                                                <div className="w-7 h-7 bg-indigo-50 rounded-full flex items-center justify-center text-[10px] font-black text-indigo-600 border border-indigo-100">
+                                                    {(session.user?.username || 'S').charAt(0).toUpperCase()}
+                                                </div>
+                                                <span className="text-xs font-bold text-slate-600 truncate max-w-[100px]">{session.user?.username || 'Sistema'}</span>
+                                            </div>
+                                        </td>
+                                        <td className="px-6 py-5 text-xs font-bold text-slate-600">${session.openAmount.toFixed(2)}</td>
+                                        <td className="px-6 py-5 text-xs font-black text-slate-800">
+                                            {session.status === 'Closed' ? `$${session.closeAmount.toFixed(2)}` : '---'}
+                                        </td>
+                                        <td className="px-6 py-5">
+                                            {session.status === 'Closed' ? (
+                                                <span className={`text-xs font-black px-2.5 py-1 rounded-lg ${session.discrepancy === 0 ? 'text-emerald-600 bg-emerald-50' : 'text-rose-600 bg-rose-50'}`}>
+                                                    {session.discrepancy > 0 ? '+' : ''}{session.discrepancy.toFixed(2)}
+                                                </span>
+                                            ) : (
+                                                <span className="text-xs font-bold text-slate-300 italic">En curso...</span>
+                                            )}
+                                        </td>
+                                        <td className="px-6 py-5">
+                                            <span className={`text-[9px] font-black uppercase tracking-widest px-3 py-1 rounded-full border ${session.status === 'Open' ? 'bg-emerald-500 text-white border-emerald-400 shadow-lg shadow-emerald-500/20 animate-pulse' : 'bg-slate-100 text-slate-400 border-slate-200'}`}>
+                                                {session.status === 'Open' ? 'ABIERTA' : 'CERRADA'}
+                                            </span>
+                                        </td>
+                                    </tr>
+                                ))
+                            )}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    );
+};
+
+// Sub-component for denomination counting
+const DenominationCounter = ({ onChange }: { onChange: (total: number) => void }) => {
+
+    const denominations = [
+        { value: 100, label: '$100', type: 'bill' },
+        { value: 50, label: '$50', type: 'bill' },
+        { value: 20, label: '$20', type: 'bill' },
+        { value: 10, label: '$10', type: 'bill' },
+        { value: 5, label: '$5', type: 'bill' },
+        { value: 1, label: '$1', type: 'bill' },
+        { value: 1, label: '$1.00', type: 'coin' },
+        { value: 0.50, label: '$0.50', type: 'coin' },
+        { value: 0.25, label: '$0.25', type: 'coin' },
+        { value: 0.10, label: '$0.10', type: 'coin' },
+        { value: 0.05, label: '$0.05', type: 'coin' },
+        { value: 0.01, label: '$0.01', type: 'coin' },
+    ];
+
+    // Simplified State Management
+    const [inputs, setInputs] = useState<{ [key: string]: string }>({});
+
+    const handleInputChange = (key: string, value: string) => {
+        const newInputs = { ...inputs, [key]: value };
+        setInputs(newInputs);
+
+        // Calculate total
+        let total = 0;
+        denominations.forEach(d => {
+            const inputKey = `${d.type}_${d.value}`;
+            const count = Number(newInputs[inputKey] || 0);
+            total += count * d.value;
+        });
+        onChange(total);
+    };
+
+    return (
+        <div className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                {/* Billetes */}
+                <div className="space-y-3">
+                    <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                        <span className="w-6 h-px bg-slate-200"></span> Billetes <span className="w-full h-px bg-slate-200"></span>
+                    </h3>
+                    <div className="grid grid-cols-2 gap-3">
+                        {denominations.filter(d => d.type === 'bill').map((d) => (
+                            <div key={`bill_${d.value}`} className="relative group">
+                                <div className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-[10px] font-black uppercase tracking-wider pointer-events-none">
+                                    {d.label}
+                                </div>
+                                <input
+                                    type="number"
+                                    min="0"
+                                    className="w-full pl-12 pr-3 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all outline-none text-right font-bold text-slate-700 placeholder:text-slate-300"
+                                    placeholder="0"
+                                    value={inputs[`${d.type}_${d.value}`] || ''}
+                                    onChange={(e) => handleInputChange(`${d.type}_${d.value}`, e.target.value)}
+                                    onFocus={(e) => e.target.select()}
+                                />
+                            </div>
+                        ))}
+                    </div>
+                </div>
+
+                {/* Monedas */}
+                <div className="space-y-3">
+                    <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                        <span className="w-6 h-px bg-slate-200"></span> Monedas <span className="w-full h-px bg-slate-200"></span>
+                    </h3>
+                    <div className="grid grid-cols-2 gap-3">
+                        {denominations.filter(d => d.type === 'coin').map((d) => (
+                            <div key={`coin_${d.value}`} className="relative group">
+                                <div className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-[10px] font-black uppercase tracking-wider pointer-events-none">
+                                    {d.label}
+                                </div>
+                                <input
+                                    type="number"
+                                    min="0"
+                                    className="w-full pl-12 pr-3 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all outline-none text-right font-bold text-slate-700 placeholder:text-slate-300"
+                                    placeholder="0"
+                                    value={inputs[`${d.type}_${d.value}`] || ''}
+                                    onChange={(e) => handleInputChange(`${d.type}_${d.value}`, e.target.value)}
+                                    onFocus={(e) => e.target.select()}
+                                />
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            </div>
         </div>
     );
 };

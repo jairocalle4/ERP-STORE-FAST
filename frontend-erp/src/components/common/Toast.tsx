@@ -18,12 +18,20 @@ const bgMap = {
 };
 
 export const Toast: React.FC = () => {
-    const { notifications, removeNotification } = useNotificationStore();
+    const { notifications, removeNotification, clearAll } = useNotificationStore();
 
     if (notifications.length === 0) return null;
 
     const content = (
-        <div className="fixed top-6 right-6 z-[9999] flex flex-col gap-3 pointer-events-none">
+        <div className="fixed top-6 right-6 z-[9999] flex flex-col items-end gap-3 pointer-events-none">
+            {notifications.length > 1 && (
+                <button
+                    onClick={clearAll}
+                    className="pointer-events-auto px-4 py-2 bg-slate-900/90 text-white text-xs font-black uppercase tracking-widest rounded-xl shadow-lg hover:bg-slate-800 transition-all active:scale-95 animate-fade-in flex items-center gap-2 mb-2"
+                >
+                    <X size={14} /> Borrar Todo ({notifications.length})
+                </button>
+            )}
             {notifications.map((n) => (
                 <div
                     key={n.id}
@@ -32,10 +40,10 @@ export const Toast: React.FC = () => {
                         flex items-center gap-3 px-4 py-3 min-w-[300px] max-w-md
                         backdrop-blur-md border rounded-2xl shadow-xl
                         animate-fade-in transition-all duration-300
-                        ${bgMap[n.type]}
+                        ${bgMap[n.type] || bgMap.info}
                     `}
                 >
-                    <div className="flex-shrink-0">{iconMap[n.type]}</div>
+                    <div className="flex-shrink-0">{iconMap[n.type] || iconMap.info}</div>
                     <div className="flex-1 text-sm font-bold text-slate-800">
                         {n.message}
                     </div>

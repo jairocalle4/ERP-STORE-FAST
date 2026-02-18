@@ -17,8 +17,8 @@ const ClientFormModal: React.FC<ClientFormModalProps> = ({ isOpen, onClose, onSa
         address: '',
         email: ''
     });
+    const [errors, setErrors] = useState<{ [key: string]: string }>({});
     const [isLoading, setIsLoading] = useState(false);
-    const [error, setError] = useState<string | null>(null);
 
     useEffect(() => {
         if (initialData) {
@@ -29,6 +29,7 @@ const ClientFormModal: React.FC<ClientFormModalProps> = ({ isOpen, onClose, onSa
                 address: initialData.address,
                 email: initialData.email
             });
+            setErrors({});
         } else {
             setFormData({
                 name: '',
@@ -37,38 +38,63 @@ const ClientFormModal: React.FC<ClientFormModalProps> = ({ isOpen, onClose, onSa
                 address: '',
                 email: ''
             });
+            setErrors({});
         }
-        setError(null);
     }, [initialData, isOpen]);
+
+    const validateField = (name: string, value: string) => {
+        let error = '';
+        switch (name) {
+            case 'name':
+                if (!value.trim()) error = 'El nombre es obligatorio';
+                else if (value.trim().length < 3) error = 'Mínimo 3 caracteres';
+                break;
+            case 'cedulaRuc':
+                if (!value) error = 'La identificación es obligatoria';
+                else if (!/^\d+$/.test(value)) error = 'Solo se permiten números';
+                else if (value.length !== 10 && value.length !== 13)
+                    error = 'Debe tener 10 dígitos (Cédula) o 13 (RUC)';
+                break;
+            case 'phone':
+                if (!value) error = 'El teléfono es obligatorio';
+                else if (!/^\d+$/.test(value)) error = 'Solo números';
+                else if (value.length !== 10) error = 'Debe tener exactamente 10 dígitos';
+                break;
+            case 'email':
+                if (value && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value))
+                    error = 'Email con formato inválido';
+                break;
+            default:
+                break;
+        }
+        setErrors(prev => ({ ...prev, [name]: error }));
+        return error === '';
+    };
+
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const { name, value } = e.target;
+
+        // Restriction for numeric-only fields
+        if ((name === 'cedulaRuc' || name === 'phone') && value !== '' && !/^\d+$/.test(value)) {
+            return;
+        }
+
+        setFormData(prev => ({ ...prev, [name]: value }));
+        validateField(name, value);
+    };
 
     if (!isOpen) return null;
 
-    const validateEmail = (email: string) => {
-        return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-    };
-
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        setError(null);
 
-        // Validation: Cédula / RUC (10 or 13 digits)
-        const cedulaRuc = formData.cedulaRuc || '';
-        if (!/^\d{10}(\d{3})?$/.test(cedulaRuc)) {
-            setError('La Identificación debe tener 10 dígitos (Cédula) o 13 dígitos (RUC)');
-            return;
-        }
+        // Global validation check
+        const isNameValid = validateField('name', formData.name);
+        const isIdValid = validateField('cedulaRuc', formData.cedulaRuc || '');
+        const isPhoneValid = validateField('phone', formData.phone || '');
+        const isEmailValid = validateField('email', formData.email || '');
 
-        // Validation: Phone (10 digits)
-        const phone = formData.phone || '';
-        if (!/^\d{10}$/.test(phone)) {
-            setError('El Teléfono debe tener exactamente 10 dígitos numéricos');
-            return;
-        }
-
-        // Validation: Email (Optional but must be valid if present)
-        const email = formData.email || '';
-        if (email && !validateEmail(email)) {
-            setError('El formato del correo electrónico no es válido');
+        if (!isNameValid || !isIdValid || !isPhoneValid || !isEmailValid) {
             return;
         }
 
@@ -77,7 +103,7 @@ const ClientFormModal: React.FC<ClientFormModalProps> = ({ isOpen, onClose, onSa
             await onSave(formData);
             onClose();
         } catch (err: any) {
-            setError(err.message || 'Error al guardar el cliente');
+            setErrors(prev => ({ ...prev, form: err.message || 'Error al guardar el cliente' }));
         } finally {
             setIsLoading(false);
         }
@@ -98,62 +124,68 @@ const ClientFormModal: React.FC<ClientFormModalProps> = ({ isOpen, onClose, onSa
                     </button>
                 </div>
 
-                {error && (
+                {errors.form && (
                     <div className="mb-6 p-4 bg-rose-50 border border-rose-100 rounded-2xl text-rose-600 text-sm font-medium animate-shake">
-                        {error}
+                        {errors.form}
                     </div>
                 )}
 
                 <form onSubmit={handleSubmit} className="space-y-4 overflow-y-auto max-h-[70vh] pr-2 custom-scrollbar">
                     <div className="space-y-2">
-                        <label className="text-xs font-bold text-slate-400 uppercase tracking-widest ml-1">Nombre Completo</label>
+                        <label className="text-xs font-bold text-slate-400 uppercase tracking-widest ml-1">Nombre Completo <span className="text-rose-500">*</span></label>
                         <input
                             type="text"
+                            name="name"
                             required
                             value={formData.name}
-                            onChange={e => setFormData({ ...formData, name: e.target.value })}
-                            className="w-full px-5 py-3.5 bg-slate-50 border border-slate-100 rounded-2xl focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/5 outline-none transition-all placeholder:text-slate-300 text-slate-700 font-medium"
+                            onChange={handleChange}
+                            className={`w-full px-5 py-3.5 bg-slate-50 border ${errors.name ? 'border-rose-500 ring-4 ring-rose-500/5' : 'border-slate-100 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/5'} rounded-2xl focus:bg-white outline-none transition-all placeholder:text-slate-300 text-slate-700 font-medium`}
                             placeholder="Ej: Juan Pérez"
                         />
+                        {errors.name && <p className="text-[10px] text-rose-500 font-bold mt-1 ml-1 animate-fade-in">{errors.name}</p>}
                     </div>
 
                     <div className="space-y-2">
-                        <label className="text-xs font-bold text-slate-400 uppercase tracking-widest ml-1">Cédula / RUC</label>
+                        <label className="text-xs font-bold text-slate-400 uppercase tracking-widest ml-1">Cédula / RUC <span className="text-rose-500">*</span></label>
                         <input
                             type="text"
+                            name="cedulaRuc"
                             required
                             value={formData.cedulaRuc}
-                            onChange={e => setFormData({ ...formData, cedulaRuc: e.target.value.replace(/\D/g, '') })}
-                            className="w-full px-5 py-3.5 bg-slate-50 border border-slate-100 rounded-2xl focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/5 outline-none transition-all placeholder:text-slate-300 text-slate-700 font-medium"
+                            onChange={handleChange}
+                            className={`w-full px-5 py-3.5 bg-slate-50 border ${errors.cedulaRuc ? 'border-rose-500 ring-4 ring-rose-500/5' : 'border-slate-100 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/5'} rounded-2xl focus:bg-white outline-none transition-all placeholder:text-slate-300 text-slate-700 font-medium`}
                             placeholder="Ej: 0999999999 o 0999999999001"
                             maxLength={13}
-                            title="10 dígitos para Cédula o 13 para RUC"
                         />
+                        {errors.cedulaRuc && <p className="text-[10px] text-rose-500 font-bold mt-1 ml-1 animate-fade-in">{errors.cedulaRuc}</p>}
                     </div>
 
                     <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
-                            <label className="text-xs font-bold text-slate-400 uppercase tracking-widest ml-1">Teléfono</label>
+                            <label className="text-xs font-bold text-slate-400 uppercase tracking-widest ml-1">Teléfono <span className="text-rose-500">*</span></label>
                             <input
                                 type="text"
+                                name="phone"
                                 required
                                 value={formData.phone}
-                                onChange={e => setFormData({ ...formData, phone: e.target.value.replace(/\D/g, '') })}
-                                className="w-full px-5 py-3.5 bg-slate-50 border border-slate-100 rounded-2xl focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/5 outline-none transition-all placeholder:text-slate-300 text-slate-700 font-medium"
+                                onChange={handleChange}
+                                className={`w-full px-5 py-3.5 bg-slate-50 border ${errors.phone ? 'border-rose-500 ring-4 ring-rose-500/5' : 'border-slate-100 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/5'} rounded-2xl focus:bg-white outline-none transition-all placeholder:text-slate-300 text-slate-700 font-medium`}
                                 placeholder="Ej: 0991234567"
                                 maxLength={10}
-                                title="Debe tener 10 dígitos"
                             />
+                            {errors.phone && <p className="text-[10px] text-rose-500 font-bold mt-1 ml-1 animate-fade-in">{errors.phone}</p>}
                         </div>
                         <div className="space-y-2">
                             <label className="text-xs font-bold text-slate-400 uppercase tracking-widest ml-1">Email</label>
                             <input
                                 type="email"
+                                name="email"
                                 value={formData.email}
-                                onChange={e => setFormData({ ...formData, email: e.target.value })}
-                                className="w-full px-5 py-3.5 bg-slate-50 border border-slate-100 rounded-2xl focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/5 outline-none transition-all placeholder:text-slate-300 text-slate-700 font-medium"
+                                onChange={handleChange}
+                                className={`w-full px-5 py-3.5 bg-slate-50 border ${errors.email ? 'border-rose-500 ring-4 ring-rose-500/5' : 'border-slate-100 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/5'} rounded-2xl focus:bg-white outline-none transition-all placeholder:text-slate-300 text-slate-700 font-medium`}
                                 placeholder="juan@mail.com"
                             />
+                            {errors.email && <p className="text-[10px] text-rose-500 font-bold mt-1 ml-1 animate-fade-in">{errors.email}</p>}
                         </div>
                     </div>
 
@@ -161,8 +193,9 @@ const ClientFormModal: React.FC<ClientFormModalProps> = ({ isOpen, onClose, onSa
                         <label className="text-xs font-bold text-slate-400 uppercase tracking-widest ml-1">Dirección</label>
                         <input
                             type="text"
+                            name="address"
                             value={formData.address}
-                            onChange={e => setFormData({ ...formData, address: e.target.value })}
+                            onChange={handleChange}
                             className="w-full px-5 py-3.5 bg-slate-50 border border-slate-100 rounded-2xl focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/5 outline-none transition-all placeholder:text-slate-300 text-slate-700 font-medium"
                             placeholder="Calle Principal 123"
                         />

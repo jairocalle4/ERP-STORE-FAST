@@ -16,12 +16,14 @@ public class SalesController : ControllerBase
     private readonly AppDbContext _context;
     private readonly IEmailService _emailService;
     private readonly IInventoryService _inventoryService;
+    private readonly IServiceScopeFactory _scopeFactory;
 
-    public SalesController(AppDbContext context, IEmailService emailService, IInventoryService inventoryService)
+    public SalesController(AppDbContext context, IEmailService emailService, IInventoryService inventoryService, IServiceScopeFactory scopeFactory)
     {
         _context = context;
         _emailService = emailService;
         _inventoryService = inventoryService;
+        _scopeFactory = scopeFactory;
     }
 
     [HttpGet]
@@ -99,6 +101,7 @@ public class SalesController : ControllerBase
             };
 
             decimal calculatedTotal = 0;
+            var lowStockItems = new List<(string Name, int MinStock, int CurrentStock)>();
 
             foreach (var detailDto in dto.Details)
             {
@@ -117,33 +120,27 @@ public class SalesController : ControllerBase
                 if (product.Stock <= product.MinStock)
                 {
                     var today = DateTime.UtcNow.Date;
+                    
+                    // Check if alert already exists for TODAY
                     var existingAlert = await _context.Notifications
                         .AnyAsync(n => n.Link == "/products?stock=low" && 
                                        n.Title.Contains(product.Name) && 
-                                       n.CreatedAt >= today);
+                                       n.CreatedAt.Date == today);
                     
                     if (!existingAlert)
                     {
-                        _context.Notifications.Add(new Notification
+                        var notification = new Notification
                         {
-                            Title = "Stock Bajo",
+                            Title = $"Stock Bajo: {product.Name}",
                             Message = $"El producto {product.Name} ha llegado a su nivel mínimo ({product.Stock} restantes).",
                             Type = "Warning",
                             Link = "/products?stock=low",
                             CreatedAt = DateTime.UtcNow
-                        });
-
-                        // Send Email
-                        var settings = await _context.CompanySettings.FirstOrDefaultAsync();
-                        var recipient = settings?.Email ?? settings?.SmtpUser;
-                        if (settings != null && !string.IsNullOrEmpty(recipient))
-                        {
-                            await _emailService.SendEmailAsync(
-                                recipient, 
-                                "ALERTA: Stock Bajo - " + product.Name, 
-                                $"<h3>Alerta de Inventario</h3><p>El producto <b>{product.Name}</b> ha llegado a su nivel mínimo configurado ({product.MinStock}).</p><p>Stock actual: <b>{product.Stock}</b></p><br/><p>Por favor, realice un pedido de reposición pronto.</p>"
-                            );
-                        }
+                        };
+                        _context.Notifications.Add(notification);
+                        
+                        // Collect for background email sending
+                        lowStockItems.Add((product.Name, product.MinStock, product.Stock));
                     }
                 }
 
@@ -178,6 +175,39 @@ public class SalesController : ControllerBase
             }
             await _context.SaveChangesAsync();
             await transaction.CommitAsync();
+
+            // BACKGROUND EMAIL TASK
+            if (lowStockItems.Any())
+            {
+                _ = Task.Run(async () =>
+                {
+                    try
+                    {
+                        using var scope = _scopeFactory.CreateScope();
+                        var scopedContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+                        var emailService = scope.ServiceProvider.GetRequiredService<IEmailService>();
+
+                        var settings = await scopedContext.CompanySettings.FirstOrDefaultAsync();
+                        var recipient = settings?.Email ?? settings?.SmtpUser;
+
+                        if (settings != null && !string.IsNullOrEmpty(recipient))
+                        {
+                            foreach (var item in lowStockItems)
+                            {
+                                await emailService.SendEmailAsync(
+                                    recipient,
+                                    "ALERTA: Stock Bajo - " + item.Name,
+                                    $"<h3>Alerta de Inventario</h3><p>El producto <b>{item.Name}</b> ha llegado a su nivel mínimo configurado ({item.MinStock}).</p><p>Stock actual: <b>{item.CurrentStock}</b></p><br/><p>Por favor, realice un pedido de reposición pronto.</p>"
+                                );
+                            }
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"Error sending background emails: {ex.Message}");
+                    }
+                });
+            }
 
             // Return full object with includes
             return await _context.Sales

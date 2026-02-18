@@ -21,6 +21,7 @@ export function SupplierFormModal({ isOpen, onClose, onSuccess, supplier }: Prop
         contactName: '',
         isActive: true
     });
+    const [errors, setErrors] = useState<{ [key: string]: string }>({});
     const [loading, setLoading] = useState(false);
     const addNotification = useNotificationStore(s => s.addNotification);
 
@@ -35,6 +36,7 @@ export function SupplierFormModal({ isOpen, onClose, onSuccess, supplier }: Prop
                 contactName: supplier.contactName || '',
                 isActive: supplier.isActive
             });
+            setErrors({}); // Clear errors when editing a new supplier
         } else {
             setFormData({
                 name: '',
@@ -45,13 +47,66 @@ export function SupplierFormModal({ isOpen, onClose, onSuccess, supplier }: Prop
                 contactName: '',
                 isActive: true
             });
+            setErrors({});
         }
     }, [supplier, isOpen]);
+
+    const validateField = (name: string, value: string) => {
+        let error = '';
+        switch (name) {
+            case 'name':
+                if (!value.trim()) error = 'El nombre es obligatorio';
+                else if (value.trim().length < 3) error = 'Mínimo 3 caracteres';
+                break;
+            case 'taxId':
+                if (!value) error = 'La identificación es obligatoria';
+                else if (!/^\d+$/.test(value)) error = 'Solo se permiten números';
+                else if (value.length !== 10 && value.length !== 13)
+                    error = 'Debe tener 10 dígitos (C.I.) o 13 (RUC)';
+                break;
+            case 'email':
+                if (value && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value))
+                    error = 'Email inválido';
+                break;
+            case 'phone':
+                if (!value) error = 'El teléfono es obligatorio';
+                else if (!/^\d+$/.test(value)) error = 'Solo números';
+                else if (value.length !== 10) error = 'Debe tener 10 dígitos';
+                break;
+            default:
+                break;
+        }
+        setErrors(prev => ({ ...prev, [name]: error }));
+        return error === '';
+    };
+
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const { name, value } = e.target;
+
+        // Special restriction for taxId and phone: only numbers allowed
+        if ((name === 'taxId' || name === 'phone') && value !== '' && !/^\d+$/.test(value)) {
+            return;
+        }
+
+        setFormData(prev => ({ ...prev, [name]: value }));
+        validateField(name, value);
+    };
 
     if (!isOpen) return null;
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+
+        // Final validation
+        const nameValid = validateField('name', formData.name);
+        const taxValid = validateField('taxId', formData.taxId);
+        const emailValid = validateField('email', formData.email);
+
+        if (!nameValid || !taxValid || !emailValid) {
+            addNotification('Por favor corrige los errores del formulario', 'error');
+            return;
+        }
+
         setLoading(true);
         try {
             if (supplier) {
@@ -95,26 +150,30 @@ export function SupplierFormModal({ isOpen, onClose, onSuccess, supplier }: Prop
                                     <User className="absolute left-3 top-1/2 -translate-y-1/2 text-indigo-400" size={18} />
                                     <input
                                         type="text"
+                                        name="name"
                                         required
                                         value={formData.name}
-                                        onChange={e => setFormData({ ...formData, name: e.target.value })}
-                                        className="w-full pl-10 pr-4 py-3 bg-white border border-indigo-100 rounded-xl focus:ring-4 focus:ring-indigo-500/5 focus:border-indigo-500/50 outline-none transition-all font-bold text-indigo-950"
+                                        onChange={handleChange}
+                                        className={`w-full pl-10 pr-4 py-3 bg-white border ${errors.name ? 'border-rose-500 ring-4 ring-rose-500/5' : 'border-indigo-100 focus:ring-4 focus:ring-indigo-500/5 focus:border-indigo-500/50'} rounded-xl outline-none transition-all font-bold text-indigo-950`}
                                         placeholder="Ej: Distribuidora Central S.A."
                                     />
+                                    {errors.name && <p className="text-[10px] text-rose-500 font-bold mt-1 ml-1 animate-fade-in">{errors.name}</p>}
                                 </div>
                             </div>
 
                             <div>
-                                <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-2 ml-1">RUC / Identificación</label>
+                                <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-2 ml-1">RUC / Identificación <span className="text-rose-500">*</span></label>
                                 <div className="relative">
                                     <Hash className="absolute left-3 top-1/2 -translate-y-1/2 text-indigo-400" size={18} />
                                     <input
                                         type="text"
+                                        name="taxId"
                                         value={formData.taxId}
-                                        onChange={e => setFormData({ ...formData, taxId: e.target.value })}
-                                        className="w-full pl-10 pr-4 py-3 bg-white border border-indigo-100 rounded-xl focus:ring-4 focus:ring-indigo-500/5 focus:border-indigo-500/50 outline-none transition-all font-mono text-sm"
+                                        onChange={handleChange}
+                                        className={`w-full pl-10 pr-4 py-3 bg-white border ${errors.taxId ? 'border-rose-500 ring-4 ring-rose-500/5' : 'border-indigo-100 focus:ring-4 focus:ring-indigo-500/5 focus:border-indigo-500/50'} rounded-xl outline-none transition-all font-mono text-sm`}
                                         placeholder="17xxxxxxxx001"
                                     />
+                                    {errors.taxId && <p className="text-[10px] text-rose-500 font-bold mt-1 ml-1 animate-fade-in">{errors.taxId}</p>}
                                 </div>
                             </div>
 
@@ -124,8 +183,9 @@ export function SupplierFormModal({ isOpen, onClose, onSuccess, supplier }: Prop
                                     <User className="absolute left-3 top-1/2 -translate-y-1/2 text-indigo-400" size={18} />
                                     <input
                                         type="text"
+                                        name="contactName"
                                         value={formData.contactName}
-                                        onChange={e => setFormData({ ...formData, contactName: e.target.value })}
+                                        onChange={handleChange}
                                         className="w-full pl-10 pr-4 py-3 bg-white border border-indigo-100 rounded-xl focus:ring-4 focus:ring-indigo-500/5 focus:border-indigo-500/50 outline-none transition-all text-sm"
                                         placeholder="Nombre del vendedor..."
                                     />
@@ -133,16 +193,19 @@ export function SupplierFormModal({ isOpen, onClose, onSuccess, supplier }: Prop
                             </div>
 
                             <div>
-                                <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-2 ml-1">Teléfono</label>
+                                <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-2 ml-1">Teléfono <span className="text-rose-500">*</span></label>
                                 <div className="relative">
                                     <Phone className="absolute left-3 top-1/2 -translate-y-1/2 text-indigo-400" size={18} />
                                     <input
                                         type="text"
+                                        name="phone"
                                         value={formData.phone}
-                                        onChange={e => setFormData({ ...formData, phone: e.target.value })}
-                                        className="w-full pl-10 pr-4 py-3 bg-white border border-indigo-100 rounded-xl focus:ring-4 focus:ring-indigo-500/5 focus:border-indigo-500/50 outline-none transition-all text-sm"
+                                        onChange={handleChange}
+                                        maxLength={10}
+                                        className={`w-full pl-10 pr-4 py-3 bg-white border ${errors.phone ? 'border-rose-500 ring-4 ring-rose-500/5' : 'border-indigo-100 focus:ring-4 focus:ring-indigo-500/5 focus:border-indigo-500/50'} rounded-xl outline-none transition-all text-sm`}
                                         placeholder="Ej: 09XXXXXXXX"
                                     />
+                                    {errors.phone && <p className="text-[10px] text-rose-500 font-bold mt-1 ml-1 animate-fade-in">{errors.phone}</p>}
                                 </div>
                             </div>
 
@@ -152,11 +215,13 @@ export function SupplierFormModal({ isOpen, onClose, onSuccess, supplier }: Prop
                                     <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-indigo-400" size={18} />
                                     <input
                                         type="email"
+                                        name="email"
                                         value={formData.email}
-                                        onChange={e => setFormData({ ...formData, email: e.target.value })}
-                                        className="w-full pl-10 pr-4 py-3 bg-white border border-indigo-100 rounded-xl focus:ring-4 focus:ring-indigo-500/5 focus:border-indigo-500/50 outline-none transition-all text-sm"
+                                        onChange={handleChange}
+                                        className={`w-full pl-10 pr-4 py-3 bg-white border ${errors.email ? 'border-rose-500 ring-4 ring-rose-500/5' : 'border-indigo-100 focus:ring-4 focus:ring-indigo-500/5 focus:border-indigo-500/50'} rounded-xl outline-none transition-all text-sm`}
                                         placeholder="ejemplo@empresa.com"
                                     />
+                                    {errors.email && <p className="text-[10px] text-rose-500 font-bold mt-1 ml-1 animate-fade-in">{errors.email}</p>}
                                 </div>
                             </div>
 
@@ -166,8 +231,9 @@ export function SupplierFormModal({ isOpen, onClose, onSuccess, supplier }: Prop
                                     <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 text-indigo-400" size={18} />
                                     <input
                                         type="text"
+                                        name="address"
                                         value={formData.address}
-                                        onChange={e => setFormData({ ...formData, address: e.target.value })}
+                                        onChange={handleChange}
                                         className="w-full pl-10 pr-4 py-3 bg-white border border-indigo-100 rounded-xl focus:ring-4 focus:ring-indigo-500/5 focus:border-indigo-500/50 outline-none transition-all text-sm"
                                         placeholder="Ciudad, Sector, Calle..."
                                     />

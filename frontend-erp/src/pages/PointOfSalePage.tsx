@@ -44,6 +44,7 @@ export default function PointOfSalePage() {
     const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
     const [paymentMethod, setPaymentMethod] = useState<'Efectivo' | 'Transferencia'>('Efectivo');
     const [isClosedSessionModalOpen, setIsClosedSessionModalOpen] = useState(false);
+    const [isMobileCartOpen, setIsMobileCartOpen] = useState(false);
 
     // Pagination / Infinite Scroll
     const [visibleLimit, setVisibleLimit] = useState(24);
@@ -63,6 +64,10 @@ export default function PointOfSalePage() {
             setProducts(productsData);
             setClients(clientsData);
             setCategories(categoriesRes.data);
+
+            // Set Consumidor Final as default
+            const cf = clientsData.find(c => c.cedulaRuc === '9999999999');
+            if (cf) setSelectedClient(cf);
         } catch (err) {
             console.error('Error fetching POS data', err);
             addNotification('Error al cargar datos del punto de venta', 'error');
@@ -218,32 +223,31 @@ export default function PointOfSalePage() {
     );
 
     return (
-        <div className="h-[calc(100vh-100px)] flex flex-col gap-6 animate-fade-in relative">
+        <div className="h-auto md:h-[calc(100vh-100px)] flex flex-col gap-0 animate-fade-in relative">
 
-            <div className="h-[calc(100vh-40px)] grid grid-cols-12 gap-6 overflow-hidden p-4">
+            <div className="h-auto md:h-[calc(100vh-40px)] grid grid-cols-12 gap-4 md:overflow-hidden pt-2 px-2 md:pl-4 md:pr-0.5 pb-4">
 
                 {/* LEFT COLUMN: HEADER + CATEGORIES + PRODUCTS */}
-                <div className="col-span-12 lg:col-span-7 xl:col-span-8 2xl:col-span-9 flex flex-col gap-6 h-full min-h-0">
+                <div className="col-span-12 md:col-span-7 xl:col-span-8 2xl:col-span-9 flex flex-col gap-6 h-auto md:h-full min-h-0">
 
-                    {/* Header Section (Moved inside left column) */}
                     <div className="flex justify-between items-center bg-white/40 backdrop-blur-md p-4 rounded-3xl border border-white/60 shadow-sm shrink-0">
-                        <div className="flex items-center gap-4">
-                            <div className="h-12 w-12 bg-indigo-600 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-indigo-600/20">
-                                <ShoppingCart size={24} />
+                        <div className="flex items-center gap-3 md:gap-4">
+                            <div className="h-10 w-10 md:h-12 md:w-12 bg-indigo-600 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-indigo-600/20 shrink-0">
+                                <ShoppingCart size={20} className="md:scale-125" />
                             </div>
-                            <div className="hidden sm:block">
-                                <h1 className="text-2xl font-black text-slate-800 tracking-tight">Caja Registradora</h1>
-                                <p className="text-slate-500 text-sm font-medium">Nueva transacción de venta</p>
+                            <div className="min-w-0">
+                                <h1 className="text-lg md:text-2xl font-black text-slate-800 tracking-tight truncate">Caja</h1>
+                                <p className="text-slate-500 text-[10px] md:text-sm font-medium truncate">Nueva transacción</p>
                             </div>
                         </div>
 
-                        <div className="flex items-center gap-3 flex-1 justify-end ml-4">
+                        <div className="flex items-center gap-2 flex-1 justify-end ml-2 md:ml-4">
                             <div className="relative group w-full max-w-[350px]">
-                                <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 transition-colors group-focus-within:text-indigo-600" size={18} />
+                                <Search className="absolute left-3 md:left-4 top-1/2 -translate-y-1/2 text-slate-400 transition-colors group-focus-within:text-indigo-600" size={16} />
                                 <input
                                     type="text"
-                                    className="w-full pl-11 pr-4 py-3 bg-white/80 border border-slate-200/60 rounded-2xl focus:ring-4 focus:ring-indigo-500/5 focus:border-indigo-500/50 outline-none text-slate-700 font-medium transition-all"
-                                    placeholder="Buscar producto por nombre o SKU..."
+                                    className="w-full pl-9 md:pl-11 pr-3 py-2 md:py-3 bg-white/80 border border-slate-200/60 rounded-xl md:rounded-2xl focus:ring-4 focus:ring-indigo-500/5 focus:border-indigo-500/50 outline-none text-slate-700 text-sm md:text-base font-medium transition-all"
+                                    placeholder="Buscar..."
                                     value={searchTerm}
                                     onChange={e => setSearchTerm(e.target.value)}
                                 />
@@ -251,16 +255,15 @@ export default function PointOfSalePage() {
                         </div>
                     </div>
 
-                    {/* CATEGORIES ROW */}
-                    <div className="flex items-center gap-3 overflow-x-auto pb-2 custom-scrollbar shrink-0">
+                    <div className="flex items-center gap-2 overflow-x-auto pb-1 px-1 custom-scrollbar shrink-0 no-scrollbar">
                         <button
                             onClick={() => setSelectedCategory(null)}
-                            className={`px-6 py-3 rounded-2xl border transition-all flex items-center gap-2 whitespace-nowrap group font-bold text-sm tracking-tight ${selectedCategory === null
+                            className={`px-4 md:px-6 py-2 md:py-3 rounded-xl md:rounded-2xl border transition-all flex items-center gap-2 whitespace-nowrap group font-bold text-xs md:text-sm tracking-tight ${selectedCategory === null
                                 ? 'bg-slate-900 text-white border-slate-900 shadow-xl shadow-slate-900/20'
                                 : 'bg-white/60 border-white/60 text-slate-600 hover:bg-white hover:border-slate-200'
                                 }`}
                         >
-                            <LayoutGrid size={16} className={selectedCategory === null ? 'text-indigo-400' : 'text-slate-400'} />
+                            <LayoutGrid size={14} className={selectedCategory === null ? 'text-indigo-400' : 'text-slate-400'} />
                             Todas
                         </button>
 
@@ -268,19 +271,20 @@ export default function PointOfSalePage() {
                             <button
                                 key={cat.id}
                                 onClick={() => setSelectedCategory(cat.id)}
-                                className={`px-6 py-3 rounded-2xl border transition-all flex items-center gap-2 whitespace-nowrap group font-bold text-sm tracking-tight ${selectedCategory === cat.id
+                                className={`px-4 md:px-6 py-2 md:py-3 rounded-xl md:rounded-2xl border transition-all flex items-center gap-2 whitespace-nowrap group font-bold text-xs md:text-sm tracking-tight ${selectedCategory === cat.id
                                     ? 'bg-indigo-600 text-white border-indigo-600 shadow-xl shadow-indigo-600/20'
                                     : 'bg-white/60 border-white/60 text-slate-600 hover:bg-white hover:border-slate-200'
                                     }`}
                             >
-                                <Tag size={16} className={selectedCategory === cat.id ? 'text-indigo-200' : 'text-slate-400 group-hover:text-indigo-500'} />
+                                <Tag size={14} className={selectedCategory === cat.id ? 'text-indigo-200' : 'text-slate-400 group-hover:text-indigo-50'} />
                                 {cat.name}
                             </button>
                         ))}
                     </div>
 
+
                     {/* PRODUCTS GRID (RESPONSIVE) */}
-                    <div className="grow overflow-y-auto pr-2 custom-scrollbar">
+                    <div className="grow md:overflow-y-auto pr-0 md:pr-2 custom-scrollbar">
                         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4 pb-4">
                             {loading ? (
                                 Array(6).fill(0).map((_, i) => (
@@ -331,10 +335,9 @@ export default function PointOfSalePage() {
                                                     <div className="flex justify-between items-end gap-2">
                                                         <div>
                                                             <div className="flex items-center gap-1.5">
-                                                                <Package size={12} className={product.stock <= 5 ? 'text-rose-500' : 'text-emerald-500'} />
-                                                                <p className={`text-[11px] font-black uppercase tracking-tight ${product.stock <= 5 ? 'text-rose-500' : 'text-emerald-600'
-                                                                    }`}>
-                                                                    {product.stock} {product.stock === 1 ? 'Disponible' : 'Disponibles'}
+                                                                <Package size={12} className={product.stock <= 5 ? 'text-rose-500' : 'text-indigo-500'} />
+                                                                <p className={`text-[11px] font-bold ${product.stock <= 5 ? 'text-rose-500' : 'text-slate-600'}`}>
+                                                                    Stock: {product.stock}
                                                                 </p>
                                                             </div>
                                                             <p className="text-lg font-black text-slate-900">${product.price.toFixed(2)}</p>
@@ -362,21 +365,46 @@ export default function PointOfSalePage() {
                     </div>
                 </div>
 
-                {/* RIGHT COLUMN: CART & CHECKOUT (FULL HEIGHT) */}
-                <div className="col-span-12 lg:col-span-5 xl:col-span-4 2xl:col-span-3 flex flex-col h-full min-h-0">
-                    <div className="h-full flex flex-col bg-white/60 backdrop-blur-xl rounded-[2.5rem] border border-white/60 shadow-2xl shadow-indigo-500/5 overflow-hidden min-h-0">
+                {/* RIGHT COLUMN: CART & CHECKOUT (Responsive: Floating Modal on Mobile, Column on Desktop) */}
+                <div
+                    id="cart-section"
+                    className={`
+                        fixed top-0 left-0 w-full h-full z-[100] bg-white flex flex-col transition-transform duration-500 md:static md:z-auto md:w-auto md:h-full md:bg-transparent md:col-span-5 xl:col-span-4 2xl:col-span-3 md:translate-y-0
+                        ${isMobileCartOpen ? 'translate-y-0' : 'translate-y-full md:translate-y-0'}
+                    `}
+                >
+                    <div className="h-full flex flex-col bg-white md:bg-white/60 landscape:md:bg-white/60 backdrop-blur-xl md:rounded-[2.5rem] border-t md:border border-white/60 shadow-2xl shadow-indigo-500/5 overflow-hidden min-h-0">
+
+                        {/* Mobile Cart Header (Only visible on mobile) */}
+                        <div className="md:hidden flex items-center justify-between p-4 border-b border-indigo-50 bg-white shadow-sm shrink-0">
+                            <button
+                                onClick={() => setIsMobileCartOpen(false)}
+                                className="flex items-center gap-1 text-indigo-600 font-bold px-3 py-1.5 bg-indigo-50 rounded-xl active:scale-95 transition-all"
+                            >
+                                <ChevronRight className="rotate-180" size={18} strokeWidth={3} />
+                                <span className="text-sm">Volver</span>
+                            </button>
+
+                            <h2 className="text-base font-black text-slate-800 flex items-center gap-2">
+                                <ShoppingCart size={18} className="text-indigo-600" />
+                                Carrito
+                                <span className="bg-rose-500 text-white text-[10px] w-5 h-5 rounded-full flex items-center justify-center font-black">
+                                    {cart.length}
+                                </span>
+                            </h2>
+
+                            <div className="w-16"></div> {/* Spacer for balance */}
+                        </div>
+
 
                         {/* Consumidor Final Toggle */}
                         <div className="p-6 border-b border-indigo-100/30">
                             <div className="flex items-center justify-between bg-white p-4 rounded-3xl border border-indigo-50 shadow-sm">
-                                <div className="flex items-center gap-4">
-                                    <div className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-colors ${selectedClient?.cedulaRuc === '9999999999' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/30' : 'bg-slate-100 text-slate-400'}`}>
-                                        <User size={20} />
+                                <div className="flex items-center gap-3">
+                                    <div className={`w-8 h-8 rounded-xl flex items-center justify-center transition-colors ${selectedClient?.cedulaRuc === '9999999999' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/30' : 'bg-slate-100 text-slate-400'}`}>
+                                        <User size={14} />
                                     </div>
-                                    <div className="min-w-0">
-                                        <p className="text-base font-black text-slate-800 leading-none">Consumidor Final</p>
-                                        <p className="text-xs text-slate-400 font-bold uppercase mt-1.5 tracking-wider">9999999999</p>
-                                    </div>
+                                    <p className="text-sm font-bold text-slate-800">Consumidor Final</p>
                                 </div>
                                 <label className="relative inline-flex items-center cursor-pointer">
                                     <input
@@ -396,42 +424,44 @@ export default function PointOfSalePage() {
                                 </label>
                             </div>
 
-                            {selectedClient && selectedClient.cedulaRuc !== '9999999999' && (
-                                <div className="mt-4 flex items-center gap-4 bg-white p-4 rounded-2xl border border-indigo-50 shadow-sm animate-scale-in">
-                                    <div className="w-10 h-10 rounded-xl bg-indigo-50 flex items-center justify-center text-indigo-600">
-                                        <User size={18} />
+                            {/* Client Selector (Hidden when CF is active) */}
+                            {selectedClient?.cedulaRuc !== '9999999999' && (
+                                <div className="mt-3 flex items-center gap-3 bg-white p-3 rounded-2xl border border-indigo-50 shadow-sm animate-scale-in">
+                                    <div className="w-8 h-8 rounded-lg bg-indigo-50 flex items-center justify-center text-indigo-600">
+                                        <User size={14} />
                                     </div>
                                     <div className="grow min-w-0">
-                                        <p className="text-sm font-black text-slate-800 truncate">{selectedClient.name}</p>
-                                        <p className="text-[10px] font-bold text-indigo-400 uppercase tracking-widest mt-0.5">{selectedClient.cedulaRuc}</p>
+                                        <p className="text-[11px] font-black text-slate-800 truncate uppercase tracking-tight">{selectedClient?.name}</p>
+                                        <p className="text-[9px] font-bold text-indigo-400 tracking-widest">{selectedClient?.cedulaRuc}</p>
                                     </div>
-                                    <button onClick={() => setSelectedClient(null)} className="p-2 text-slate-300 hover:text-rose-500 hover:bg-rose-50 rounded-xl transition-all">
-                                        <X size={18} />
+                                    <button onClick={() => setSelectedClient(null)} className="p-1.5 text-slate-300 hover:text-rose-500 hover:bg-rose-50 rounded-lg transition-all">
+                                        <X size={14} />
                                     </button>
                                 </div>
                             )}
 
+                            {/* Client Search (Search triggered if no client is selected or if we want to change) */}
                             {!selectedClient && (
-                                <div className="mt-4 flex gap-3">
+                                <div className="mt-3 flex gap-2">
                                     <div className="relative grow">
-                                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
+                                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={14} />
                                         <input
                                             type="text"
-                                            className="w-full pl-11 pr-4 py-3 bg-white border border-slate-100 rounded-2xl text-sm focus:ring-4 focus:ring-indigo-500/5 focus:border-indigo-500/50 outline-none transition-all placeholder:text-slate-400"
-                                            placeholder="Buscar otro cliente..."
+                                            className="w-full pl-9 pr-4 py-2.5 bg-white border border-slate-100 rounded-xl text-xs focus:ring-4 focus:ring-indigo-500/5 focus:border-indigo-500/50 outline-none transition-all placeholder:text-slate-400"
+                                            placeholder="Buscar cliente..."
                                             value={clientSearch}
                                             onChange={e => setClientSearch(e.target.value)}
                                         />
                                         {clientSearch && (
-                                            <div className="absolute top-full left-0 right-0 bg-white border border-slate-200 rounded-2xl mt-2 shadow-2xl z-30 max-h-48 overflow-y-auto p-2 space-y-1">
+                                            <div className="absolute top-full left-0 right-0 bg-white border border-slate-200 rounded-xl mt-1 shadow-2xl z-30 max-h-40 overflow-y-auto p-1.5 space-y-1">
                                                 {filteredClients.map(client => (
                                                     <div
                                                         key={client.id}
-                                                        className="p-3 hover:bg-indigo-50 rounded-xl cursor-pointer transition-colors group"
+                                                        className="p-2 hover:bg-indigo-50 rounded-lg cursor-pointer transition-colors group"
                                                         onClick={() => { setSelectedClient(client); setClientSearch(''); }}
                                                     >
-                                                        <div className="font-bold text-slate-800 text-sm group-hover:text-indigo-600">{client.name}</div>
-                                                        <div className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">{client.cedulaRuc}</div>
+                                                        <div className="font-bold text-slate-800 text-[11px] group-hover:text-indigo-600">{client.name}</div>
+                                                        <div className="text-[9px] text-slate-400 font-bold uppercase tracking-widest">{client.cedulaRuc}</div>
                                                     </div>
                                                 ))}
                                             </div>
@@ -439,10 +469,9 @@ export default function PointOfSalePage() {
                                     </div>
                                     <button
                                         onClick={() => setIsClientModalOpen(true)}
-                                        className="p-3 bg-white border border-slate-100 rounded-2xl text-indigo-600 hover:bg-indigo-50 transition-all shadow-sm flex items-center justify-center shrink-0"
-                                        title="Registrar nuevo cliente"
+                                        className="p-2.5 bg-white border border-slate-100 rounded-xl text-indigo-600 hover:bg-indigo-50 transition-all shadow-sm flex items-center justify-center shrink-0"
                                     >
-                                        <Plus size={20} strokeWidth={3} />
+                                        <Plus size={16} strokeWidth={3} />
                                     </button>
                                 </div>
                             )}
@@ -460,7 +489,7 @@ export default function PointOfSalePage() {
                                 </div>
                             ) : (
                                 cart.map(item => (
-                                    <div key={item.product.id} className="flex gap-4 p-3 bg-white/50 hover:bg-white rounded-2xl transition-all border border-transparent hover:border-slate-100 hover:shadow-sm">
+                                    <div key={item.product.id} className="group flex gap-3 p-3 bg-white/40 hover:bg-white rounded-2xl transition-all border border-transparent hover:border-indigo-50 hover:shadow-sm">
                                         <div className="h-12 w-12 bg-white rounded-xl p-1 shrink-0 border border-slate-100 flex items-center justify-center">
                                             {item.product.images?.[0] ? (
                                                 <img src={item.product.images[0].url} alt="" className="w-full h-full object-contain mix-blend-multiply" />
@@ -468,29 +497,28 @@ export default function PointOfSalePage() {
                                         </div>
 
                                         <div className="grow min-w-0 flex flex-col justify-center gap-1">
-                                            <h4 className="font-bold text-slate-700 text-sm truncate leading-tight">{item.product.name}</h4>
+                                            <h4 className="font-bold text-slate-800 text-[13px] truncate leading-tight">{item.product.name}</h4>
                                             <div className="flex items-center gap-2">
-                                                <div className="flex items-center gap-1 bg-slate-50 rounded-lg px-2 py-0.5 border border-slate-100 focus-within:border-indigo-300 focus-within:ring-2 focus-within:ring-indigo-100 transition-all">
-                                                    <span className="text-xs text-slate-400">$</span>
+                                                <div className="flex items-center gap-0.5 bg-slate-50 px-1.5 py-0.5 rounded-lg border border-slate-100 focus-within:border-indigo-300 transition-all">
+                                                    <span className="text-[10px] font-bold text-slate-400">$</span>
                                                     <input
                                                         type="number"
                                                         value={item.price}
                                                         onChange={(e) => updatePrice(item.product.id, parseFloat(e.target.value) || 0)}
-                                                        className="w-14 bg-transparent text-xs font-bold text-slate-700 outline-none"
+                                                        className="w-12 bg-transparent text-[11px] font-bold text-indigo-600 outline-none"
                                                     />
                                                 </div>
-                                                <span className="text-xs text-slate-300">x</span>
-                                                <div className="flex items-center bg-white rounded-lg border border-slate-100">
-                                                    <button onClick={() => updateQuantity(item.product.id, -1)} className="w-6 h-6 flex items-center justify-center text-slate-400 hover:text-indigo-600 transition-colors"><Minus size={12} /></button>
-                                                    <span className="text-xs font-bold w-4 text-center text-slate-700">{item.quantity}</span>
-                                                    <button onClick={() => updateQuantity(item.product.id, 1)} className="w-6 h-6 flex items-center justify-center text-slate-400 hover:text-indigo-600 transition-colors"><Plus size={12} /></button>
+                                                <div className="flex items-center bg-white rounded-lg border border-slate-100 p-0.5 shadow-sm">
+                                                    <button onClick={() => updateQuantity(item.product.id, -1)} className="w-6 h-6 flex items-center justify-center text-slate-400 hover:text-indigo-600 transition-colors"><Minus size={10} strokeWidth={3} /></button>
+                                                    <span className="text-xs font-bold w-5 text-center text-slate-700">{item.quantity}</span>
+                                                    <button onClick={() => updateQuantity(item.product.id, 1)} className="w-6 h-6 flex items-center justify-center text-slate-400 hover:text-indigo-600 transition-colors"><Plus size={10} strokeWidth={3} /></button>
                                                 </div>
                                             </div>
                                         </div>
 
-                                        <div className="flex flex-col items-end justify-between">
-                                            <button onClick={() => removeFromCart(item.product.id)} className="text-slate-300 hover:text-rose-500 transition-colors p-1"><Trash2 size={14} /></button>
-                                            <span className="font-bold text-slate-800 text-sm">${(item.price * item.quantity).toFixed(2)}</span>
+                                        <div className="flex flex-col items-end justify-between py-0.5">
+                                            <button onClick={() => removeFromCart(item.product.id)} className="text-rose-300 hover:text-rose-500 transition-colors p-1"><Trash2 size={14} /></button>
+                                            <span className="font-bold text-slate-900 text-sm tracking-tight">${(item.price * item.quantity).toFixed(2)}</span>
                                         </div>
                                     </div>
                                 ))
@@ -606,6 +634,21 @@ export default function PointOfSalePage() {
                 onClose={() => setIsDetailsModalOpen(false)}
                 sale={completedSale}
             />
+
+            {cart.length > 0 && !isMobileCartOpen && (
+                <button
+                    onClick={() => setIsMobileCartOpen(true)}
+                    className="fixed bottom-6 right-6 md:hidden z-30 bg-indigo-600 text-white p-4 rounded-full shadow-2xl shadow-indigo-600/40 animate-bounce-subtle flex items-center gap-2 group"
+                >
+                    <div className="relative">
+                        <ShoppingCart size={24} />
+                        <span className="absolute -top-2 -right-2 bg-rose-500 text-[10px] w-5 h-5 rounded-full flex items-center justify-center font-black border-2 border-white">
+                            {cart.length}
+                        </span>
+                    </div>
+                    <span className="font-bold text-sm tracking-tight pr-2">Ver Carrito</span>
+                </button>
+            )}
 
             <ConfirmModal
                 isOpen={isClosedSessionModalOpen}
