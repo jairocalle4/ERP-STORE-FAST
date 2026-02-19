@@ -20,7 +20,12 @@ public class ProductsController : ControllerBase
 
     [HttpGet]
     [AllowAnonymous] // Public for PWA
-    public async Task<ActionResult<IEnumerable<Product>>> GetProducts([FromQuery] bool includeInactive = false)
+    public async Task<ActionResult<IEnumerable<Product>>> GetProducts(
+        [FromQuery] bool includeInactive = false,
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 1000,
+        [FromQuery] int? categoryId = null,
+        [FromQuery] string? search = null) 
     {
         var query = _context.Products
             .Include(p => p.Category)
@@ -33,7 +38,27 @@ public class ProductsController : ControllerBase
             query = query.Where(p => p.IsActive);
         }
 
-        return await query.ToListAsync();
+        if (categoryId.HasValue)
+        {
+            query = query.Where(p => p.CategoryId == categoryId.Value);
+        }
+
+        if (!string.IsNullOrEmpty(search))
+        {
+            var searchLower = search.ToLower();
+            query = query.Where(p => p.Name.ToLower().Contains(searchLower) 
+                || (p.Description != null && p.Description.ToLower().Contains(searchLower))
+                || (p.SKU != null && p.SKU.ToLower().Contains(searchLower)));
+        }
+
+        if (page < 1) page = 1;
+        if (pageSize < 1) pageSize = 10;
+
+        return await query
+            .OrderByDescending(p => p.Id)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync();
     }
 
     [HttpGet("{id}")]

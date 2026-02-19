@@ -19,6 +19,7 @@ public class CompanySettingsController : ControllerBase
         _context = context;
     }
 
+    [AllowAnonymous]
     [HttpGet]
     public async Task<ActionResult<CompanySetting>> GetSettings()
     {
@@ -69,6 +70,7 @@ public class CompanySettingsController : ControllerBase
         settings.SmtpPort = dto.SmtpPort;
         settings.SmtpUser = dto.SmtpUser;
         settings.SmtpPass = dto.SmtpPass;
+        settings.CoverImageUrl = dto.CoverImageUrl;
         settings.UpdatedAt = DateTime.UtcNow;
 
         await _context.SaveChangesAsync();

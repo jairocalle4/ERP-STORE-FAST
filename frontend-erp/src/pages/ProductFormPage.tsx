@@ -50,7 +50,8 @@ export default function ProductFormPage() {
         subcategoryId: 0,
         isActive: true,
         videoUrl: '',
-        minStock: 3
+        minStock: 3,
+        discountPercentage: 0
     });
 
     const [images, setImages] = useState<ProductImage[]>([]);
@@ -108,7 +109,8 @@ export default function ProductFormPage() {
                 subcategoryId: data.subcategoryId || 0,
                 isActive: data.isActive,
                 videoUrl: data.videoUrl || '',
-                minStock: data.minStock || 3
+                minStock: data.minStock || 3,
+                discountPercentage: data.discountPercentage || 0
             });
 
             if (data.categoryId) fetchSubcategories(data.categoryId);
@@ -200,6 +202,7 @@ export default function ProductFormPage() {
                 categoryId: Number(formData.categoryId),
                 subcategoryId: formData.subcategoryId ? Number(formData.subcategoryId) : null,
                 minStock: Number(formData.minStock),
+                discountPercentage: Number(formData.discountPercentage),
                 images: images
             };
 
@@ -332,7 +335,7 @@ export default function ProductFormPage() {
                             {/* Precios e Inventario */}
                             <GlassCard>
                                 <h2 className="text-xl font-bold mb-6 text-indigo-900 border-b border-indigo-100 pb-2">Precios e Inventario</h2>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-4">
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-4">
                                     <div>
                                         <label className="block text-sm font-semibold text-indigo-900/70 mb-2">
                                             Costo Compra ($) <span className="text-rose-500">*</span>
@@ -364,6 +367,23 @@ export default function ProductFormPage() {
                                             className={`w-full px-4 py-3 bg-white/50 border rounded-xl focus:ring-2 outline-none transition-all text-indigo-950 font-mono font-bold ${errors.price ? 'border-rose-400 focus:ring-rose-200' : 'border-indigo-100 focus:ring-indigo-500/50 focus:border-indigo-500'}`}
                                         />
                                         {errors.price && <p className="text-xs text-rose-500 font-bold mt-1 ml-1">{errors.price}</p>}
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-semibold text-indigo-900/70 mb-2">
+                                            Descuento (%)
+                                        </label>
+                                        <input
+                                            type="number"
+                                            value={formData.discountPercentage}
+                                            onChange={e => {
+                                                const val = e.target.value === '' ? 0 : parseInt(e.target.value);
+                                                setFormData({ ...formData, discountPercentage: val });
+                                            }}
+                                            className="w-full px-4 py-3 bg-white/50 border border-indigo-100 rounded-xl focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 outline-none transition-all text-indigo-950 font-mono"
+                                            placeholder="0"
+                                            min="0"
+                                            max="100"
+                                        />
                                     </div>
                                 </div>
                                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">

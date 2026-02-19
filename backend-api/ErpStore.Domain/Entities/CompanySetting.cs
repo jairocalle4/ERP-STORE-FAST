@@ -22,4 +22,7 @@ public class CompanySetting : BaseEntity
     public int SmtpPort { get; set; } = 587;
     public string? SmtpUser { get; set; }
     public string? SmtpPass { get; set; }
+
+    // SEO & Social Media
+    public string? CoverImageUrl { get; set; }
 }

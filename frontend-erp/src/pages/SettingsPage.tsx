@@ -152,6 +152,19 @@ export default function SettingsPage() {
                                     </div>
                                 </div>
                             </div>
+                            <div>
+                                <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-2 ml-1">URL Imagen Portada (SEO/Redes)</label>
+                                <input
+                                    type="text"
+                                    placeholder="https://ejemplo.com/imagen.jpg"
+                                    value={settings?.coverImageUrl || ''}
+                                    onChange={e => setSettings(s => s ? { ...s, coverImageUrl: e.target.value } : null)}
+                                    className="w-full px-4 py-3 bg-white/50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500/50 outline-none transition-all text-sm"
+                                />
+                                <p className="text-[10px] text-slate-400 mt-1 italic">
+                                    Esta imagen aparecerá al compartir tu tienda en redes sociales.
+                                </p>
+                            </div>
                         </div>
                     </GlassCard>
 
@@ -337,7 +350,7 @@ export default function SettingsPage() {
                         Guardar Configuración
                     </button>
                 </div>
-            </form>
-        </div>
+            </form >
+        </div >
     );
 }

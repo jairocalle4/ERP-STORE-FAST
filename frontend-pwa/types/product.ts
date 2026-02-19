@@ -17,4 +17,5 @@ export interface Product {
         isCover: boolean;
         order: number;
     }[];
+    discountPercentage?: number;
 }

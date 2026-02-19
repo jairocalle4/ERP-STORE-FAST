@@ -15,11 +15,38 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "FastStore | Tu Tienda Online Profesional",
+  title: {
+    default: "FastStore | Tu Tienda Online Profesional",
+    template: "%s | FastStore"
+  },
   description: "Descubre la mejor selección de productos con la mejor calidad y servicio. Envío rápido y pagos seguros.",
-  keywords: ["ecommerce", "tienda online", "productos premium", "FastStore"],
+  keywords: ["ecommerce", "tienda online", "productos premium", "FastStore", "tecnología", "moda", "hogar"],
   authors: [{ name: "FastStore Team" }],
   viewport: "width=device-width, initial-scale=1, maximum-scale=1",
+  themeColor: "#7c3aed",
+  manifest: "/manifest.json",
+  openGraph: {
+    type: "website",
+    locale: "es_ES",
+    url: "https://faststore.dominioprueba.com",
+    title: "FastStore | Tu Tienda Online Profesional",
+    description: "La mejor experiencia de compra online. Calidad, rapidez y seguridad en cada pedido.",
+    siteName: "FastStore",
+    images: [
+      {
+        url: "/og-image.jpg", // Necesitamos crear esta imagen
+        width: 1200,
+        height: 630,
+        alt: "FastStore Banner",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "FastStore | Tu Tienda Online Profesional",
+    description: "La mejor experiencia de compra online.",
+    images: ["/og-image.jpg"],
+  },
 };
 
 export default function RootLayout({
@@ -28,7 +55,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="es" className="scroll-smooth">
+    <html lang="es" className="scroll-smooth" suppressHydrationWarning>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased min-h-screen selection:bg-primary/30`}
       >

@@ -3,6 +3,7 @@ using System;
 using ErpStore.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -10,9 +11,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace ErpStore.Infrastructure.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260219161816_AddCoverImageUrlToCompanySettings")]
+    partial class AddCoverImageUrlToCompanySettings
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "9.0.1");
@@ -522,9 +525,6 @@ namespace ErpStore.Infrastructure.Migrations
                         .IsRequired()
                         .HasColumnType("TEXT");
 
-                    b.Property<int>("DiscountPercentage")
-                        .HasColumnType("INTEGER");
-
                     b.Property<bool>("IsActive")
                         .HasColumnType("INTEGER");
 
@@ -573,7 +573,6 @@ namespace ErpStore.Infrastructure.Migrations
                             Cost = 900.00m,
                             CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Laptop de alto rendimiento",
-                            DiscountPercentage = 0,
                             IsActive = true,
                             MinStock = 3,
                             Name = "Laptop Gamer",
@@ -588,7 +587,6 @@ namespace ErpStore.Infrastructure.Migrations
                             Cost = 600.00m,
                             CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Teléfono inteligente",
-                            DiscountPercentage = 0,
                             IsActive = true,
                             MinStock = 3,
                             Name = "Smartphone X",
@@ -603,7 +601,6 @@ namespace ErpStore.Infrastructure.Migrations
                             Cost = 30.00m,
                             CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Cafetera automática",
-                            DiscountPercentage = 0,
                             IsActive = true,
                             MinStock = 3,
                             Name = "Cafetera",

@@ -18,6 +18,7 @@ export interface CompanySetting {
     smtpPort: number;
     smtpUser?: string;
     smtpPass?: string;
+    coverImageUrl?: string;
 }
 
 export interface CompanySettingDto {
@@ -37,6 +38,7 @@ export interface CompanySettingDto {
     smtpPort: number;
     smtpUser?: string;
     smtpPass?: string;
+    coverImageUrl?: string;
 }
 
 export const companyService = {

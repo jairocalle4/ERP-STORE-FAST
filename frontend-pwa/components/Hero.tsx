@@ -18,7 +18,7 @@ export default function Hero() {
                         <span className="text-[10px] uppercase font-bold tracking-[0.2em] text-muted-foreground">Colección 2026 Ya Disponible</span>
                     </div>
 
-                    <h1 className="text-6xl md:text-8xl font-outfit font-black leading-none tracking-tighter text-foreground">
+                    <h1 className="text-4xl sm:text-6xl md:text-8xl font-outfit font-black leading-none tracking-tighter text-foreground">
                         ESTILO QUE <br />
                         <span className="gradient-text">TE DEFINE.</span>
                     </h1>
@@ -27,26 +27,26 @@ export default function Hero() {
                         Explora una selección única de productos diseñados para elevar tu día a día. Calidad sin compromisos, Directo a tu puerta.
                     </p>
 
-                    <div className="flex flex-wrap gap-4 pt-4">
-                        <Link href="/catalog" className="premium-button px-10 py-5 rounded-2xl flex items-center gap-3 shadow-2xl shadow-primary/30 group">
+                    <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 pt-4">
+                        <Link href="/catalog" className="premium-button px-6 sm:px-10 py-4 sm:py-5 rounded-2xl flex items-center justify-center gap-3 shadow-2xl shadow-primary/30 group">
                             <span>Comprar Ahora</span>
-                            <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" />
+                            <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
                         </Link>
-                        <Link href="/catalog" className="bg-white hover:bg-slate-50 text-foreground px-10 py-5 rounded-2xl font-bold flex items-center gap-3 shadow-lg shadow-black/5 transition-all active:scale-95 border border-slate-100">
-                            <ShoppingBag size={20} />
+                        <Link href="/catalog" className="bg-white hover:bg-slate-50 text-foreground px-6 sm:px-10 py-4 sm:py-5 rounded-2xl font-bold flex items-center justify-center gap-3 shadow-lg shadow-black/5 transition-all active:scale-95 border border-slate-100">
+                            <ShoppingBag size={18} />
                             <span>Ver Ofertas</span>
                         </Link>
                     </div>
 
-                    <div className="flex items-center gap-8 pt-6">
+                    <div className="flex items-center gap-6 sm:gap-8 pt-4 sm:pt-6">
                         <div>
-                            <p className="text-3xl font-outfit font-black text-foreground">15k+</p>
-                            <p className="text-xs text-muted-foreground uppercase font-bold tracking-widest">Clientes</p>
+                            <p className="text-2xl sm:text-3xl font-outfit font-black text-foreground">15k+</p>
+                            <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-widest">Clientes</p>
                         </div>
                         <div className="w-px h-10 bg-slate-200"></div>
                         <div>
-                            <p className="text-3xl font-outfit font-black text-foreground">98%</p>
-                            <p className="text-xs text-muted-foreground uppercase font-bold tracking-widest">Satisfechos</p>
+                            <p className="text-2xl sm:text-3xl font-outfit font-black text-foreground">98%</p>
+                            <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-widest">Satisfechos</p>
                         </div>
                     </div>
                 </div>
@@ -56,8 +56,8 @@ export default function Hero() {
                     <div className="relative z-10 w-full aspect-square rounded-[3rem] overflow-hidden shadow-2xl rotate-3 hover:rotate-0 transition-transform duration-700">
                         {/* Note: I'll use a high-quality placeholder since image generation failed */}
                         <img
-                            src="https://images.unsplash.com/photo-1441986300917-64674bd600d8?q=80&w=1000&auto=format&fit=crop"
-                            alt="Luxury Fashion Store"
+                            src="https://images.unsplash.com/photo-1550009158-9ebf69173e03?q=80&w=1000&auto=format&fit=crop"
+                            alt="Tecnología y Accesorios"
                             className="w-full h-full object-cover scale-110 hover:scale-100 transition-transform duration-1000"
                         />
                         <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent"></div>

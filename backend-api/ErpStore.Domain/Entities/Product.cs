@@ -25,4 +25,5 @@ public class Product : BaseEntity
     public Category? Category { get; set; }
     public Subcategory? Subcategory { get; set; }
     public ICollection<ProductImage> Images { get; set; } = new List<ProductImage>();
+    public int DiscountPercentage { get; set; } = 0;
 }

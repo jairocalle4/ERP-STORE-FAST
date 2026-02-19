@@ -73,21 +73,21 @@ export default function Home() {
         {/* Categories / Filter Section Quick Access (Optional) */}
 
         {/* Why Choose Us */}
-        <section className="py-24 bg-white">
+        <section className="py-12 md:py-24 bg-white">
           <div className="max-w-7xl mx-auto px-6">
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-12">
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-8 md:gap-12">
               {[
                 { icon: Truck, title: "Envío Veloz", desc: "Entrega garantizada en menos de 24 horas." },
                 { icon: ShieldCheck, title: "Pago Seguro", desc: "Tus transacciones están 100% protegidas." },
-                { icon: Star, title: "Calidad Premium", desc: "Solo productos curados con los mejores estándares." },
+                { icon: Star, title: "Variedad para Todos", desc: "Productos de todo tipo y calidad que se ajustan a ti y a tu presupuesto." },
                 { icon: Zap, title: "Soporte 24/7", desc: "Estamos aquí para ayudarte en cualquier momento." },
               ].map((feature, i) => (
-                <div key={i} className="space-y-4 group">
-                  <div className="w-14 h-14 rounded-2xl bg-slate-50 flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-white transition-all duration-500 shadow-sm">
-                    <feature.icon size={28} />
+                <div key={i} className="space-y-3 md:space-y-4 group">
+                  <div className="w-12 h-12 md:w-14 md:h-14 rounded-2xl bg-slate-50 flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-white transition-all duration-500 shadow-sm">
+                    <feature.icon size={24} className="md:w-7 md:h-7" />
                   </div>
-                  <h3 className="font-outfit font-bold text-lg">{feature.title}</h3>
-                  <p className="text-muted-foreground text-sm leading-relaxed">{feature.desc}</p>
+                  <h3 className="font-outfit font-bold text-base md:text-lg">{feature.title}</h3>
+                  <p className="text-muted-foreground text-[11px] md:text-sm leading-relaxed line-clamp-2 md:line-clamp-none">{feature.desc}</p>
                 </div>
               ))}
             </div>
@@ -95,7 +95,7 @@ export default function Home() {
         </section>
 
         {/* Product Grid Section */}
-        <section id="products" className="py-24 bg-slate-50/50">
+        <section id="products" className="py-12 md:py-24 bg-slate-50/50">
           <div className="max-w-7xl mx-auto px-6">
             <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-16">
               <div className="space-y-4">
