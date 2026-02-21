@@ -20,13 +20,31 @@ public class CategoriesController : ControllerBase
 
     [HttpGet]
     [AllowAnonymous]
-    public async Task<ActionResult<IEnumerable<Category>>> GetCategories()
+    public async Task<ActionResult<IEnumerable<Category>>> GetCategories([FromQuery] bool onlyWithProducts = false)
     {
-        return await _context.Categories
-            .Include(c => c.Products)
+        if (onlyWithProducts)
+        {
+            // Get IDs of categories that have at least one active product
+            var categoryIdsWithProducts = await _context.Products
+                .Where(p => p.IsActive)
+                .Select(p => p.CategoryId)
+                .Distinct()
+                .ToListAsync();
+
+            var filteredCategories = await _context.Categories
+                .Include(c => c.Subcategories.Where(s => s.IsActive))
+                .Where(c => c.IsActive && categoryIdsWithProducts.Contains(c.Id))
+                .ToListAsync();
+
+            return Ok(filteredCategories);
+        }
+
+        var allCategories = await _context.Categories
             .Include(c => c.Subcategories.Where(s => s.IsActive))
             .Where(c => c.IsActive)
             .ToListAsync();
+
+        return Ok(allCategories);
     }
 
     [HttpGet("{id}")]

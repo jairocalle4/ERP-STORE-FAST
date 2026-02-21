@@ -1,14 +1,18 @@
 import { useEffect, useState } from 'react';
-import { Building2, Save, MapPin, Phone, Mail, Hash, Calendar, ShieldCheck } from 'lucide-react';
+import { Building2, Save, MapPin, Phone, Mail, Hash, Calendar, ShieldCheck, Eye, EyeOff } from 'lucide-react';
 import { GlassCard } from '../components/common/GlassCard';
 import { companyService } from '../services/company.service';
 import type { CompanySetting } from '../services/company.service';
 import { useNotificationStore } from '../store/useNotificationStore';
+import api from '../services/api';
 
 export default function SettingsPage() {
     const [settings, setSettings] = useState<CompanySetting | null>(null);
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
+    const [showSmtpPass, setShowSmtpPass] = useState(false);
+    const [testingEmail, setTestingEmail] = useState(false);
+    const [testEmailResult, setTestEmailResult] = useState<{ ok: boolean; msg: string; detail?: string } | null>(null);
     const addNotification = useNotificationStore(state => state.addNotification);
 
     useEffect(() => {
@@ -153,7 +157,7 @@ export default function SettingsPage() {
                                 </div>
                             </div>
                             <div>
-                                <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-2 ml-1">URL Imagen Portada (SEO/Redes)</label>
+                                <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-2 ml-1">Imagen de Portada (Hero de la Tienda)</label>
                                 <input
                                     type="text"
                                     placeholder="https://ejemplo.com/imagen.jpg"
@@ -162,8 +166,19 @@ export default function SettingsPage() {
                                     className="w-full px-4 py-3 bg-white/50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500/50 outline-none transition-all text-sm"
                                 />
                                 <p className="text-[10px] text-slate-400 mt-1 italic">
-                                    Esta imagen aparecerá al compartir tu tienda en redes sociales.
+                                    ⚡ Esta imagen aparece como foto principal en la tienda online y al compartir en redes sociales.
                                 </p>
+                                {settings?.coverImageUrl && (
+                                    <div className="mt-3 rounded-xl overflow-hidden border border-slate-200 shadow-sm">
+                                        <img
+                                            src={settings.coverImageUrl}
+                                            alt="Vista previa"
+                                            className="w-full h-32 object-cover"
+                                            onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                                        />
+                                        <p className="text-[10px] text-slate-400 text-center py-1.5 bg-slate-50">Vista previa de la imagen</p>
+                                    </div>
+                                )}
                             </div>
                         </div>
                     </GlassCard>
@@ -250,17 +265,104 @@ export default function SettingsPage() {
                             </div>
                             <div className="md:col-span-2">
                                 <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-2 ml-1">Contraseña de Aplicación</label>
-                                <input
-                                    type="password"
-                                    placeholder="••••••••••••••••"
-                                    value={settings?.smtpPass || ''}
-                                    onChange={e => setSettings(s => s ? { ...s, smtpPass: e.target.value } : null)}
-                                    className="w-full px-4 py-3 bg-white/50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500/50 outline-none transition-all text-sm"
-                                />
+                                <div className="relative">
+                                    <input
+                                        type={showSmtpPass ? 'text' : 'password'}
+                                        placeholder="••••••••••••••••"
+                                        value={settings?.smtpPass || ''}
+                                        onChange={e => setSettings(s => s ? { ...s, smtpPass: e.target.value } : null)}
+                                        className="w-full pr-12 pl-4 py-3 bg-white/50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500/50 outline-none transition-all text-sm font-mono"
+                                    />
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowSmtpPass(v => !v)}
+                                        className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-slate-300 hover:text-indigo-500 transition-colors rounded-lg"
+                                        title={showSmtpPass ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+                                    >
+                                        {showSmtpPass ? <EyeOff size={18} /> : <Eye size={18} />}
+                                    </button>
+                                </div>
                                 <p className="text-[10px] text-slate-400 mt-2 italic leading-relaxed">
                                     <span className="font-bold text-indigo-600">⚠ Muy Importante:</span> En Gmail y Outlook no se usa su clave normal. Debe generar una <span className="underline">Contraseña de Aplicación</span> en la cuenta de Google/Microsoft.
                                 </p>
                             </div>
+
+                            {/* Brevo API Key — solución cuando el ISP bloquea SMTP */}
+                            <div className="md:col-span-2 p-4 rounded-2xl bg-violet-50 border border-violet-100">
+                                <div className="flex items-start gap-3 mb-3">
+                                    <div className="w-8 h-8 rounded-lg bg-violet-100 flex items-center justify-center shrink-0 mt-0.5">
+                                        <Mail size={16} className="text-violet-600" />
+                                    </div>
+                                    <div>
+                                        <h4 className="font-black text-violet-800 text-sm">🚀 Brevo API Key — Recomendado</h4>
+                                        <p className="text-[11px] text-violet-600 mt-0.5 leading-relaxed">
+                                            Si el SMTP no funciona (error de conexión), es porque tu proveedor de internet bloquea los puertos 587/465.
+                                            Usa <strong>Brevo</strong> (antes Sendinblue) — gratuito hasta 300 correos/día y funciona siempre.
+                                            <a href="https://app.brevo.com/settings/keys/api" target="_blank" rel="noopener noreferrer" className="ml-1 underline font-bold hover:text-violet-800">
+                                                → Obtener API Key gratis
+                                            </a>
+                                        </p>
+                                    </div>
+                                </div>
+                                <label className="block text-xs font-black text-violet-500 uppercase tracking-widest mb-2">Brevo API Key</label>
+                                <input
+                                    type="text"
+                                    placeholder="xkeysib-xxxxxxxxxxxxxxxxxxxxxxxx..."
+                                    value={settings?.brevoApiKey || ''}
+                                    onChange={e => setSettings(s => s ? { ...s, brevoApiKey: e.target.value } : null)}
+                                    className="w-full px-4 py-3 bg-white border border-violet-200 rounded-xl focus:ring-2 focus:ring-violet-400/50 outline-none transition-all text-sm font-mono"
+                                />
+                                <p className="text-[10px] text-violet-500 mt-1.5 font-medium">
+                                    ✅ Si se configura aquí, se usa en lugar del SMTP para enviar correos (tiene prioridad).
+                                    El correo de envío será el configurado en "Usuario / Email de Envío".
+                                </p>
+                            </div>
+                        </div>
+
+                        {/* Test Email Button */}
+                        <div className="pt-2 flex items-center gap-4 flex-wrap">
+
+                            <button
+                                type="button"
+                                onClick={async () => {
+                                    setTestingEmail(true);
+                                    setTestEmailResult(null);
+                                    try {
+                                        const res = await api.post('/notifications/test-email');
+                                        setTestEmailResult({ ok: true, msg: res.data.message });
+                                    } catch (e: any) {
+                                        const errData = e?.response?.data;
+                                        if (errData) {
+                                            setTestEmailResult({ ok: false, msg: errData.error, detail: errData.detail });
+                                        } else {
+                                            setTestEmailResult({ ok: false, msg: 'No se pudo conectar. Verifica que el backend esté corriendo.' });
+                                        }
+                                    } finally {
+                                        setTestingEmail(false);
+                                    }
+                                }}
+                                disabled={testingEmail}
+                                className="flex items-center gap-2 px-5 py-2.5 bg-indigo-50 border border-indigo-200 text-indigo-700 hover:bg-indigo-100 rounded-xl font-black text-xs uppercase tracking-widest transition-all disabled:opacity-50 active:scale-95"
+                            >
+                                {testingEmail ? (
+                                    <div className="w-4 h-4 border-2 border-indigo-300 border-t-indigo-600 rounded-full animate-spin" />
+                                ) : (
+                                    <Mail size={15} />
+                                )}
+                                {testingEmail ? 'Enviando...' : 'Enviar Correo de Prueba'}
+                            </button>
+
+                            {testEmailResult && (
+                                <div className={`flex-1 px-4 py-2.5 rounded-xl text-sm font-bold border ${testEmailResult.ok
+                                    ? 'bg-emerald-50 border-emerald-200 text-emerald-700'
+                                    : 'bg-rose-50 border-rose-200 text-rose-700'
+                                    }`}>
+                                    {testEmailResult.ok ? '✅ ' : '❌ '}{testEmailResult.msg}
+                                    {testEmailResult.detail && (
+                                        <p className="text-[11px] font-normal mt-0.5 opacity-80">{testEmailResult.detail}</p>
+                                    )}
+                                </div>
+                            )}
                         </div>
                     </GlassCard>
 

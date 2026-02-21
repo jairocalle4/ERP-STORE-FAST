@@ -24,58 +24,13 @@ public class NotificationsController : ControllerBase
     [HttpGet]
     public async Task<ActionResult<List<Notification>>> GetNotifications()
     {
-        await EnsureLowStockNotifications();
+        // Disparar procesamiento de stock bajo (consolidado en el servicio)
+        await _emailService.ProcessLowStockAlertsAsync();
         
         return await _context.Notifications
             .OrderByDescending(n => n.CreatedAt)
             .Take(50)
             .ToListAsync();
-    }
-
-    private async Task EnsureLowStockNotifications()
-    {
-        // Find products with low stock that don't have an unread notification
-        var lowStockProducts = await _context.Products
-            .Where(p => p.Stock > 0 && p.Stock <= p.MinStock)
-            .ToListAsync();
-
-        if (!lowStockProducts.Any()) return;
-
-        var settings = await _context.CompanySettings.FirstOrDefaultAsync();
-        var recipient = settings?.Email ?? settings?.SmtpUser;
-
-        foreach (var product in lowStockProducts)
-        {
-            var hasUnread = await _context.Notifications
-                .AnyAsync(n => n.Link == "/products?stock=low" && n.Message.Contains(product.Name) && !n.IsRead);
-
-            if (!hasUnread)
-            {
-                _context.Notifications.Add(new Notification
-                {
-                    Title = "Stock Bajo",
-                    Message = $"El producto {product.Name} ha llegado a su nivel mínimo ({product.Stock} restantes).",
-                    Type = "Warning",
-                    Link = "/products?stock=low",
-                    CreatedAt = DateTime.UtcNow
-                });
-
-                // Send Email for new notification
-                if (settings != null && !string.IsNullOrEmpty(recipient))
-                {
-                    await _emailService.SendEmailAsync(
-                        recipient, 
-                        "ALERTA: Stock Bajo - " + product.Name, 
-                        $"<h3>Alerta de Inventario</h3><p>El producto <b>{product.Name}</b> ha llegado a su nivel mínimo ({product.MinStock}).</p><p>Stock actual: <b>{product.Stock}</b></p><br/><p>Por favor, revise su inventario.</p>"
-                    );
-                }
-            }
-        }
-
-        if (_context.ChangeTracker.HasChanges())
-        {
-            await _context.SaveChangesAsync();
-        }
     }
 
     [HttpGet("unread-count")]
@@ -122,5 +77,33 @@ public class NotificationsController : ControllerBase
         _context.Notifications.RemoveRange(all);
         await _context.SaveChangesAsync();
         return NoContent();
+    }
+
+    [HttpPost("test-email")]
+    public async Task<IActionResult> TestEmail()
+    {
+        var settings = await _context.CompanySettings.FirstOrDefaultAsync();
+
+        if (settings == null)
+            return BadRequest(new { error = "No hay configuración de empresa guardada." });
+
+        if (string.IsNullOrEmpty(settings.SmtpServer) && string.IsNullOrEmpty(settings.BrevoApiKey))
+            return BadRequest(new { error = "No hay método de envío configurado (SMTP o Brevo)." });
+
+        var recipient = settings.Email ?? settings.SmtpUser;
+
+        try
+        {
+            await _emailService.SendEmailAsync(
+                recipient,
+                "✅ Prueba de Correo - FASTSTORE ERP",
+                $"<h2>¡Correo de prueba exitoso!</h2><p>Este correo fue enviado desde <strong>FASTSTORE ERP</strong>.</p><p style='color:green;font-weight:bold'>✅ La configuración funciona correctamente.</p>"
+            );
+            return Ok(new { message = $"Correo de prueba enviado a: {recipient}" });
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new { error = $"Error al enviar: {ex.Message}", detail = ex.InnerException?.Message });
+        }
     }
 }

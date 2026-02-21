@@ -24,9 +24,8 @@ export default function Footer() {
 
     return (
         <footer className="bg-white border-t border-slate-100 pt-20 pb-10">
-            <div className="max-w-7xl mx-auto px-6 grid grid-cols-1 md:grid-cols-4 gap-12">
-                {/* Branding */}
-                <div className="space-y-6">
+            <div className="max-w-7xl mx-auto px-6 grid grid-cols-2 md:grid-cols-5 gap-10">
+                <div className="space-y-4 col-span-2 md:col-span-1">
                     <Link href="/" className="flex items-center gap-2">
                         <div className="w-8 h-8 rounded-lg premium-button flex items-center justify-center">
                             <ShoppingBag size={18} strokeWidth={2.5} />
@@ -36,7 +35,7 @@ export default function Footer() {
                         </span>
                     </Link>
                     <p className="text-muted-foreground text-sm leading-relaxed">
-                        Tu destino premium para productos de alta calidad. Innovación, estilo y servicio excepcional en cada clic.
+                        Tu destino premium para productos de calidad y servicios de software profesional.
                     </p>
                     {/* Social Media Hidden for now */}
                     {/* <div className="flex gap-4">
@@ -55,6 +54,16 @@ export default function Footer() {
                         <li><Link href="/about" className="text-sm text-muted-foreground hover:text-primary transition-colors">Sobre Nosotros</Link></li>
                         <li><Link href="/terms" className="text-sm text-muted-foreground hover:text-primary transition-colors">Términos y Condiciones</Link></li>
                         <li><Link href="/shipping" className="text-sm text-muted-foreground hover:text-primary transition-colors">Envíos y Devoluciones</Link></li>
+                    </ul>
+                </div>
+
+                {/* Services Links */}
+                <div>
+                    <h4 className="font-outfit font-bold text-foreground mb-6">Servicios</h4>
+                    <ul className="space-y-4">
+                        <li><Link href="/services" className="text-sm text-muted-foreground hover:text-primary transition-colors">Desarrollo de Software</Link></li>
+                        <li><Link href="/services" className="text-sm text-muted-foreground hover:text-primary transition-colors">Consultoría Tecnológica</Link></li>
+                        <li><Link href="/services#software" className="text-sm text-muted-foreground hover:text-primary transition-colors">Software en Venta</Link></li>
                     </ul>
                 </div>
 

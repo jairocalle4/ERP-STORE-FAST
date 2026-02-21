@@ -11,27 +11,15 @@ import Link from "next/link";
 
 export default function Home() {
   const [products, setProducts] = useState<Product[]>([]);
-  const [categories, setCategories] = useState<{ id: number, name: string }[]>([]);
-  const [selectedCategory, setSelectedCategory] = useState<string>("Todos");
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     async function fetchData() {
       try {
-        const [prodRes, catRes] = await Promise.all([
-          fetch("http://localhost:5140/api/v1/products"),
-          fetch("http://localhost:5140/api/v1/categories")
-        ]);
-
-        if (!prodRes.ok || !catRes.ok) throw new Error("Failed to fetch data");
-
-        const [prodData, catData] = await Promise.all([
-          prodRes.json(),
-          catRes.json()
-        ]);
-
+        const prodRes = await fetch("http://localhost:5140/api/v1/products");
+        if (!prodRes.ok) throw new Error("Failed to fetch products");
+        const prodData = await prodRes.json();
         setProducts(prodData);
-        setCategories(catData);
       } catch (error) {
         console.error(error);
       } finally {
@@ -55,13 +43,7 @@ export default function Home() {
     sessionStorage.setItem("home_scroll_pos", window.scrollY.toString());
   };
 
-  const filteredProducts = (selectedCategory === "Todos"
-    ? products
-    : products.filter(p => p.category?.name === selectedCategory)).slice(0, 8);
-
-  const activeCategories = categories.filter(cat =>
-    products.some(p => p.category?.id === cat.id)
-  );
+  const featuredProducts = products.slice(0, 8);
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -97,7 +79,7 @@ export default function Home() {
         {/* Product Grid Section */}
         <section id="products" className="py-12 md:py-24 bg-slate-50/50">
           <div className="max-w-7xl mx-auto px-6">
-            <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-16">
+            <div className="flex flex-col gap-6 mb-16">
               <div className="space-y-4">
                 <div className="inline-flex items-center gap-2 px-3 py-1 bg-primary/10 text-primary rounded-full">
                   <Star size={12} fill="currentColor" />
@@ -109,24 +91,6 @@ export default function Home() {
                 <p className="text-muted-foreground max-w-lg">
                   Nuestra selección de los artículos más buscados y mejor valorados por nuestra comunidad.
                 </p>
-              </div>
-
-              <div className="flex gap-3 overflow-x-auto pb-4 custom-scrollbar lg:pb-0">
-                <button
-                  onClick={() => setSelectedCategory("Todos")}
-                  className={`px-6 py-2.5 rounded-xl border text-sm font-semibold transition-all shadow-sm flex-shrink-0 ${selectedCategory === "Todos" ? 'bg-primary text-white border-primary' : 'bg-white border-slate-100 hover:border-primary hover:text-primary'}`}
-                >
-                  Todos
-                </button>
-                {activeCategories.map((cat) => (
-                  <button
-                    key={cat.id}
-                    onClick={() => setSelectedCategory(cat.name)}
-                    className={`px-6 py-2.5 rounded-xl border text-sm font-semibold transition-all shadow-sm flex-shrink-0 ${selectedCategory === cat.name ? 'bg-primary text-white border-primary' : 'bg-white border-slate-100 hover:border-primary hover:text-primary'}`}
-                  >
-                    {cat.name}
-                  </button>
-                ))}
               </div>
             </div>
 
@@ -141,9 +105,9 @@ export default function Home() {
                 ))}
               </div>
             ) : (
-              filteredProducts.length > 0 ? (
+              featuredProducts.length > 0 ? (
                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-8">
-                  {filteredProducts.map((product) => (
+                  {featuredProducts.map((product: Product) => (
                     <ProductCard
                       key={product.id}
                       product={product}

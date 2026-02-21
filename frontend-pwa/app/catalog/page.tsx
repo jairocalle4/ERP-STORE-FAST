@@ -1,28 +1,34 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import ProductCard from "@/components/ProductCard";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { Product } from "@/types/product";
 import { Search, SlidersHorizontal, ShoppingBag, Star } from "lucide-react";
+import { useSearchParams } from "next/navigation";
 
-export default function CatalogPage() {
+function CatalogContent() {
+    const searchParams = useSearchParams();
+    const initialFilter = searchParams.get("filter");
+    const initialSearch = searchParams.get("search");
+
     const [products, setProducts] = useState<Product[]>([]);
     const [categories, setCategories] = useState<{ id: number, name: string }[]>([]);
     const [selectedCategoryId, setSelectedCategoryId] = useState<number | null>(null);
-    const [searchQuery, setSearchQuery] = useState("");
+    const [isOffersOnly, setIsOffersOnly] = useState(initialFilter === "offers");
+    const [searchQuery, setSearchQuery] = useState(initialSearch || "");
     const [loading, setLoading] = useState(true);
     const [page, setPage] = useState(1);
     const [hasMore, setHasMore] = useState(true);
     const [loadingMore, setLoadingMore] = useState(false);
     const PAGE_SIZE = 8;
 
-    // Categorías se cargan una sola vez
+    // Categorías se cargan una sola vez: solo las que tienen productos activos
     useEffect(() => {
         async function fetchCategories() {
             try {
-                const res = await fetch("http://localhost:5140/api/v1/categories");
+                const res = await fetch("http://localhost:5140/api/v1/categories?onlyWithProducts=true");
                 if (res.ok) setCategories(await res.json());
             } catch (e) { console.error(e); }
         }
@@ -30,14 +36,16 @@ export default function CatalogPage() {
     }, []);
 
     // Carga de productos (inicial y paginada)
-    const fetchProducts = async (pageNum: number, isInitial = false, catId: number | null = null, search: string = searchQuery) => {
+    const fetchProducts = async (pageNum: number, isInitial = false, catId: number | null = null, search: string = searchQuery, offersOnly: boolean = isOffersOnly) => {
         if (pageNum > 1) setLoadingMore(true);
         else if (isInitial) setLoading(true);
 
         try {
             const categoryParam = catId ? `&categoryId=${catId}` : "";
             const searchParam = search ? `&search=${encodeURIComponent(search)}` : "";
-            const res = await fetch(`http://localhost:5140/api/v1/products?page=${pageNum}&pageSize=${PAGE_SIZE}${categoryParam}${searchParam}`);
+            const offersParam = offersOnly ? `&onlyOffers=true` : "";
+
+            const res = await fetch(`http://localhost:5140/api/v1/products?page=${pageNum}&pageSize=${PAGE_SIZE}${categoryParam}${searchParam}${offersParam}`);
             if (!res.ok) throw new Error("Failed");
             const newProducts = await res.json();
 
@@ -59,58 +67,74 @@ export default function CatalogPage() {
     // Al cambiar la categoría, reseteamos todo
     const handleCategoryChange = (id: number | null) => {
         setSelectedCategoryId(id);
+        setIsOffersOnly(false); // Clear offers when switching to a category
         setPage(1);
         setHasMore(true);
         setProducts([]);
-        fetchProducts(1, true, id, searchQuery);
+        fetchProducts(1, true, id, "", false); // Also clear search query locally for cleaner switching? 
+        // User might want to keep search, but let's clear it if they click a specific category for better UX
+        setSearchQuery("");
     };
 
+    // Al cambiar a ofertas
+    const handleOffersChange = () => {
+        setIsOffersOnly(true);
+        setSelectedCategoryId(null);
+        setPage(1);
+        setHasMore(true);
+        setProducts([]);
+        setSearchQuery("");
+        fetchProducts(1, true, null, "", true);
+    };
+
+    // React to URL parameter changes (Search from Navbar or Filters)
     useEffect(() => {
-        // Initialize once, rely on search effect for first fetch if search is empty?
-        // Actually, search query effect should run initially too due to searchQuery state.
-        // But let's keep separate logic to avoid double fetch if needed?
-        // No, fetchProducts(1, true) handles it.
-        // BUT search effect below will handle searchQuery change.
-        // Let's remove fetchProducts(1, true) from here and let the search effect handle it?
-        // Or keep it separate
-        if (!searchQuery) fetchProducts(1, true);
+        const filterParam = searchParams.get("filter");
+        const srchParam = searchParams.get("search");
 
-        // Restaurar posición del scroll
-        const savedScrollPos = sessionStorage.getItem("catalog_scroll_pos");
-        if (savedScrollPos) {
-            setTimeout(() => {
-                window.scrollTo(0, parseInt(savedScrollPos));
-                sessionStorage.removeItem("catalog_scroll_pos");
-            }, 100);
+        if (filterParam === "offers") {
+            if (!isOffersOnly) {
+                setIsOffersOnly(true);
+                setSelectedCategoryId(null);
+                setProducts([]);
+                setPage(1);
+                fetchProducts(1, true, null, "", true);
+            }
+        } else if (srchParam !== null) {
+            if (srchParam !== searchQuery) {
+                setSearchQuery(srchParam);
+                setIsOffersOnly(false);
+                setSelectedCategoryId(null);
+                setProducts([]);
+                setPage(1);
+                fetchProducts(1, true, null, srchParam, false);
+            }
+        } else if (!filterParam && srchParam === null && products.length === 0 && loading) {
+            // Initial load without params
+            fetchProducts(1, true, null, "", false);
         }
-    }, []);
+    }, [searchParams]);
 
-    // Effect for Search (Debounced)
+    // Local Search Effect (Debounced)
     useEffect(() => {
         const timer = setTimeout(() => {
-            if (searchQuery) {
+            const urlSearch = searchParams.get("search") || "";
+            if (searchQuery !== urlSearch && searchQuery !== "") {
                 setPage(1);
                 setHasMore(true);
-                // setProducts([]); // Don't clear immediately to avoid flash? UI might look cleaner if we do or show loading
                 setProducts([]);
-                fetchProducts(1, true, selectedCategoryId, searchQuery);
-            } else {
-                // handled by initial load or category change mostly, but if user clears search:
-                // We should re-fetch all
-                if (products.length === 0 && !loading) { // logic to avoid double fetch on mount?
-                    fetchProducts(1, true, selectedCategoryId, "");
-                } else if (searchQuery === "" && products.length > 0) {
-                    // If existing products are filtered search result, we need to refresh
-                    // How to know? Assume yes if search cleared.
-                    setPage(1);
-                    setProducts([]);
-                    fetchProducts(1, true, selectedCategoryId, "");
-                }
+                fetchProducts(1, true, selectedCategoryId, searchQuery, isOffersOnly);
+            } else if (searchQuery === "" && urlSearch !== "") {
+                // User cleared search locally
+                setPage(1);
+                setHasMore(true);
+                setProducts([]);
+                fetchProducts(1, true, selectedCategoryId, "", isOffersOnly);
             }
         }, 500);
 
         return () => clearTimeout(timer);
-    }, [searchQuery]); // Removed selectedCategoryId from deps here to avoid double fetch with handler, only search change matters here
+    }, [searchQuery]);
 
 
     // Infinite Scroll Observer
@@ -121,7 +145,7 @@ export default function CatalogPage() {
             if (entries[0].isIntersecting) {
                 const nextPage = page + 1;
                 setPage(nextPage);
-                fetchProducts(nextPage, false, selectedCategoryId, searchQuery);
+                fetchProducts(nextPage, false, selectedCategoryId, searchQuery, isOffersOnly);
             }
         }, { threshold: 0.1 });
 
@@ -129,7 +153,18 @@ export default function CatalogPage() {
         if (loader) observer.observe(loader);
 
         return () => observer.disconnect();
-    }, [page, hasMore, loadingMore, loading, selectedCategoryId, searchQuery]);
+    }, [page, hasMore, loadingMore, loading, selectedCategoryId, searchQuery, isOffersOnly]);
+
+    useEffect(() => {
+        // Restaurar posición del scroll
+        const savedScrollPos = sessionStorage.getItem("catalog_scroll_pos");
+        if (savedScrollPos) {
+            setTimeout(() => {
+                window.scrollTo(0, parseInt(savedScrollPos));
+                sessionStorage.removeItem("catalog_scroll_pos");
+            }, 100);
+        }
+    }, []);
 
     // Guardar posición antes de salir
     const handleProductClick = () => {
@@ -187,10 +222,21 @@ export default function CatalogPage() {
 
                         <button
                             onClick={() => handleCategoryChange(null)}
-                            className={`px-6 py-2.5 rounded-xl border text-sm font-semibold transition-all shadow-sm flex-shrink-0 ${selectedCategoryId === null ? 'bg-primary text-white border-primary' : 'bg-white border-slate-100 hover:border-primary hover:text-primary'}`}
+                            className={`px-6 py-2.5 rounded-xl border text-sm font-semibold transition-all shadow-sm flex-shrink-0 ${selectedCategoryId === null && !isOffersOnly ? 'bg-primary text-white border-primary' : 'bg-white border-slate-100 hover:border-primary hover:text-primary'}`}
                         >
                             Todos
                         </button>
+
+                        <button
+                            onClick={handleOffersChange}
+                            className={`px-6 py-2.5 rounded-xl border text-sm font-semibold transition-all shadow-sm flex-shrink-0 ${isOffersOnly ? 'bg-amber-400 text-amber-950 border-amber-400' : 'bg-white border-slate-100 hover:border-amber-400 hover:text-amber-600'}`}
+                        >
+                            <div className="flex items-center gap-2">
+                                <Star size={14} className={isOffersOnly ? "fill-amber-950" : "text-amber-500"} />
+                                <span>Ofertas</span>
+                            </div>
+                        </button>
+
                         {categories.map((cat) => (
                             <button
                                 key={cat.id}
@@ -264,5 +310,17 @@ export default function CatalogPage() {
 
             <Footer />
         </div>
+    );
+}
+
+export default function CatalogPage() {
+    return (
+        <Suspense fallback={
+            <div className="min-h-screen flex items-center justify-center">
+                <div className="w-12 h-12 border-4 border-primary/20 border-t-primary rounded-full animate-spin"></div>
+            </div>
+        }>
+            <CatalogContent />
+        </Suspense>
     );
 }

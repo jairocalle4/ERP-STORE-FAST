@@ -23,6 +23,11 @@ public class CompanySetting : BaseEntity
     public string? SmtpUser { get; set; }
     public string? SmtpPass { get; set; }
 
+    // Brevo (Sendinblue) API — alternative to SMTP when ISP blocks port 587/465
+    public string? BrevoApiKey { get; set; }
+
+    public DateTime? LastStockAlertDate { get; set; }
+
     // SEO & Social Media
     public string? CoverImageUrl { get; set; }
 }

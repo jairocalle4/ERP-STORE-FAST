@@ -25,13 +25,19 @@ public class ProductsController : ControllerBase
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 1000,
         [FromQuery] int? categoryId = null,
-        [FromQuery] string? search = null) 
+        [FromQuery] string? search = null,
+        [FromQuery] bool onlyOffers = false) 
     {
         var query = _context.Products
             .Include(p => p.Category)
             .Include(p => p.Subcategory)
             .Include(p => p.Images)
             .AsQueryable();
+        
+        if (onlyOffers)
+        {
+            query = query.Where(p => p.DiscountPercentage > 0);
+        }
         
         if (!includeInactive)
         {

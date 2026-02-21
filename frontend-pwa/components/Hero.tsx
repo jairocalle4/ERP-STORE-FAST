@@ -2,8 +2,14 @@
 
 import { ArrowRight, ShoppingBag } from "lucide-react";
 import Link from "next/link";
+import { useCompany } from "@/context/CompanyContext";
+
+const FALLBACK_IMAGE = "https://images.unsplash.com/photo-1550009158-9ebf69173e03?q=80&w=1000&auto=format&fit=crop";
 
 export default function Hero() {
+    const { company } = useCompany();
+    const heroImage = company.coverImageUrl?.trim() || FALLBACK_IMAGE;
+
     return (
         <section className="relative min-h-screen flex items-center pt-20 overflow-hidden">
             {/* Background elements */}
@@ -32,7 +38,7 @@ export default function Hero() {
                             <span>Comprar Ahora</span>
                             <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
                         </Link>
-                        <Link href="/catalog" className="bg-white hover:bg-slate-50 text-foreground px-6 sm:px-10 py-4 sm:py-5 rounded-2xl font-bold flex items-center justify-center gap-3 shadow-lg shadow-black/5 transition-all active:scale-95 border border-slate-100">
+                        <Link href="/catalog?filter=offers" className="bg-white hover:bg-slate-50 text-foreground px-6 sm:px-10 py-4 sm:py-5 rounded-2xl font-bold flex items-center justify-center gap-3 shadow-lg shadow-black/5 transition-all active:scale-95 border border-slate-100">
                             <ShoppingBag size={18} />
                             <span>Ver Ofertas</span>
                         </Link>
@@ -51,14 +57,16 @@ export default function Hero() {
                     </div>
                 </div>
 
-                {/* Visual / Image */}
+                {/* Visual / Image — controlled from ERP Settings (coverImageUrl) */}
                 <div className="relative animate-fade-in [animation-delay:200ms]">
                     <div className="relative z-10 w-full aspect-square rounded-[3rem] overflow-hidden shadow-2xl rotate-3 hover:rotate-0 transition-transform duration-700">
-                        {/* Note: I'll use a high-quality placeholder since image generation failed */}
                         <img
-                            src="https://images.unsplash.com/photo-1550009158-9ebf69173e03?q=80&w=1000&auto=format&fit=crop"
-                            alt="Tecnología y Accesorios"
+                            src={heroImage}
+                            alt="Imagen de portada de la tienda"
                             className="w-full h-full object-cover scale-110 hover:scale-100 transition-transform duration-1000"
+                            onError={(e) => {
+                                (e.target as HTMLImageElement).src = FALLBACK_IMAGE;
+                            }}
                         />
                         <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent"></div>
                     </div>

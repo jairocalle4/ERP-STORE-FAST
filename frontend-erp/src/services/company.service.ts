@@ -18,6 +18,7 @@ export interface CompanySetting {
     smtpPort: number;
     smtpUser?: string;
     smtpPass?: string;
+    brevoApiKey?: string;
     coverImageUrl?: string;
 }
 
@@ -38,6 +39,7 @@ export interface CompanySettingDto {
     smtpPort: number;
     smtpUser?: string;
     smtpPass?: string;
+    brevoApiKey?: string;
     coverImageUrl?: string;
 }
 

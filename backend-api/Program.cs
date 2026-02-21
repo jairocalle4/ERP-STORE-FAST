@@ -17,6 +17,7 @@ builder.Services.AddControllers()
 builder.Services.AddInfrastructureServices(builder.Configuration);
 
 // Register Services
+builder.Services.AddHttpClient(); // Required for IHttpClientFactory (used by EmailService → Brevo API)
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<ICloudinaryService, CloudinaryService>();
 builder.Services.AddScoped<IEmailService, EmailService>();

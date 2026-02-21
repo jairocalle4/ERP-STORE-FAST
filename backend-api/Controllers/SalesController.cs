@@ -176,40 +176,24 @@ public class SalesController : ControllerBase
             await _context.SaveChangesAsync();
             await transaction.CommitAsync();
 
-            // BACKGROUND EMAIL TASK
+            // TRIGGER LOW STOCK PROCESSING (Consolidated & Throttled)
             if (lowStockItems.Any())
             {
                 _ = Task.Run(async () =>
                 {
-                    try
+                    try 
                     {
                         using var scope = _scopeFactory.CreateScope();
-                        var scopedContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-                        var emailService = scope.ServiceProvider.GetRequiredService<IEmailService>();
-
-                        var settings = await scopedContext.CompanySettings.FirstOrDefaultAsync();
-                        var recipient = settings?.Email ?? settings?.SmtpUser;
-
-                        if (settings != null && !string.IsNullOrEmpty(recipient))
-                        {
-                            foreach (var item in lowStockItems)
-                            {
-                                await emailService.SendEmailAsync(
-                                    recipient,
-                                    "ALERTA: Stock Bajo - " + item.Name,
-                                    $"<h3>Alerta de Inventario</h3><p>El producto <b>{item.Name}</b> ha llegado a su nivel mínimo configurado ({item.MinStock}).</p><p>Stock actual: <b>{item.CurrentStock}</b></p><br/><p>Por favor, realice un pedido de reposición pronto.</p>"
-                                );
-                            }
-                        }
+                        var emailSvc = scope.ServiceProvider.GetRequiredService<IEmailService>();
+                        await emailSvc.ProcessLowStockAlertsAsync();
                     }
                     catch (Exception ex)
                     {
-                        Console.WriteLine($"Error sending background emails: {ex.Message}");
+                        Console.WriteLine($"[SALE_LOW_STOCK] Error triggering alerts: {ex.Message}");
                     }
                 });
             }
 
-            // Return full object with includes
             return await _context.Sales
                 .Include(s => s.SaleDetails)
                 .ThenInclude(sd => sd.Product)

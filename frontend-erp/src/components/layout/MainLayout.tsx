@@ -254,10 +254,11 @@ export default function MainLayout() {
                                             {notifications.length > 0 && (
                                                 <button
                                                     onClick={async () => {
-                                                        if (window.confirm('¿Eliminar todas las notificaciones?')) {
-                                                            await notificationService.deleteAll();
-                                                            fetchNotifications();
-                                                        }
+                                                        // Immediately clear UI — instant feedback
+                                                        setNotifications([]);
+                                                        setUnreadCount(0);
+                                                        // Then persist to DB
+                                                        await notificationService.deleteAll();
                                                     }}
                                                     className="group flex items-center gap-1.5 px-2.5 py-1.5 hover:bg-rose-50 text-slate-400 hover:text-rose-600 rounded-lg transition-all"
                                                 >

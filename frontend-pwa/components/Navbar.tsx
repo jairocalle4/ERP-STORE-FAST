@@ -1,10 +1,11 @@
 "use client";
 
-import { ShoppingBag, Search, User, Menu, X } from "lucide-react";
+import { ShoppingBag, Search, Menu, X } from "lucide-react";
 import Link from "next/link";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useCart } from "@/context/CartContext";
+import { useCompany } from "@/context/CompanyContext";
 
 export default function Navbar() {
     const [isScrolled, setIsScrolled] = useState(false);
@@ -12,7 +13,14 @@ export default function Navbar() {
     const [isSearchOpen, setIsSearchOpen] = useState(false);
     const [searchQuery, setSearchQuery] = useState("");
     const { totalItems, setIsCartOpen } = useCart();
+    const { company } = useCompany();
     const router = useRouter();
+
+    // Split name into two parts for styling: first half normal, second half gradient
+    const name = company.name || "FASTSTORE";
+    const half = Math.ceil(name.length / 2);
+    const nameFirst = name.slice(0, half);
+    const nameLast = name.slice(half);
 
     const handleSearch = (e: React.FormEvent) => {
         e.preventDefault();
@@ -47,7 +55,7 @@ export default function Navbar() {
                             <ShoppingBag size={22} strokeWidth={2.5} />
                         </div>
                         <span className="text-xl font-outfit font-black tracking-tighter text-foreground">
-                            FAST<span className="gradient-text">STORE</span>
+                            {nameFirst}<span className="gradient-text">{nameLast}</span>
                         </span>
                     </Link>
 
@@ -57,6 +65,7 @@ export default function Navbar() {
                             { name: "Colecciones", href: "/catalog" },
                             { name: "Nosotros", href: "/about" },
                             { name: "Ofertas", href: "/catalog?filter=offers" },
+                            { name: "Servicios", href: "/services" },
                             { name: "Contacto", href: "#footer-contact" }
                         ].map((item) => (
                             <Link
@@ -131,6 +140,7 @@ export default function Navbar() {
                             { name: "Colecciones", href: "/catalog" },
                             { name: "Nosotros", href: "/about" },
                             { name: "Ofertas", href: "/catalog?filter=offers" },
+                            { name: "Servicios", href: "/services" },
                             { name: "Contacto", href: "#footer-contact" }
                         ].map((item, i) => (
                             <Link

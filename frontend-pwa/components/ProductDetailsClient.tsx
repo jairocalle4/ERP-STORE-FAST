@@ -68,6 +68,37 @@ export default function ProductDetailsClient({ id }: { id: string }) {
 
     const discountPercentage = product.discountPercentage || 0;
     const oldPrice = discountPercentage > 0 ? (product.price / (1 - discountPercentage / 100)) : 0;
+    const isOutOfStock = product.stock <= 0;
+
+    // Parse description: lines starting with - or * become elegant bullet points
+    const renderDescription = (desc: string | null | undefined) => {
+        if (!desc) return <p className="text-slate-400 italic">Sin descripción disponible.</p>;
+
+        // Split by lines that start with - or * (treating them as bullet points)
+        // Also handle inline separators like "- item1 - item2"
+        const lines = desc
+            .split(/\n/)
+            .flatMap(line => line.split(/(?<=\S)\s*[-*]\s+/))
+            .map(s => s.replace(/^\s*[-*]\s*/, '').trim())
+            .filter(s => s.length > 0);
+
+        // If we got multiple items, render as bullet list
+        if (lines.length > 1) {
+            return (
+                <ul className="space-y-2.5">
+                    {lines.map((line, i) => (
+                        <li key={i} className="flex items-start gap-3">
+                            <span className="mt-1.5 flex-shrink-0 w-1.5 h-1.5 rounded-full bg-primary"></span>
+                            <span className="text-sm md:text-base text-slate-600 leading-relaxed font-medium">{line}</span>
+                        </li>
+                    ))}
+                </ul>
+            );
+        }
+
+        // Otherwise render as plain paragraph
+        return <p className="text-sm md:text-base text-slate-600 leading-relaxed font-medium">{desc}</p>;
+    };
 
     return (
         <div className="min-h-screen flex flex-col bg-slate-50">
@@ -215,8 +246,8 @@ export default function ProductDetailsClient({ id }: { id: string }) {
                                 {/* Description */}
                                 <div className="space-y-3">
                                     <h3 className="text-xs font-black uppercase tracking-widest text-slate-400">Sobre este producto</h3>
-                                    <div className="text-sm md:text-base text-slate-600 leading-relaxed font-medium">
-                                        <p>{product.description || "Sin descripción disponible para este producto premium."}</p>
+                                    <div>
+                                        {renderDescription(product.description)}
                                     </div>
                                 </div>
 
@@ -245,18 +276,34 @@ export default function ProductDetailsClient({ id }: { id: string }) {
                                 {/* Actions */}
                                 <div className="space-y-4 pt-4">
                                     <button
-                                        onClick={() => addToCart(product)}
-                                        className="w-full premium-button py-5 rounded-2xl flex items-center justify-center gap-3 shadow-xl shadow-primary/20 group hover:-translate-y-1 transition-all duration-300"
+                                        onClick={() => { if (!isOutOfStock) addToCart(product); }}
+                                        disabled={isOutOfStock}
+                                        className={`w-full py-5 rounded-2xl flex items-center justify-center gap-3 transition-all duration-300 font-black uppercase tracking-widest text-lg ${isOutOfStock
+                                                ? 'bg-slate-100 text-slate-400 cursor-not-allowed shadow-none'
+                                                : 'premium-button shadow-xl shadow-primary/20 group hover:-translate-y-1'
+                                            }`}
                                     >
-                                        <div className="relative">
-                                            <ShoppingCart size={24} className="group-hover:scale-110 transition-transform duration-300" />
-                                            <div className="absolute -top-1 -right-1 w-2 h-2 bg-white rounded-full animate-ping"></div>
-                                        </div>
-                                        <span className="text-lg font-black uppercase tracking-widest">Añadir al Carrito</span>
+                                        {isOutOfStock ? (
+                                            <>
+                                                <ShoppingCart size={24} />
+                                                <span>Producto Agotado</span>
+                                            </>
+                                        ) : (
+                                            <>
+                                                <div className="relative">
+                                                    <ShoppingCart size={24} className="group-hover:scale-110 transition-transform duration-300" />
+                                                    <div className="absolute -top-1 -right-1 w-2 h-2 bg-white rounded-full animate-ping"></div>
+                                                </div>
+                                                <span>Añadir al Carrito</span>
+                                            </>
+                                        )}
                                     </button>
 
                                     <p className="text-center text-[10px] text-slate-400 font-medium">
-                                        Pago seguro con encriptación SSL de 256-bits.
+                                        {isOutOfStock
+                                            ? 'Este producto no está disponible en este momento.'
+                                            : 'Pago seguro con encriptación SSL de 256-bits.'
+                                        }
                                     </p>
                                 </div>
                             </div>

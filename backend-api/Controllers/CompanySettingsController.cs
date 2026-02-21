@@ -70,6 +70,7 @@ public class CompanySettingsController : ControllerBase
         settings.SmtpPort = dto.SmtpPort;
         settings.SmtpUser = dto.SmtpUser;
         settings.SmtpPass = dto.SmtpPass;
+        settings.BrevoApiKey = dto.BrevoApiKey;
         settings.CoverImageUrl = dto.CoverImageUrl;
         settings.UpdatedAt = DateTime.UtcNow;
 
