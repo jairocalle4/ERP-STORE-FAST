@@ -1,36 +1,22 @@
 "use client";
 
-import { ShoppingBag, Search, Menu, X } from "lucide-react";
+import { ShoppingBag, Menu, X } from "lucide-react";
 import Link from "next/link";
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
 import { useCart } from "@/context/CartContext";
 import { useCompany } from "@/context/CompanyContext";
 
 export default function Navbar() {
     const [isScrolled, setIsScrolled] = useState(false);
     const [isMenuOpen, setIsMenuOpen] = useState(false);
-    const [isSearchOpen, setIsSearchOpen] = useState(false);
-    const [searchQuery, setSearchQuery] = useState("");
     const { totalItems, setIsCartOpen } = useCart();
     const { company } = useCompany();
-    const router = useRouter();
 
     // Split name into two parts for styling: first half normal, second half gradient
     const name = company.name || "FASTSTORE";
     const half = Math.ceil(name.length / 2);
     const nameFirst = name.slice(0, half);
     const nameLast = name.slice(half);
-
-    const handleSearch = (e: React.FormEvent) => {
-        e.preventDefault();
-        if (searchQuery.trim()) {
-            router.push(`/catalog?search=${encodeURIComponent(searchQuery)}`);
-            setIsSearchOpen(false);
-            setSearchQuery("");
-            setIsMenuOpen(false);
-        }
-    };
 
     useEffect(() => {
         const handleScroll = () => {
@@ -79,36 +65,7 @@ export default function Navbar() {
                     </div>
 
                     {/* Actions */}
-                    {/* Actions */}
                     <div className="flex items-center gap-3">
-                        {/* Search Bar */}
-                        {isSearchOpen ? (
-                            <form onSubmit={handleSearch} className="absolute inset-x-4 top-1/2 -translate-y-1/2 md:static md:inset-auto md:transform-none flex items-center bg-white md:bg-transparent z-50">
-                                <input
-                                    autoFocus
-                                    type="text"
-                                    placeholder="Buscar productos..."
-                                    className="w-full md:w-60 bg-slate-100 border-none rounded-xl px-4 py-2.5 text-sm font-medium outline-none focus:ring-2 ring-primary/20 transition-all text-foreground shadow-lg md:shadow-none"
-                                    value={searchQuery}
-                                    onChange={(e) => setSearchQuery(e.target.value)}
-                                // onBlur={() => { if(!searchQuery) setIsSearchOpen(false); }}
-                                />
-                                <button
-                                    type="button"
-                                    onClick={() => setIsSearchOpen(false)}
-                                    className="ml-2 p-2 text-slate-400 hover:text-rose-500 md:hidden"
-                                >
-                                    <X size={20} />
-                                </button>
-                            </form>
-                        ) : (
-                            <button
-                                onClick={() => setIsSearchOpen(true)}
-                                className="p-2.5 rounded-xl hover:bg-muted text-foreground transition-all duration-300 group"
-                            >
-                                <Search size={20} className="group-hover:scale-110 transition-transform" />
-                            </button>
-                        )}
 
                         {/* User removed as per request */}
                         <button

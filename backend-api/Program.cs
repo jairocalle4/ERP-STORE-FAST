@@ -22,6 +22,8 @@ builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<ICloudinaryService, CloudinaryService>();
 builder.Services.AddScoped<IEmailService, EmailService>();
 builder.Services.AddScoped<IInventoryService, InventoryService>();
+// Background service: verifica stock bajo cada hora y envía correo automático consolidado
+builder.Services.AddHostedService<LowStockBackgroundService>();
 
 // Configure JWT Authentication
 var jwtSettings = builder.Configuration.GetSection("JwtSettings");

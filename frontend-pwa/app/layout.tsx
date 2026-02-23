@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { CartProvider } from "@/context/CartContext";
 import { CompanyProvider } from "@/context/CompanyContext";
@@ -15,38 +15,40 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  themeColor: "#7c3aed",
+};
+
 export const metadata: Metadata = {
   title: {
-    default: "FastStore | Tu Tienda Online Profesional",
-    template: "%s | FastStore"
+    default: "FASTSTORE | Tu Tienda Online",
+    template: "%s | FASTSTORE"
   },
   description: "Descubre la mejor selección de productos con la mejor calidad y servicio. Envío rápido y pagos seguros.",
-  keywords: ["ecommerce", "tienda online", "productos premium", "FastStore", "tecnología", "moda", "hogar"],
-  authors: [{ name: "FastStore Team" }],
-  viewport: "width=device-width, initial-scale=1, maximum-scale=1",
-  themeColor: "#7c3aed",
+  keywords: ["ecommerce", "tienda online", "productos", "FASTSTORE", "compras online"],
+  authors: [{ name: "FASTSTORE" }],
   manifest: "/manifest.json",
+  icons: {
+    icon: "/icon-512x512.png",
+    apple: "/apple-touch-icon.png",
+    shortcut: "/icon-192x192.png",
+  },
   openGraph: {
     type: "website",
     locale: "es_ES",
-    url: "https://faststore.dominioprueba.com",
-    title: "FastStore | Tu Tienda Online Profesional",
+    title: "FASTSTORE | Tu Tienda Online",
     description: "La mejor experiencia de compra online. Calidad, rapidez y seguridad en cada pedido.",
-    siteName: "FastStore",
-    images: [
-      {
-        url: "/og-image.jpg", // Necesitamos crear esta imagen
-        width: 1200,
-        height: 630,
-        alt: "FastStore Banner",
-      },
-    ],
+    siteName: "FASTSTORE",
+    images: [{ url: "/icon-512x512.png", width: 512, height: 512, alt: "FASTSTORE Logo" }],
   },
   twitter: {
-    card: "summary_large_image",
-    title: "FastStore | Tu Tienda Online Profesional",
+    card: "summary",
+    title: "FASTSTORE | Tu Tienda Online",
     description: "La mejor experiencia de compra online.",
-    images: ["/og-image.jpg"],
+    images: ["/icon-512x512.png"],
   },
 };
 
