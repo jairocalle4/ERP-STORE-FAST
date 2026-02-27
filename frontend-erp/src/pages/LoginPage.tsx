@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import axios from 'axios';
+import { BASE_API_URL } from '../services/api';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../store/useAuthStore';
 import { Lock, User } from 'lucide-react';
@@ -19,7 +20,7 @@ export default function LoginPage() {
         setLoading(true);
 
         try {
-            const response = await axios.post('http://localhost:5140/api/auth/login', {
+            const response = await axios.post(`${BASE_API_URL}/auth/login`, {
                 username,
                 password,
             });

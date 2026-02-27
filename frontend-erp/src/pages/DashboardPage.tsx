@@ -3,6 +3,7 @@ import { Package, ShoppingCart, Settings, TrendingUp, AlertCircle, Wallet, Arrow
 import { Link } from "react-router-dom";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import { dashboardService } from "../services/dashboard.service";
+import { BASE_API_URL } from '../services/api';
 import type { DashboardStats } from "../services/dashboard.service";
 
 export default function DashboardPage() {
@@ -246,7 +247,7 @@ export default function DashboardPage() {
                     onClick={async () => {
                         if (!window.confirm("¿Estás seguro de que deseas RESTAURAR la base de datos?")) return;
                         try {
-                            const response = await fetch('http://localhost:5140/api/Seed/restore', { method: 'POST' });
+                            const response = await fetch(`${BASE_API_URL}/Seed/restore`, { method: 'POST' });
                             if (response.ok) { window.location.reload(); }
                         } catch (e) { console.error(e); }
                     }}
