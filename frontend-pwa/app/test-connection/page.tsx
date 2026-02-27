@@ -5,24 +5,39 @@ import { useEffect, useState } from 'react';
 export default function TestConnectionPage() {
   const [data, setData] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
+  const [status, setStatus] = useState<string>('Connecting...');
 
-  useEffect(() => {
-    fetch('http://localhost:5140/api/health')
+  const checkConnection = () => {
+    setStatus('Verificando conexión...');
+    const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5140/api/v1";
+    // Using health endpoint relative to the main API
+    const healthUrl = API_URL.replace('/api/v1', '/api/health');
+    fetch(healthUrl)
       .then(res => {
         if (!res.ok) throw new Error('Failed to fetch');
         return res.json();
       })
-      .then(data => setData(data))
-      .catch(err => setError(err.message));
+      .then(data => {
+        setData(data);
+        setStatus('Conexión exitosa.');
+      })
+      .catch(err => {
+        setError(err.message);
+        setStatus('Error de conexión.');
+      });
+  };
+
+  useEffect(() => {
+    checkConnection();
   }, []);
 
   return (
     <div className="p-10 flex flex-col items-center justify-center min-h-screen">
       <h1 className="text-3xl font-bold mb-6">Walking Skeleton: API Connection Test</h1>
-      
+
       <div className="border p-6 rounded-lg shadow-lg w-full max-w-md bg-white text-black">
         <h2 className="text-xl font-semibold mb-4 border-b pb-2">Status</h2>
-        
+
         {error && (
           <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative">
             <strong className="font-bold">Error: </strong>
@@ -36,12 +51,12 @@ export default function TestConnectionPage() {
             <pre className="mt-2 text-sm">{JSON.stringify(data, null, 2)}</pre>
           </div>
         ) : (
-          !error && <p className="text-gray-500 animate-pulse">Connecting to API...</p>
+          !error && <p className="text-gray-500 animate-pulse">{status}</p>
         )}
       </div>
 
       <div className="mt-8 text-sm text-gray-400">
-        <p>API URL: http://localhost:5140/api/health</p>
+        <p>API URL: {process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5140/api/v1'}</p>
       </div>
     </div>
   );

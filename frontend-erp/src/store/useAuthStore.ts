@@ -5,12 +5,13 @@ import axios from 'axios';
 interface User {
     username: string;
     role: string;
+    permissions: string[];
 }
 
 interface AuthState {
     token: string | null;
     user: User | null;
-    login: (token: string, username: string, role: string) => void;
+    login: (token: string, username: string, role: string, permissions: string[]) => void;
     updateUser: (user: Partial<User>) => void;
     logout: () => void;
 }
@@ -20,8 +21,8 @@ export const useAuthStore = create<AuthState>()(
         (set) => ({
             token: null,
             user: null,
-            login: (token, username, role) => {
-                set({ token, user: { username, role } });
+            login: (token, username, role, permissions) => {
+                set({ token, user: { username, role, permissions } });
                 // Configure axios default header
                 axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
             },

@@ -57,16 +57,16 @@ export default function PointOfSalePage() {
     const fetchData = async () => {
         try {
             const [productsData, clientsData, categoriesRes] = await Promise.all([
-                productService.getAll(false),
-                clientService.getAll(),
-                api.get('/categories')
+                productService.getAll(false, 1, 1000),
+                clientService.getAll(1, 1000),
+                api.get('/categories', { params: { pageSize: 1000 } })
             ]);
-            setProducts(productsData);
-            setClients(clientsData);
-            setCategories(categoriesRes.data);
+            setProducts(productsData.items);
+            setClients(clientsData.items);
+            setCategories(categoriesRes.data.items);
 
             // Set Consumidor Final as default
-            const cf = clientsData.find(c => c.cedulaRuc === '9999999999');
+            const cf = clientsData.items.find((c: any) => c.cedulaRuc === '9999999999');
             if (cf) setSelectedClient(cf);
         } catch (err) {
             console.error('Error fetching POS data', err);
@@ -178,8 +178,8 @@ export default function PointOfSalePage() {
             // We don't auto-hide anymore so user can print
 
             // Refresh products to update stock
-            const updatedProducts = await productService.getAll(false);
-            setProducts(updatedProducts);
+            const updatedProducts = await productService.getAll(false, 1, 1000);
+            setProducts(updatedProducts.items);
         } catch (err: any) {
             console.error('Checkout error', err);
 
@@ -209,17 +209,17 @@ export default function PointOfSalePage() {
         return str.normalize('NFD').replace(/[\u0300-\u036f]/g, "").toLowerCase();
     };
 
-    const filteredProducts = products.filter(p => {
-        const searchLower = normalizeString(searchTerm);
-        const matchesSearch = normalizeString(p.name).includes(searchLower) ||
-            normalizeString(p.sku).includes(searchLower);
+    const filteredProducts = (products || []).filter(p => {
+        const searchLower = normalizeString(searchTerm || '');
+        const matchesSearch = normalizeString(p.name || '').includes(searchLower) ||
+            normalizeString(p.sku || '').includes(searchLower);
         const matchesCategory = selectedCategory ? p.categoryId === selectedCategory : true;
         return matchesSearch && matchesCategory;
     });
 
-    const filteredClients = clients.filter(c =>
-        c.name.toLowerCase().includes(clientSearch.toLowerCase()) ||
-        (c.cedulaRuc && c.cedulaRuc.includes(clientSearch))
+    const filteredClients = (clients || []).filter(c =>
+        c.name?.toLowerCase().includes((clientSearch || '').toLowerCase()) ||
+        (c.cedulaRuc && c.cedulaRuc.includes(clientSearch || ''))
     );
 
     return (

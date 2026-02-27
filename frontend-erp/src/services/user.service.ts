@@ -8,6 +8,7 @@ export interface User {
     firstName: string;
     lastName: string;
     role: string;
+    permissions: string[];
     password?: string; // Optional for updates
 }
 

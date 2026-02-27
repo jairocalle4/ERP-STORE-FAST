@@ -11,6 +11,7 @@ public class Purchase : BaseEntity
     public string Status { get; set; } = "Paid"; // Paid, Pending, PartiallyPaid
     public string PaymentMethod { get; set; } = "Efectivo"; // Efectivo, Transferencia, Credito
     public string? Notes { get; set; }
+    public bool IsVoid { get; set; }
 
     // Navigation
     public Supplier? Supplier { get; set; }

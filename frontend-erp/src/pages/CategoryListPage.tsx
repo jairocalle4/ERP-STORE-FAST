@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import api from '../services/api';
-import { Plus, Edit2, Trash2, Search, Layers, LayoutList, X } from 'lucide-react';
+import { Plus, Edit2, Trash2, Search, Layers, LayoutList, X, ChevronLeft, ChevronRight } from 'lucide-react';
 import CategoryFormModal from '../components/CategoryFormModal';
 import SubcategoryFormModal from '../components/SubcategoryFormModal';
 import { GlassCard } from '../components/common/GlassCard';
@@ -44,14 +44,25 @@ export default function CategoryListPage() {
     const [isSubDeleteModalOpen, setIsSubDeleteModalOpen] = useState(false);
     const [isSubDeleting, setIsSubDeleting] = useState(false);
 
-    useEffect(() => {
-        fetchCategories();
-    }, []);
+    // Pagination State
+    const [currentPage, setCurrentPage] = useState(1);
+    const [totalPages, setTotalPages] = useState(1);
+    const [totalItems, setTotalItems] = useState(0);
+    const pageSize = 12; // 3 rows of 4 in desktop if possible, or similar
 
-    const fetchCategories = async () => {
+    useEffect(() => {
+        fetchCategories(currentPage);
+    }, [currentPage]);
+
+    const fetchCategories = async (page = 1) => {
+        setLoading(true);
         try {
-            const res = await api.get('/categories');
-            setCategories(res.data);
+            const res = await api.get('/categories', {
+                params: { page, pageSize }
+            });
+            setCategories(res.data.items);
+            setTotalPages(res.data.totalPages);
+            setTotalItems(res.data.totalCount);
         } catch (err) {
             console.error('Error categories', err);
         } finally {
@@ -142,8 +153,8 @@ export default function CategoryListPage() {
         }
     };
 
-    const filteredCategories = categories.filter(c =>
-        c.name.toLowerCase().includes(searchTerm.toLowerCase())
+    const filteredCategories = (categories || []).filter(c =>
+        c.name?.toLowerCase().includes(searchTerm.toLowerCase())
     );
 
     return (
@@ -306,6 +317,36 @@ export default function CategoryListPage() {
                             </div>
                         )}
                     </div>
+
+                    {/* Pagination Controls */}
+                    {!loading && totalPages > 1 && (
+                        <div className="px-8 py-6 bg-slate-50/50 border-t border-indigo-50/50 flex flex-col md:flex-row items-center justify-between gap-4">
+                            <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest bg-white/50 px-4 py-2 rounded-xl border border-indigo-50/50">
+                                Mostrando <span className="text-indigo-600">{categories.length}</span> de <span className="text-indigo-950">{totalItems}</span> categorías
+                            </div>
+                            <div className="flex gap-2">
+                                <button
+                                    onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                                    disabled={currentPage === 1}
+                                    className="p-3 rounded-2xl border border-indigo-100 bg-white text-slate-400 hover:bg-indigo-600 hover:text-white disabled:opacity-30 disabled:hover:bg-white disabled:hover:text-slate-400 transition-all shadow-md active:scale-95"
+                                >
+                                    <ChevronLeft size={20} />
+                                </button>
+
+                                <div className="flex items-center px-6 bg-white border border-indigo-100 rounded-2xl font-black text-xs text-indigo-600 shadow-md">
+                                    Página {currentPage} de {totalPages}
+                                </div>
+
+                                <button
+                                    onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                                    disabled={currentPage === totalPages}
+                                    className="p-3 rounded-2xl border border-indigo-100 bg-white text-slate-400 hover:bg-indigo-600 hover:text-white disabled:opacity-30 disabled:hover:bg-white disabled:hover:text-slate-400 transition-all shadow-md active:scale-95"
+                                >
+                                    <ChevronRight size={20} />
+                                </button>
+                            </div>
+                        </div>
+                    )}
                 </GlassCard>
             </div>
 

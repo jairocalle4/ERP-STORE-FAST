@@ -1,4 +1,5 @@
 import api from './api';
+import type { PagedResponse } from './types';
 
 export interface ProductImage {
     id: number;
@@ -27,8 +28,12 @@ export interface Product {
 }
 
 export const productService = {
-    getAll: async (includeInactive = false) => {
-        const response = await api.get<Product[]>(`/products?includeInactive=${includeInactive}`);
+    getAll: async (includeInactive = false, page = 1, pageSize = 20, search?: string, categoryId?: number) => {
+        const params: any = { includeInactive, page, pageSize };
+        if (search) params.search = search;
+        if (categoryId && categoryId > 0) params.categoryId = categoryId;
+
+        const response = await api.get<PagedResponse<Product>>('/products', { params });
         return response.data;
     },
 

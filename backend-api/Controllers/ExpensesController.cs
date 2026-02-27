@@ -20,24 +20,30 @@ public class ExpensesController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<ActionResult<IEnumerable<ExpenseDto>>> GetExpenses()
+    public async Task<ActionResult<PagedResponse<ExpenseDto>>> GetExpenses([FromQuery] int page = 1, [FromQuery] int pageSize = 20)
     {
-        var expenses = await _context.Expenses
+        var query = _context.Expenses
             .Include(e => e.ExpenseCategory)
-            .OrderByDescending(e => e.Date)
-            .ToListAsync();
+            .OrderByDescending(e => e.Date);
 
-        return expenses.Select(e => new ExpenseDto
-        {
-            Id = e.Id,
-            Description = e.Description,
-            Amount = e.Amount,
-            ExpenseCategoryId = e.ExpenseCategoryId,
-            CategoryName = e.ExpenseCategory?.Name ?? "Sin Categoría",
-            Date = e.Date,
-            PaymentMethod = e.PaymentMethod,
-            Notes = e.Notes
-        }).ToList();
+        var totalCount = await query.CountAsync();
+        var items = await query
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .Select(e => new ExpenseDto
+            {
+                Id = e.Id,
+                Description = e.Description,
+                Amount = e.Amount,
+                ExpenseCategoryId = e.ExpenseCategoryId,
+                CategoryName = e.ExpenseCategory != null ? e.ExpenseCategory.Name : "Sin Categoría",
+                Date = e.Date,
+                PaymentMethod = e.PaymentMethod,
+                Notes = e.Notes
+            }).ToListAsync();
+
+        var totalPages = (int)Math.Ceiling(totalCount / (double)pageSize);
+        return new PagedResponse<ExpenseDto>(items, totalCount, page, pageSize, totalPages);
     }
 
     [HttpGet("{id}")]

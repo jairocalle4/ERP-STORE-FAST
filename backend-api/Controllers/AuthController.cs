@@ -33,6 +33,6 @@ public class AuthController : ControllerBase
         // Fetch user again to return details (optimization: return details from service)
         var user = await _context.Users.FirstAsync(u => u.Username == request.Username);
 
-        return new AuthResponseDto(token, user.Username, user.Role.ToString());
+        return new AuthResponseDto(token, user.Username, user.Role.ToString(), user.Permissions);
     }
 }

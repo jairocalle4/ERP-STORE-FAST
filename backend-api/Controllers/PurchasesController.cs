@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using ErpStore.Application.Interfaces;
+using ErpStore.Application.DTOs;
 
 namespace ErpStore.Api.Controllers;
 
@@ -24,14 +25,23 @@ public class PurchasesController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<ActionResult<IEnumerable<Purchase>>> GetPurchases()
+    public async Task<ActionResult<PagedResponse<Purchase>>> GetPurchases([FromQuery] int page = 1, [FromQuery] int pageSize = 20)
     {
-        return await _context.Purchases
+        var query = _context.Purchases
             .Include(p => p.Supplier)
             .Include(p => p.Details)
             .ThenInclude(d => d.Product)
-            .OrderByDescending(p => p.Date)
+            .OrderByDescending(p => p.Date);
+
+        var totalCount = await query.CountAsync();
+        var items = await query
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
             .ToListAsync();
+
+        var totalPages = (int)Math.Ceiling(totalCount / (double)pageSize);
+
+        return new PagedResponse<Purchase>(items, totalCount, page, pageSize, totalPages);
     }
 
     [HttpGet("{id}")]
@@ -118,8 +128,8 @@ public class PurchasesController : ControllerBase
         }
     }
 
-    [HttpDelete("{id}")]
-    public async Task<IActionResult> DeletePurchase(int id)
+    [HttpPost("{id}/void")]
+    public async Task<IActionResult> VoidPurchase(int id)
     {
         using var transaction = await _context.Database.BeginTransactionAsync();
         try
@@ -129,6 +139,7 @@ public class PurchasesController : ControllerBase
                 .FirstOrDefaultAsync(p => p.Id == id);
 
             if (purchase == null) return NotFound();
+            if (purchase.IsVoid) return BadRequest("Esta compra ya ha sido anulada.");
 
             // REVERSE STOCK
             foreach (var detail in purchase.Details)
@@ -174,35 +185,38 @@ public class PurchasesController : ControllerBase
                 }
             }
 
-            _context.Purchases.Remove(purchase);
+            purchase.IsVoid = true;
             await _context.SaveChangesAsync();
 
             // KARDEX LOGGING
             foreach (var detail in purchase.Details)
             {
                 await _inventoryService.RegisterMovementAsync(
-                    detail.ProductId, 
-                    "AnulacionCompra", 
+                    detail.ProductId,
+                    "AnulacionCompra",
                     -detail.Quantity, // OUT
-                    GetCurrentUserId(), 
-                    $"Anulación Compra #{purchase.InvoiceNumber}", 
-                    purchaseId: purchase.Id // Purchase is being deleted, but ID exists until transaction commit? 
-                    // Actually, if we delete, we might lose the link. But let's try.
-                    // If Constraint is Cascade, it will fail.
-                    // Migration likely uses Cascade.
-                    // Safe approach: Pass null for purchaseId if we are deleting it.
+                    GetCurrentUserId(),
+                    $"Anulación Factura #{purchase.InvoiceNumber}",
+                    purchaseId: purchase.Id
                 );
             }
+
             await _context.SaveChangesAsync();
             await transaction.CommitAsync();
 
-            return NoContent();
+            return Ok(new { message = "Compra anulada correctamente", purchase });
         }
         catch (Exception ex)
         {
             await transaction.RollbackAsync();
             return BadRequest(ex.Message);
         }
+    }
+
+    [HttpDelete("{id}")]
+    public async Task<IActionResult> DeletePurchase(int id)
+    {
+        return await VoidPurchase(id);
     }
 
     private int GetCurrentUserId()

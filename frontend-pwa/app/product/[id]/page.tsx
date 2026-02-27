@@ -12,7 +12,8 @@ export async function generateMetadata(
     const { id } = await params;
 
     try {
-        const res = await fetch(`http://localhost:5140/api/v1/products/${id}`);
+        const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5140/api/v1";
+        const res = await fetch(`${API_URL}/products/${id}`);
         if (!res.ok) return { title: "Producto no encontrado" };
 
         const product = await res.json();

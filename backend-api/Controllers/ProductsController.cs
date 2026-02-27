@@ -3,6 +3,7 @@ using ErpStore.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using ErpStore.Application.DTOs;
 
 namespace ErpStore.Api.Controllers;
 
@@ -20,10 +21,10 @@ public class ProductsController : ControllerBase
 
     [HttpGet]
     [AllowAnonymous] // Public for PWA
-    public async Task<ActionResult<IEnumerable<Product>>> GetProducts(
+    public async Task<ActionResult<PagedResponse<Product>>> GetProducts(
         [FromQuery] bool includeInactive = false,
         [FromQuery] int page = 1,
-        [FromQuery] int pageSize = 1000,
+        [FromQuery] int pageSize = 20,
         [FromQuery] int? categoryId = null,
         [FromQuery] string? search = null,
         [FromQuery] bool onlyOffers = false) 
@@ -43,12 +44,12 @@ public class ProductsController : ControllerBase
         {
             query = query.Where(p => p.IsActive);
         }
-
+ 
         if (categoryId.HasValue)
         {
             query = query.Where(p => p.CategoryId == categoryId.Value);
         }
-
+ 
         if (!string.IsNullOrEmpty(search))
         {
             var searchLower = search.ToLower();
@@ -56,15 +57,20 @@ public class ProductsController : ControllerBase
                 || (p.Description != null && p.Description.ToLower().Contains(searchLower))
                 || (p.SKU != null && p.SKU.ToLower().Contains(searchLower)));
         }
-
+ 
         if (page < 1) page = 1;
         if (pageSize < 1) pageSize = 10;
 
-        return await query
+        var totalCount = await query.CountAsync();
+        var items = await query
             .OrderByDescending(p => p.Id)
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
             .ToListAsync();
+
+        var totalPages = (int)Math.Ceiling(totalCount / (double)pageSize);
+ 
+        return new PagedResponse<Product>(items, totalCount, page, pageSize, totalPages);
     }
 
     [HttpGet("{id}")]

@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import { X, Printer, Calendar, User, Package, Hash, CreditCard, Download, Trash2 } from 'lucide-react';
 import type { Sale } from '../../services/sale.service';
 import { saleService } from '../../services/sale.service';
+import { companyService, type CompanySetting } from '../../services/company.service';
 import { useNotificationStore } from '../../store/useNotificationStore';
 
 interface SaleDetailsModalProps {
@@ -17,6 +18,22 @@ const SaleDetailsModal: React.FC<SaleDetailsModalProps> = ({ isOpen, onClose, sa
     const addNotification = useNotificationStore(state => state.addNotification);
     const [isVoiding, setIsVoiding] = React.useState(false);
     const [showConfirmVoid, setShowConfirmVoid] = React.useState(false);
+    const [company, setCompany] = React.useState<CompanySetting | null>(null);
+
+    // Load company settings for print
+    React.useEffect(() => {
+        if (isOpen) {
+            const loadSettings = async () => {
+                try {
+                    const data = await companyService.getSettings();
+                    setCompany(data);
+                } catch (err) {
+                    console.error('Error fetching company settings for print', err);
+                }
+            };
+            loadSettings();
+        }
+    }, [isOpen]);
 
     // Auto-print effect
     React.useEffect(() => {
@@ -78,10 +95,10 @@ const SaleDetailsModal: React.FC<SaleDetailsModalProps> = ({ isOpen, onClose, sa
                 </head>
                 <body>
                     <div class="text-center header">
-                        <div class="store-name">ERP STORE FAST</div>
-                        <div>RUC: 0999999999001</div>
-                        <div>Matriz: Calle Principal 123</div>
-                        <div>Telf: 0991693863</div>
+                        <div class="store-name">${company?.name || 'ERP STORE FAST'}</div>
+                        <div>RUC: ${company?.ruc || '0999999999001'}</div>
+                        <div>Matriz: ${company?.address || 'Calle Principal 123'}</div>
+                        <div>Telf: ${company?.phone || '0991693863'}</div>
                     </div>
 
                     <div class="divider"></div>
@@ -144,8 +161,7 @@ const SaleDetailsModal: React.FC<SaleDetailsModalProps> = ({ isOpen, onClose, sa
 
                     <div class="footer text-center">
                         <div class="bold">¡GRACIAS POR SU COMPRA!</div>
-                        <div>Este documento es un comprobante de venta.</div>
-                        <div>Conserve su ticket para cambios o devoluciones.</div>
+                        <div>${company?.legalMessage || 'Este documento es un comprobante de venta.<br/>Conserve su ticket para cambios o devoluciones.'}</div>
                     </div>
                 </body>
             </html>

@@ -1,4 +1,5 @@
 import api from './api';
+import type { PagedResponse } from './types';
 import type { Client } from './client.service';
 import type { Employee } from './employee.service';
 
@@ -47,8 +48,10 @@ export interface CreateSaleDto {
 }
 
 export const saleService = {
-    getAll: async () => {
-        const response = await api.get<Sale[]>('/sales');
+    getAll: async (page: number = 1, pageSize: number = 20) => {
+        const response = await api.get<PagedResponse<Sale>>('/sales', {
+            params: { page, pageSize }
+        });
         return response.data;
     },
     getById: async (id: number) => {

@@ -1,24 +1,39 @@
 import { useState, useEffect } from 'react';
-import { Plus, Search, Calendar, FileText, Truck, DollarSign, Eye, Trash2 } from 'lucide-react';
+import { Plus, Search, Calendar, FileText, Truck, DollarSign, Eye, Trash2, ChevronLeft, ChevronRight } from 'lucide-react';
 import { GlassCard } from '../components/common/GlassCard';
 import { purchaseService, type Purchase } from '../services/purchase.service';
 import { useNotificationStore } from '../store/useNotificationStore';
 import { Link } from 'react-router-dom';
+import ConfirmModal from '../components/modals/ConfirmModal';
 
 export default function PurchaseListPage() {
     const [purchases, setPurchases] = useState<Purchase[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
+    const [deleteModal, setDeleteModal] = useState<{ isOpen: boolean, purchaseId: number | null, isLoading: boolean }>({
+        isOpen: false,
+        purchaseId: null,
+        isLoading: false
+    });
+
+    // Pagination State
+    const [currentPage, setCurrentPage] = useState(1);
+    const [totalPages, setTotalPages] = useState(1);
+    const [totalItems, setTotalItems] = useState(0);
+    const pageSize = 15;
     const addNotification = useNotificationStore(s => s.addNotification);
 
     useEffect(() => {
-        fetchPurchases();
-    }, []);
+        fetchPurchases(currentPage);
+    }, [currentPage]);
 
-    const fetchPurchases = async () => {
+    const fetchPurchases = async (page = 1) => {
+        setLoading(true);
         try {
-            const data = await purchaseService.getAll();
-            setPurchases(data);
+            const data = await purchaseService.getAll(page, pageSize);
+            setPurchases(data?.items || []);
+            setTotalPages(data?.totalPages || 1);
+            setTotalItems(data?.totalCount || 0);
         } catch (err) {
             console.error(err);
             addNotification('Error al cargar compras', 'error');
@@ -27,12 +42,29 @@ export default function PurchaseListPage() {
         }
     };
 
-    const filteredPurchases = purchases.filter(p =>
-        p.invoiceNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (p.supplier?.name.toLowerCase().includes(searchTerm.toLowerCase()))
-    );
+    const handleDelete = async () => {
+        if (!deleteModal.purchaseId) return;
 
-    const getStatusStyle = (status: string) => {
+        setDeleteModal(prev => ({ ...prev, isLoading: true }));
+        try {
+            await purchaseService.void(deleteModal.purchaseId);
+            addNotification('Compra anulada correctamente', 'success');
+            fetchPurchases(currentPage);
+        } catch (err) {
+            addNotification('Error al anular compra', 'error');
+        } finally {
+            setDeleteModal({ isOpen: false, purchaseId: null, isLoading: false });
+        }
+    };
+
+    const filteredPurchases = (purchases || []).filter(p => {
+        const invoiceMatch = p.invoiceNumber?.toLowerCase().includes(searchTerm.toLowerCase());
+        const supplierMatch = p.supplier?.name?.toLowerCase().includes(searchTerm.toLowerCase());
+        return invoiceMatch || supplierMatch;
+    });
+
+    const getStatusStyle = (status: string, isVoid?: boolean) => {
+        if (isVoid) return 'bg-rose-100 text-rose-600 border-rose-200';
         switch (status) {
             case 'Paid': return 'bg-emerald-100 text-emerald-600 border-emerald-200';
             case 'Pending': return 'bg-amber-100 text-amber-600 border-amber-200';
@@ -43,6 +75,16 @@ export default function PurchaseListPage() {
 
     return (
         <div className="space-y-6 animate-fade-in">
+            <ConfirmModal
+                isOpen={deleteModal.isOpen}
+                onClose={() => setDeleteModal({ isOpen: false, purchaseId: null, isLoading: false })}
+                onConfirm={handleDelete}
+                title="Anular Factura de Compra"
+                message="¿Estás seguro de que deseas anular esta compra? El stock de los productos se descontará automáticamente y el registro quedará marcado como 'Anulado' para fines contables."
+                confirmText="Sí, Anular Factura"
+                cancelText="Cancelar"
+                isLoading={deleteModal.isLoading}
+            />
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
                     <h1 className="text-3xl font-bold text-indigo-950">Compras e Inventario</h1>
@@ -72,8 +114,8 @@ export default function PurchaseListPage() {
                         <DollarSign size={24} />
                     </div>
                     <div>
-                        <p className="text-[10px] font-black text-emerald-400 uppercase tracking-widest">Inversión Total</p>
-                        <p className="text-2xl font-black text-indigo-950">${purchases.reduce((acc, p) => acc + p.total, 0).toFixed(2)}</p>
+                        <p className="text-[10px] font-black text-emerald-400 uppercase tracking-widest">Inversión Neta</p>
+                        <p className="text-2xl font-black text-indigo-950">${purchases.filter(p => !p.isVoid).reduce((acc, p) => acc + p.total, 0).toFixed(2)}</p>
                     </div>
                 </GlassCard>
                 <GlassCard className="!p-6 flex items-center gap-4 border-l-4 border-l-amber-500">
@@ -123,14 +165,14 @@ export default function PurchaseListPage() {
                                 </tr>
                             ) : (
                                 filteredPurchases.map(purchase => (
-                                    <tr key={purchase.id} className="group bg-white/60 hover:bg-white transition-all shadow-sm">
+                                    <tr key={purchase.id} className={`group ${purchase.isVoid ? 'opacity-60 bg-slate-50' : 'bg-white/60 hover:bg-white'} transition-all shadow-sm`}>
                                         <td className="py-4 pl-4 rounded-l-2xl border-y border-l border-indigo-50">
                                             <div className="flex items-center gap-3">
-                                                <div className="w-10 h-10 bg-indigo-50 text-indigo-400 rounded-xl flex items-center justify-center">
+                                                <div className={`w-10 h-10 ${purchase.isVoid ? 'bg-slate-200 text-slate-400' : 'bg-indigo-50 text-indigo-400'} rounded-xl flex items-center justify-center`}>
                                                     <Calendar size={18} />
                                                 </div>
                                                 <div>
-                                                    <p className="font-bold text-slate-800 leading-none">{new Date(purchase.date).toLocaleDateString()}</p>
+                                                    <p className={`font-bold ${purchase.isVoid ? 'text-slate-500 line-through' : 'text-slate-800'} leading-none`}>{new Date(purchase.date).toLocaleDateString()}</p>
                                                     <p className="text-xs text-slate-400 mt-1 font-mono uppercase tracking-widest">#{purchase.invoiceNumber}</p>
                                                 </div>
                                             </div>
@@ -145,20 +187,30 @@ export default function PurchaseListPage() {
                                         </td>
                                         <td className="py-4 border-y border-indigo-50">
                                             <div className="flex flex-col gap-1">
-                                                <span className={`px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-widest inline-block w-fit border ${getStatusStyle(purchase.status)}`}>
-                                                    {purchase.status === 'Paid' ? 'Pagado' : purchase.status === 'Pending' ? 'Pendiente' : 'Abono'}
+                                                <span className={`px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-widest inline-block w-fit border ${getStatusStyle(purchase.status, purchase.isVoid)}`}>
+                                                    {purchase.isVoid ? 'Anulada' : (purchase.status === 'Paid' ? 'Pagado' : purchase.status === 'Pending' ? 'Pendiente' : 'Abono')}
                                                 </span>
                                                 <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-1">{purchase.paymentMethod}</span>
                                             </div>
                                         </td>
                                         <td className="py-4 pr-4 rounded-r-2xl border-y border-r border-indigo-50 text-right">
                                             <div className="flex items-center justify-end gap-2">
-                                                <button className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl transition-all" title="Ver Detalle">
+                                                <Link
+                                                    to={`/purchases/${purchase.id}`}
+                                                    className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl transition-all"
+                                                    title="Ver Detalle"
+                                                >
                                                     <Eye size={18} />
-                                                </button>
-                                                <button className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-all" title="Eliminar (Reversa Stock)">
-                                                    <Trash2 size={18} />
-                                                </button>
+                                                </Link>
+                                                {!purchase.isVoid && (
+                                                    <button
+                                                        onClick={() => setDeleteModal({ isOpen: true, purchaseId: purchase.id, isLoading: false })}
+                                                        className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-all"
+                                                        title="Anular Factura"
+                                                    >
+                                                        <Trash2 size={18} />
+                                                    </button>
+                                                )}
                                             </div>
                                         </td>
                                     </tr>
@@ -167,6 +219,36 @@ export default function PurchaseListPage() {
                         </tbody>
                     </table>
                 </div>
+
+                {/* Pagination Controls */}
+                {!loading && totalPages > 1 && (
+                    <div className="mt-6 flex items-center justify-between bg-white/40 p-4 rounded-2xl border border-indigo-50/50">
+                        <div className="text-xs font-bold text-slate-500 uppercase tracking-widest">
+                            Mostrando <span className="text-indigo-600 font-black">{purchases.length}</span> de <span className="text-indigo-950 font-black">{totalItems}</span> facturas
+                        </div>
+                        <div className="flex gap-2">
+                            <button
+                                onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                                disabled={currentPage === 1}
+                                className="p-2 rounded-xl border border-indigo-100 bg-white hover:bg-indigo-50 hover:text-indigo-600 disabled:opacity-30 disabled:hover:bg-white disabled:hover:text-slate-400 transition-all shadow-sm"
+                            >
+                                <ChevronLeft size={18} />
+                            </button>
+
+                            <div className="flex items-center px-4 bg-white border border-indigo-100 rounded-xl font-black text-xs text-indigo-600 shadow-sm">
+                                {currentPage} / {totalPages}
+                            </div>
+
+                            <button
+                                onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                                disabled={currentPage === totalPages}
+                                className="p-2 rounded-xl border border-indigo-100 bg-white hover:bg-indigo-50 hover:text-indigo-600 disabled:opacity-30 disabled:hover:bg-white disabled:hover:text-slate-400 transition-all shadow-sm"
+                            >
+                                <ChevronRight size={18} />
+                            </button>
+                        </div>
+                    </div>
+                )}
             </GlassCard>
         </div>
     );

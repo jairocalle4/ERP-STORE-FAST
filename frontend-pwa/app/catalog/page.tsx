@@ -28,8 +28,12 @@ function CatalogContent() {
     useEffect(() => {
         async function fetchCategories() {
             try {
-                const res = await fetch("http://localhost:5140/api/v1/categories?onlyWithProducts=true");
-                if (res.ok) setCategories(await res.json());
+                const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5140/api/v1";
+                const res = await fetch(`${API_URL}/categories?onlyWithProducts=true`);
+                if (res.ok) {
+                    const data = await res.json();
+                    setCategories(data.items || []);
+                }
             } catch (e) { console.error(e); }
         }
         fetchCategories();
@@ -45,16 +49,17 @@ function CatalogContent() {
             const searchParam = search ? `&search=${encodeURIComponent(search)}` : "";
             const offersParam = offersOnly ? `&onlyOffers=true` : "";
 
-            const res = await fetch(`http://localhost:5140/api/v1/products?page=${pageNum}&pageSize=${PAGE_SIZE}${categoryParam}${searchParam}${offersParam}`);
+            const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5140/api/v1";
+            const res = await fetch(`${API_URL}/products?page=${pageNum}&pageSize=${PAGE_SIZE}${categoryParam}${searchParam}${offersParam}`);
             if (!res.ok) throw new Error("Failed");
             const newProducts = await res.json();
 
-            setHasMore(newProducts.length === PAGE_SIZE);
+            setHasMore((newProducts.items || []).length === PAGE_SIZE);
 
             if (isInitial) {
-                setProducts(newProducts);
+                setProducts(newProducts.items || []);
             } else {
-                setProducts(prev => [...prev, ...newProducts]);
+                setProducts(prev => [...prev, ...(newProducts.items || [])]);
             }
         } catch (error) {
             console.error(error);

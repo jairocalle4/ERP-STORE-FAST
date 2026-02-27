@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Plus, Search, Phone, MapPin, Mail, Edit, Trash2 } from 'lucide-react';
+import { Plus, Search, Phone, MapPin, Mail, Edit, Trash2, ChevronLeft, ChevronRight } from 'lucide-react';
 import { GlassCard } from '../components/common/GlassCard';
 import { supplierService, type Supplier } from '../services/supplier.service';
 import { useNotificationStore } from '../store/useNotificationStore';
@@ -19,14 +19,23 @@ export default function SupplierListPage() {
 
     const addNotification = useNotificationStore(s => s.addNotification);
 
-    useEffect(() => {
-        fetchSuppliers();
-    }, []);
+    // Pagination State
+    const [currentPage, setCurrentPage] = useState(1);
+    const [totalPages, setTotalPages] = useState(1);
+    const [totalItems, setTotalItems] = useState(0);
+    const pageSize = 15;
 
-    const fetchSuppliers = async () => {
+    useEffect(() => {
+        fetchSuppliers(currentPage);
+    }, [currentPage]);
+
+    const fetchSuppliers = async (page = 1) => {
+        setLoading(true);
         try {
-            const data = await supplierService.getAll();
-            setSuppliers(data);
+            const data = await supplierService.getAll(page, pageSize);
+            setSuppliers(data.items);
+            setTotalPages(data.totalPages);
+            setTotalItems(data.totalCount);
         } catch (err) {
             console.error(err);
             addNotification('Error al cargar proveedores', 'error');
@@ -55,7 +64,7 @@ export default function SupplierListPage() {
         try {
             await supplierService.delete(supplierToDelete);
             addNotification('Proveedor eliminado correctamente', 'success');
-            fetchSuppliers();
+            fetchSuppliers(currentPage);
         } catch (err) {
             addNotification('Error al eliminar proveedor', 'error');
         } finally {
@@ -63,9 +72,9 @@ export default function SupplierListPage() {
         }
     };
 
-    const filteredSuppliers = suppliers.filter(s =>
-        s.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (s.taxId && s.taxId.includes(searchTerm))
+    const filteredSuppliers = (suppliers || []).filter(s =>
+        s.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        s.taxId?.includes(searchTerm)
     );
 
     return (
@@ -182,12 +191,42 @@ export default function SupplierListPage() {
                         </tbody>
                     </table>
                 </div>
+
+                {/* Pagination Controls */}
+                {!loading && totalPages > 1 && (
+                    <div className="mt-6 flex items-center justify-between bg-white/40 p-4 rounded-2xl border border-indigo-50/50">
+                        <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest">
+                            Mostrando <span className="text-indigo-600 font-black">{suppliers.length}</span> de <span className="text-indigo-950 font-black">{totalItems}</span> proveedores
+                        </div>
+                        <div className="flex gap-2">
+                            <button
+                                onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                                disabled={currentPage === 1}
+                                className="p-2 rounded-xl border border-indigo-100 bg-white hover:bg-indigo-50 hover:text-indigo-600 disabled:opacity-30 disabled:hover:bg-white disabled:hover:text-slate-400 transition-all shadow-sm"
+                            >
+                                <ChevronLeft size={18} />
+                            </button>
+
+                            <div className="flex items-center px-4 bg-white border border-indigo-100 rounded-xl font-black text-[10px] text-indigo-600 shadow-sm">
+                                {currentPage} / {totalPages}
+                            </div>
+
+                            <button
+                                onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                                disabled={currentPage === totalPages}
+                                className="p-2 rounded-xl border border-indigo-100 bg-white hover:bg-indigo-50 hover:text-indigo-600 disabled:opacity-30 disabled:hover:bg-white disabled:hover:text-slate-400 transition-all shadow-sm"
+                            >
+                                <ChevronRight size={18} />
+                            </button>
+                        </div>
+                    </div>
+                )}
             </GlassCard>
 
             <SupplierFormModal
                 isOpen={isFormOpen}
                 onClose={() => setIsFormOpen(false)}
-                onSuccess={fetchSuppliers}
+                onSuccess={() => fetchSuppliers(currentPage)}
                 supplier={selectedSupplier}
             />
 

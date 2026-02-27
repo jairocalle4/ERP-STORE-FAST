@@ -2,6 +2,7 @@
 
 import { ShoppingBag, Facebook, Instagram, Twitter, Mail, Phone, MapPin } from "lucide-react";
 import Link from "next/link";
+import Image from "next/image";
 import { useEffect, useState } from "react";
 
 export default function Footer() {
@@ -10,7 +11,8 @@ export default function Footer() {
     useEffect(() => {
         async function fetchSettings() {
             try {
-                const res = await fetch("http://localhost:5140/api/v1/CompanySettings");
+                const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5140/api/v1";
+                const res = await fetch(`${API_URL}/CompanySettings`);
                 if (res.ok) {
                     const data = await res.json();
                     setSettings(data);
@@ -27,8 +29,8 @@ export default function Footer() {
             <div className="max-w-7xl mx-auto px-6 grid grid-cols-2 md:grid-cols-5 gap-10">
                 <div className="space-y-4 col-span-2 md:col-span-1">
                     <Link href="/" className="flex items-center gap-2">
-                        <div className="w-8 h-8 rounded-lg premium-button flex items-center justify-center">
-                            <ShoppingBag size={18} strokeWidth={2.5} />
+                        <div className="relative w-8 h-8 flex items-center justify-center">
+                            <Image src="/icon-192x192.png" alt="Logo" fill className="object-contain" />
                         </div>
                         <span className="text-xl font-outfit font-black tracking-tighter text-foreground">
                             {settings?.name?.toUpperCase() || "FAST"}<span className="gradient-text">{settings?.name ? "" : "STORE"}</span>

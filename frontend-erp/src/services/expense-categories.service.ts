@@ -1,4 +1,5 @@
 import api from './api';
+import type { PagedResponse } from './types';
 
 export interface ExpenseCategory {
     id: number;
@@ -13,8 +14,10 @@ export interface CreateExpenseCategoryDto {
 }
 
 export const expenseCategoriesService = {
-    getAll: async () => {
-        const response = await api.get<ExpenseCategory[]>('/expense-categories');
+    getAll: async (page = 1, pageSize = 20) => {
+        const response = await api.get<PagedResponse<ExpenseCategory>>('/expense-categories', {
+            params: { page, pageSize }
+        });
         return response.data;
     },
 

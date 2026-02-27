@@ -27,15 +27,24 @@ public class SalesController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<ActionResult<List<Sale>>> GetSales()
+    public async Task<ActionResult<PagedResponse<Sale>>> GetSales([FromQuery] int page = 1, [FromQuery] int pageSize = 20)
     {
-        return await _context.Sales
+        var query = _context.Sales
             .Include(s => s.SaleDetails)
             .ThenInclude(sd => sd.Product)
             .Include(s => s.Client)
             .Include(s => s.Employee)
-            .OrderByDescending(s => s.CreatedAt)
+            .OrderByDescending(s => s.Date);
+
+        var totalCount = await query.CountAsync();
+        var items = await query
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
             .ToListAsync();
+
+        var totalPages = (int)Math.Ceiling(totalCount / (double)pageSize);
+
+        return new PagedResponse<Sale>(items, totalCount, page, pageSize, totalPages);
     }
 
     [HttpGet("{id}")]

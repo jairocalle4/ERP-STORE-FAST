@@ -1,4 +1,5 @@
 import api from './api';
+import type { PagedResponse } from './types';
 
 export interface Supplier {
     id: number;
@@ -12,8 +13,10 @@ export interface Supplier {
 }
 
 export const supplierService = {
-    getAll: async () => {
-        const response = await api.get<Supplier[]>('/suppliers');
+    getAll: async (page = 1, pageSize = 20) => {
+        const response = await api.get<PagedResponse<Supplier>>('/suppliers', {
+            params: { page, pageSize }
+        });
         return response.data;
     },
     getById: async (id: number) => {

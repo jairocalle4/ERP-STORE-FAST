@@ -69,8 +69,8 @@ export default function ProductFormPage() {
 
     const fetchCategories = async () => {
         try {
-            const res = await api.get('/categories');
-            setCategories(res.data);
+            const res = await api.get('/categories', { params: { pageSize: 1000 } });
+            setCategories(res.data.items);
         } catch (err) {
             console.error('Error categories', err);
         }

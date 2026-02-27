@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
+import api from '../services/api';
 import axios from 'axios';
-import { Plus, Edit2, Trash2, Search, Filter, Package, Eye, RefreshCw, ArrowUpDown, History } from 'lucide-react';
+import { Plus, Edit2, Trash2, Search, Filter, Package, Eye, RefreshCw, ArrowUpDown, History, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
 import { GlassCard } from '../components/common/GlassCard';
 import { productService, type Product } from '../services/product.service';
@@ -36,6 +37,12 @@ export default function ProductListPage() {
     const [statusFilter, setStatusFilter] = useState<string>('all'); // all, active, inactive
     const [sortConfig, setSortConfig] = useState<{ key: 'name' | 'price' | 'stock', direction: 'asc' | 'desc' }>({ key: 'name', direction: 'asc' });
 
+    // Pagination State
+    const [currentPage, setCurrentPage] = useState(1);
+    const [totalPages, setTotalPages] = useState(1);
+    const [totalItems, setTotalItems] = useState(0);
+    const pageSize = 20;
+
     // Data for dropdowns
     const [categories, setCategories] = useState<Category[]>([]);
     const [subcategories, setSubcategories] = useState<Subcategory[]>([]);
@@ -51,9 +58,12 @@ export default function ProductListPage() {
     const [isKardexOpen, setIsKardexOpen] = useState(false);
 
     useEffect(() => {
-        fetchProducts();
         fetchCategories();
     }, []);
+
+    useEffect(() => {
+        fetchProducts(currentPage);
+    }, [currentPage, searchTerm, categoryId]);
 
     useEffect(() => {
         if (categoryId > 0) {
@@ -64,11 +74,13 @@ export default function ProductListPage() {
         }
     }, [categoryId]);
 
-    const fetchProducts = async () => {
-        setLoading(true);
+    const fetchProducts = async (page: number = 1) => {
+        if (products.length === 0) setLoading(true); // Solo mostrar loader gigante en la primera carga
         try {
-            const data = await productService.getAll(true); // Include inactive
-            setProducts(data);
+            const data = await productService.getAll(statusFilter === 'all' || statusFilter === 'inactive', page, pageSize, searchTerm, categoryId);
+            setProducts(data?.items || []);
+            setTotalPages(data?.totalPages || 1);
+            setTotalItems(data?.totalCount || 0);
         } catch (err) {
             console.error('Error fetching products', err);
         } finally {
@@ -78,15 +90,15 @@ export default function ProductListPage() {
 
     const fetchCategories = async () => {
         try {
-            const res = await axios.get('http://localhost:5140/api/v1/categories');
-            setCategories(res.data);
+            const res = await api.get('/categories', { params: { pageSize: 1000 } });
+            setCategories(res.data.items || []);
         } catch (err) { console.error(err); }
     };
 
     const fetchSubcategories = async (catId: number) => {
         try {
-            const res = await axios.get(`http://localhost:5140/api/v1/subcategories?categoryId=${catId}`);
-            setSubcategories(res.data);
+            const res = await api.get(`/subcategories?categoryId=${catId}`);
+            setSubcategories(res.data || []);
         } catch (err) { console.error(err); }
     };
 
@@ -130,7 +142,7 @@ export default function ProductListPage() {
     };
 
     // Filter & Sort Logic
-    const sortedProducts = [...products]
+    const sortedProducts = [...(products || [])]
         .filter(p => {
             const normalize = (str: string) =>
                 str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
@@ -217,7 +229,10 @@ export default function ProductListPage() {
                                 type="text"
                                 placeholder="Buscar por nombre..."
                                 value={searchTerm}
-                                onChange={(e) => setSearchTerm(e.target.value)}
+                                onChange={(e) => {
+                                    setSearchTerm(e.target.value);
+                                    if (currentPage !== 1) setCurrentPage(1);
+                                }}
                                 className="w-full px-4 py-2 bg-white/50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500/50 outline-none text-sm"
                             />
                         </div>
@@ -226,7 +241,10 @@ export default function ProductListPage() {
                             <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Categoría</label>
                             <select
                                 value={categoryId}
-                                onChange={(e) => setCategoryId(Number(e.target.value))}
+                                onChange={(e) => {
+                                    setCategoryId(Number(e.target.value));
+                                    if (currentPage !== 1) setCurrentPage(1);
+                                }}
                                 className="w-full px-4 py-2 bg-white/50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500/50 outline-none text-sm text-slate-700"
                             >
                                 <option value={0}>Todas</option>
@@ -296,7 +314,10 @@ export default function ProductListPage() {
 
                     <div className="flex gap-2 mt-4">
                         <button
-                            onClick={fetchProducts}
+                            onClick={() => {
+                                setCurrentPage(1);
+                                fetchProducts(1);
+                            }}
                             className="bg-indigo-600 text-white px-6 py-2 rounded-xl text-sm font-bold shadow-md hover:bg-indigo-700 transition-all flex items-center gap-2"
                         >
                             <Search size={16} /> Buscar
@@ -436,6 +457,36 @@ export default function ProductListPage() {
                             </tbody>
                         </table>
                     </div>
+
+                    {/* Pagination Controls */}
+                    {!loading && totalPages > 1 && (
+                        <div className="px-6 py-4 bg-slate-50/50 border-t border-indigo-50/50 flex items-center justify-between">
+                            <div className="text-sm text-slate-500 font-medium">
+                                Mostrando <span className="text-indigo-600 font-bold">{products.length}</span> de <span className="text-slate-800 font-bold">{totalItems}</span> productos
+                            </div>
+                            <div className="flex gap-2">
+                                <button
+                                    onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                                    disabled={currentPage === 1}
+                                    className="p-2 rounded-xl border border-slate-200 bg-white hover:bg-indigo-50 hover:text-indigo-600 disabled:opacity-30 disabled:hover:bg-white disabled:hover:text-slate-400 transition-all shadow-sm"
+                                >
+                                    <ChevronLeft size={20} />
+                                </button>
+
+                                <div className="flex items-center px-4 bg-white border border-slate-200 rounded-xl font-bold text-sm text-indigo-600 shadow-sm">
+                                    {currentPage} / {totalPages}
+                                </div>
+
+                                <button
+                                    onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                                    disabled={currentPage === totalPages}
+                                    className="p-2 rounded-xl border border-slate-200 bg-white hover:bg-indigo-50 hover:text-indigo-600 disabled:opacity-30 disabled:hover:bg-white disabled:hover:text-slate-400 transition-all shadow-sm"
+                                >
+                                    <ChevronRight size={20} />
+                                </button>
+                            </div>
+                        </div>
+                    )}
                 </GlassCard>
             </div>
 

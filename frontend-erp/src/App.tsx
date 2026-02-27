@@ -18,16 +18,44 @@ import CashRegisterPage from './pages/CashRegisterPage';
 import SupplierListPage from './pages/SupplierListPage';
 import PurchaseListPage from './pages/PurchaseListPage';
 import PurchaseFormPage from './pages/PurchaseFormPage';
+import PurchaseDetailsPage from './pages/PurchaseDetailsPage';
 import MainLayout from './components/layout/MainLayout'; // Import Layout
 import { useAuthStore } from './store/useAuthStore';
 
 // Protected Route Component
-const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
-  const token = useAuthStore((state) => state.token);
+const ProtectedRoute = ({ children, permission }: { children: React.ReactNode, permission?: string }) => {
+  const { token, user } = useAuthStore();
+
   if (!token) {
     return <Navigate to="/login" replace />;
   }
+
+  if (permission && user?.role !== 'Admin') {
+    const hasPerm = user?.permissions?.includes(permission);
+    if (!hasPerm) {
+      return <Navigate to="/" replace />;
+    }
+  }
+
   return <>{children}</>;
+};
+
+// Root Redirect Component to find the first available page
+const RootRedirect = () => {
+  const { user } = useAuthStore();
+
+  if (!user) return <Navigate to="/login" replace />;
+  if (user.role === 'Admin') return <Navigate to="/dashboard" replace />;
+
+  // Check permissions in order of priority
+  if (user.permissions.includes('dashboard.view')) return <Navigate to="/dashboard" replace />;
+  if (user.permissions.includes('pos.access')) return <Navigate to="/pos" replace />;
+  if (user.permissions.includes('products.view')) return <Navigate to="/products" replace />;
+  if (user.permissions.includes('sales.view')) return <Navigate to="/sales" replace />;
+  if (user.permissions.includes('cash.manage')) return <Navigate to="/cash-register" replace />;
+  if (user.permissions.includes('purchases.view')) return <Navigate to="/purchases" replace />;
+
+  return <Navigate to="/profile" replace />; // Profile is always accessible
 };
 
 // Custom Error Boundary
@@ -85,28 +113,29 @@ function App() {
               </ProtectedRoute>
             }
           >
-            <Route path="/dashboard" element={<DashboardPage />} />
-            <Route path="/products" element={<ProductListPage />} />
-            <Route path="/products/new" element={<ProductFormPage />} />
-            <Route path="/products/edit/:id" element={<ProductFormPage />} />
-            <Route path="/products/:id/details" element={<ProductDetailsPage />} />
-            <Route path="/categories" element={<CategoryListPage />} />
-            <Route path="/clients" element={<ClientListPage />} />
-            <Route path="/employees" element={<EmployeeListPage />} />
-            <Route path="/sales" element={<SalesHistoryPage />} />
-            <Route path="/pos" element={<PointOfSalePage />} />
-            <Route path="/expenses" element={<ExpensesPage />} />
-            <Route path="/reports" element={<ReportsPage />} />
-            <Route path="/settings" element={<SettingsPage />} />
+            <Route path="/dashboard" element={<ProtectedRoute permission="dashboard.view"><DashboardPage /></ProtectedRoute>} />
+            <Route path="/products" element={<ProtectedRoute permission="products.view"><ProductListPage /></ProtectedRoute>} />
+            <Route path="/products/new" element={<ProtectedRoute permission="products.manage"><ProductFormPage /></ProtectedRoute>} />
+            <Route path="/products/edit/:id" element={<ProtectedRoute permission="products.manage"><ProductFormPage /></ProtectedRoute>} />
+            <Route path="/products/:id/details" element={<ProtectedRoute permission="products.view"><ProductDetailsPage /></ProtectedRoute>} />
+            <Route path="/categories" element={<ProtectedRoute permission="products.view"><CategoryListPage /></ProtectedRoute>} />
+            <Route path="/clients" element={<ProtectedRoute permission="sales.view"><ClientListPage /></ProtectedRoute>} />
+            <Route path="/employees" element={<ProtectedRoute permission="users.manage"><EmployeeListPage /></ProtectedRoute>} />
+            <Route path="/sales" element={<ProtectedRoute permission="sales.view"><SalesHistoryPage /></ProtectedRoute>} />
+            <Route path="/pos" element={<ProtectedRoute permission="pos.access"><PointOfSalePage /></ProtectedRoute>} />
+            <Route path="/expenses" element={<ProtectedRoute permission="expenses.manage"><ExpensesPage /></ProtectedRoute>} />
+            <Route path="/reports" element={<ProtectedRoute permission="reports.view"><ReportsPage /></ProtectedRoute>} />
+            <Route path="/settings" element={<ProtectedRoute permission="settings.manage"><SettingsPage /></ProtectedRoute>} />
             <Route path="/profile" element={<ProfilePage />} />
-            <Route path="/cash-register" element={<CashRegisterPage />} />
-            <Route path="/suppliers" element={<SupplierListPage />} />
-            <Route path="/purchases" element={<PurchaseListPage />} />
-            <Route path="/purchases/new" element={<PurchaseFormPage />} />
-            <Route path="/" element={<Navigate to="/dashboard" replace />} />
+            <Route path="/cash-register" element={<ProtectedRoute permission="cash.manage"><CashRegisterPage /></ProtectedRoute>} />
+            <Route path="/suppliers" element={<ProtectedRoute permission="purchases.view"><SupplierListPage /></ProtectedRoute>} />
+            <Route path="/purchases" element={<ProtectedRoute permission="purchases.view"><PurchaseListPage /></ProtectedRoute>} />
+            <Route path="/purchases/new" element={<ProtectedRoute permission="purchases.manage"><PurchaseFormPage /></ProtectedRoute>} />
+            <Route path="/purchases/:id" element={<ProtectedRoute permission="purchases.view"><PurchaseDetailsPage /></ProtectedRoute>} />
+            <Route path="/" element={<RootRedirect />} />
           </Route>
 
-          <Route path="*" element={<Navigate to="/dashboard" replace />} />
+          <Route path="*" element={<RootRedirect />} />
         </Routes>
       </BrowserRouter>
     </ErrorBoundary>

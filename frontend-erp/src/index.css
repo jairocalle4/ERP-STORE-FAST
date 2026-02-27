@@ -116,6 +116,40 @@ body {
     animation-delay: 200ms;
 }
 
+@keyframes pulseSubtle {
+
+    0%,
+    100% {
+        opacity: 1;
+        transform: scale(1);
+    }
+
+    50% {
+        opacity: 0.85;
+        transform: scale(1.02);
+    }
+}
+
+@keyframes bounceSubtle {
+
+    0%,
+    100% {
+        transform: translateY(0);
+    }
+
+    50% {
+        transform: translateY(-3px);
+    }
+}
+
+.animate-pulse-subtle {
+    animation: pulseSubtle 3s ease-in-out infinite;
+}
+
+.animate-bounce-subtle {
+    animation: bounceSubtle 2s ease-in-out infinite;
+}
+
 /* Interactions */
 .hover-float:hover {
     transform: translateY(-4px);

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Outlet, NavLink, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Package, Layers, LogOut, User, Briefcase, FileText, ShoppingCart, X, Settings, DollarSign, BarChart2, Plus, Truck, Download, Bell, Info, AlertTriangle, Trash2, ChevronRight, Menu } from 'lucide-react';
+import { LayoutDashboard, Package, Layers, LogOut, User, Briefcase, FileText, ShoppingCart, X, Settings, DollarSign, BarChart2, Plus, Truck, Download, Bell, Info, AlertTriangle, Trash2, ChevronRight, Menu, Shield } from 'lucide-react';
 import { notificationService, type Notification } from '../../services/notification.service';
 import { useAuthStore } from '../../store/useAuthStore';
 import { Toast } from '../common/Toast';
@@ -72,20 +72,28 @@ export default function MainLayout() {
         }
     }, [location.pathname]);
 
+    const hasPermission = (permission: string) => {
+        if (user?.role === 'Admin') return true;
+        return user?.permissions?.includes(permission);
+    };
+
     const navItems = [
-        { path: '/', icon: LayoutDashboard, label: 'Dashboard' },
-        { path: '/products', icon: Package, label: 'Productos' },
-        { path: '/categories', icon: Layers, label: 'Categorías' },
-        { path: '/suppliers', icon: Truck, label: 'Proveedores' },
-        { path: '/purchases', icon: Download, label: 'Compras' },
-        { path: '/clients', icon: User, label: 'Clientes' },
-        { path: '/employees', icon: Briefcase, label: 'Empleados' },
-        { path: '/sales', icon: FileText, label: 'Ventas' },
-        { path: '/expenses', icon: DollarSign, label: 'Egresos' },
-        { path: '/reports', icon: BarChart2, label: 'Reportes' },
-        { path: '/pos', icon: ShoppingCart, label: 'Punto de Venta' },
-        { path: '/cash-register', icon: DollarSign, label: 'Arqueo de Caja' },
+        { path: '/', icon: LayoutDashboard, label: 'Dashboard', permission: 'dashboard.view' },
+        { path: '/products', icon: Package, label: 'Productos', permission: 'products.view' },
+        { path: '/categories', icon: Layers, label: 'Categorías', permission: 'products.view' },
+        { path: '/suppliers', icon: Truck, label: 'Proveedores', permission: 'purchases.view' },
+        { path: '/purchases', icon: Download, label: 'Compras', permission: 'purchases.view' },
+        { path: '/clients', icon: User, label: 'Clientes', permission: 'sales.view' },
+        { path: '/employees', icon: Briefcase, label: 'Empleados', permission: 'users.manage' },
+        { path: '/sales', icon: FileText, label: 'Ventas', permission: 'sales.view' },
+        { path: '/expenses', icon: DollarSign, label: 'Egresos', permission: 'expenses.manage' },
+        { path: '/reports', icon: BarChart2, label: 'Reportes', permission: 'reports.view' },
+        { path: '/pos', icon: ShoppingCart, label: 'Punto de Venta', permission: 'pos.access' },
+        { path: '/cash-register', icon: DollarSign, label: 'Arqueo de Caja', permission: 'cash.manage' },
+        { path: '/profile', icon: Shield, label: 'Usuarios', permission: 'users.manage' },
     ];
+
+    const allowedNavItems = navItems.filter(item => hasPermission(item.permission));
 
     const [hoveredLabel, setHoveredLabel] = useState<string | null>(null);
     const [tooltipTop, setTooltipTop] = useState(0);
@@ -103,37 +111,39 @@ export default function MainLayout() {
                 </div>
 
                 <nav className="flex-1 px-3 mt-4 space-y-1 overflow-y-auto custom-scrollbar scrollbar-none overflow-x-visible">
-                    {navItems.map((item) => (
-                        <NavLink
-                            key={item.path}
-                            to={item.path}
-                            onClick={() => setIsMobileMenuOpen(false)}
-                            onMouseEnter={(e) => {
-                                if (isVisualCollapsed) {
-                                    const rect = e.currentTarget.getBoundingClientRect();
-                                    setHoveredLabel(item.label);
-                                    setTooltipTop(rect.top + rect.height / 2);
-                                }
-                            }}
-                            onMouseLeave={() => setHoveredLabel(null)}
-                            className={({ isActive }) =>
-                                `flex items-center transition-all duration-300 group font-medium text-sm relative overflow-hidden ${isActive
+                    {allowedNavItems.map((item) => {
+                        const isItemActive = item.path === '/'
+                            ? location.pathname === '/' || location.pathname === '/dashboard'
+                            : location.pathname.startsWith(item.path);
+
+                        return (
+                            <NavLink
+                                key={item.path}
+                                to={item.path}
+                                onClick={() => setIsMobileMenuOpen(false)}
+                                onMouseEnter={(e) => {
+                                    if (isVisualCollapsed) {
+                                        const rect = e.currentTarget.getBoundingClientRect();
+                                        setHoveredLabel(item.label);
+                                        setTooltipTop(rect.top + rect.height / 2);
+                                    }
+                                }}
+                                onMouseLeave={() => setHoveredLabel(null)}
+                                className={`flex items-center transition-all duration-300 group font-medium text-sm relative overflow-hidden ${isItemActive
                                     ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/40 z-10'
                                     : 'text-slate-300 hover:bg-white/10 hover:text-white'
-                                } ${isVisualCollapsed ? 'w-11 h-11 justify-center rounded-xl mx-auto' : 'px-4 py-3 gap-3 rounded-xl'}`
-                            }
-                        >
-                            {({ isActive }) => (
+                                    } ${isVisualCollapsed ? 'w-11 h-11 justify-center rounded-xl mx-auto' : 'px-4 py-3 gap-3 rounded-xl'}`}
+                            >
                                 <>
-                                    {isActive && <div className="absolute inset-0 bg-gradient-to-tr from-indigo-500 to-violet-500 rounded-xl -z-10 opacity-100"></div>}
-                                    <item.icon size={20} className={`shrink-0 transition-transform duration-300 ${isActive ? 'scale-110' : 'group-hover:scale-110'}`} />
+                                    {isItemActive && <div className="absolute inset-0 bg-gradient-to-tr from-indigo-500 to-violet-500 rounded-xl -z-10 opacity-100 animate-pulse-subtle"></div>}
+                                    <item.icon size={20} className={`shrink-0 transition-transform duration-300 ${isItemActive ? 'scale-110' : 'group-hover:scale-110'}`} />
                                     <span className={`tracking-wide whitespace-nowrap transition-all duration-300 ${isVisualCollapsed ? 'w-0 opacity-0 overflow-hidden' : 'w-auto opacity-100'}`}>
                                         {item.label}
                                     </span>
                                 </>
-                            )}
-                        </NavLink>
-                    ))}
+                            </NavLink>
+                        );
+                    })}
                 </nav>
 
                 {/* Global Tooltip for Collapsed Sidebar */}
@@ -357,14 +367,16 @@ export default function MainLayout() {
                                     </div>
 
                                     <div className="py-2">
-                                        <NavLink
-                                            to="/settings"
-                                            onClick={() => setIsUserMenuOpen(false)}
-                                            className="flex items-center gap-3 px-4 py-3 text-slate-600 hover:bg-slate-50 hover:text-indigo-600 rounded-xl transition-all text-sm font-medium"
-                                        >
-                                            <Settings size={18} />
-                                            Configuración
-                                        </NavLink>
+                                        {hasPermission('settings.manage') && (
+                                            <NavLink
+                                                to="/settings"
+                                                onClick={() => setIsUserMenuOpen(false)}
+                                                className="flex items-center gap-3 px-4 py-3 text-slate-600 hover:bg-slate-50 hover:text-indigo-600 rounded-xl transition-all text-sm font-medium"
+                                            >
+                                                <Settings size={18} />
+                                                Configuración
+                                            </NavLink>
+                                        )}
                                         <NavLink
                                             to="/profile"
                                             onClick={() => setIsUserMenuOpen(false)}

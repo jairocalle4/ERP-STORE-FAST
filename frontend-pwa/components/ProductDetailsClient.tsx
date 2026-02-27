@@ -20,7 +20,8 @@ export default function ProductDetailsClient({ id }: { id: string }) {
     useEffect(() => {
         async function fetchProduct() {
             try {
-                const res = await fetch(`http://localhost:5140/api/v1/products/${id}`);
+                const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5140/api/v1";
+                const res = await fetch(`${API_URL}/products/${id}`);
                 if (!res.ok) throw new Error("Product not found");
                 const data = await res.json();
                 setProduct(data);
@@ -279,8 +280,8 @@ export default function ProductDetailsClient({ id }: { id: string }) {
                                         onClick={() => { if (!isOutOfStock) addToCart(product); }}
                                         disabled={isOutOfStock}
                                         className={`w-full py-5 rounded-2xl flex items-center justify-center gap-3 transition-all duration-300 font-black uppercase tracking-widest text-lg ${isOutOfStock
-                                                ? 'bg-slate-100 text-slate-400 cursor-not-allowed shadow-none'
-                                                : 'premium-button shadow-xl shadow-primary/20 group hover:-translate-y-1'
+                                            ? 'bg-slate-100 text-slate-400 cursor-not-allowed shadow-none'
+                                            : 'premium-button shadow-xl shadow-primary/20 group hover:-translate-y-1'
                                             }`}
                                     >
                                         {isOutOfStock ? (

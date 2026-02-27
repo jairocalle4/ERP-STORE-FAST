@@ -3,8 +3,9 @@ import { useState, useEffect } from 'react';
 import { useAuthStore } from '../store/useAuthStore';
 import { type User, userService } from '../services/user.service';
 import { GlassCard } from '../components/common/GlassCard';
-import { Shield, Trash2, Edit2, Plus, Save } from 'lucide-react';
+import { Shield, Trash2, Edit2, Plus, Save, ChevronDown, CheckCircle2 } from 'lucide-react';
 import { useNotificationStore } from '../store/useNotificationStore';
+import { PERMISSION_LABELS, DEFAULT_ROLE_PERMISSIONS } from '../constants/permissions';
 
 export default function ProfilePage() {
     const { user: currentUser, updateUser: updateAuthUser } = useAuthStore();
@@ -18,7 +19,7 @@ export default function ProfilePage() {
 
     useEffect(() => {
         fetchProfile();
-        if (currentUser?.role === 'Admin') {
+        if (currentUser?.role === 'Admin' || currentUser?.permissions?.includes('users.manage')) {
             fetchAllUsers();
         }
     }, []); // Run only once on mount, logic for currentUser changes handled differently if needed
@@ -71,7 +72,7 @@ export default function ProfilePage() {
             // Ensure role is present for backend validation
             const updatedProfile = {
                 ...profile,
-                role: profile.role || currentUser?.role || 'Employee'
+                role: profile.role || currentUser?.role || 'Vendedor'
             };
             await userService.updateProfile(updatedProfile);
 
@@ -235,7 +236,7 @@ export default function ProfilePage() {
                 </div>
 
                 {/* Admin User Management */}
-                {currentUser?.role === 'Admin' && (
+                {(currentUser?.role === 'Admin' || currentUser?.permissions?.includes('users.manage')) && (
                     <div className="lg:col-span-2 space-y-6">
                         <div className="flex justify-between items-center">
                             <h2 className="text-xl font-bold text-slate-800 flex items-center gap-2">
@@ -244,7 +245,11 @@ export default function ProfilePage() {
                             </h2>
                             <button
                                 onClick={() => {
-                                    setEditingUser({ role: 'Employee' }); // Default role
+                                    const role = 'Vendedor';
+                                    setEditingUser({
+                                        role,
+                                        permissions: DEFAULT_ROLE_PERMISSIONS[role] || []
+                                    });
                                     setShowUserModal(true);
                                 }}
                                 className="bg-emerald-500 hover:bg-emerald-600 text-white px-4 py-2 rounded-xl font-bold shadow-lg shadow-emerald-500/20 flex items-center gap-2 transition-all active:scale-95"
@@ -277,7 +282,10 @@ export default function ProfilePage() {
                                             </td>
                                             <td className="px-6 py-4 text-slate-600">{u.firstName} {u.lastName}</td>
                                             <td className="px-6 py-4">
-                                                <span className={`px-2 py-1 rounded-lg text-xs font-bold uppercase tracking-wide ${u.role === 'Admin' ? 'bg-rose-100 text-rose-600' : 'bg-emerald-100 text-emerald-600'
+                                                <span className={`px-2 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wide ${u.role === 'Admin' ? 'bg-rose-100 text-rose-600' :
+                                                    u.role === 'Gerente' ? 'bg-purple-100 text-purple-600' :
+                                                        u.role === 'Bodeguero' ? 'bg-amber-100 text-amber-600' :
+                                                            'bg-emerald-100 text-emerald-600'
                                                     }`}>
                                                     {u.role}
                                                 </span>
@@ -285,7 +293,7 @@ export default function ProfilePage() {
                                             <td className="px-6 py-4 text-right space-x-2">
                                                 <button
                                                     onClick={() => {
-                                                        setEditingUser(u);
+                                                        setEditingUser({ ...u });
                                                         setShowUserModal(true);
                                                     }}
                                                     className="p-2 text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
@@ -310,89 +318,188 @@ export default function ProfilePage() {
 
             {/* Edit/Create User Modal */}
             {showUserModal && editingUser && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
-                    <GlassCard className="w-full max-w-md p-6 animate-scale-in">
-                        <h3 className="text-xl font-bold text-slate-800 mb-6">
-                            {editingUser.id ? 'Editar Usuario' : 'Crear Usuario'}
-                        </h3>
-                        <form onSubmit={handleUserSubmit} className="space-y-4">
+                <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-md animate-fade-in">
+                    <GlassCard className="w-full max-w-2xl p-0 animate-scale-in max-h-[90vh] flex flex-col overflow-hidden shadow-2xl border-white/40">
+                        <div className="p-6 border-b border-indigo-50 flex justify-between items-center bg-white/50">
                             <div>
-                                <label className="block text-sm font-medium text-slate-700 mb-1">Usuario</label>
-                                <input
-                                    type="text"
-                                    required
-                                    value={editingUser.username || ''}
-                                    onChange={(e) => setEditingUser({ ...editingUser, username: e.target.value })}
-                                    className="w-full px-4 py-2 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500 outline-none"
-                                />
+                                <h3 className="text-xl font-black text-slate-800 tracking-tight">
+                                    {editingUser.id ? 'Editar Usuario' : 'Crear Usuario'}
+                                </h3>
+                                <p className="text-xs text-slate-500 font-medium">Configura acceso y permisos del sistema</p>
                             </div>
-                            <div className="grid grid-cols-2 gap-4">
-                                <div>
-                                    <label className="block text-sm font-medium text-slate-700 mb-1">Nombre</label>
-                                    <input
-                                        type="text"
-                                        value={editingUser.firstName || ''}
-                                        onChange={(e) => setEditingUser({ ...editingUser, firstName: e.target.value })}
-                                        className="w-full px-4 py-2 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500 outline-none"
-                                    />
-                                </div>
-                                <div>
-                                    <label className="block text-sm font-medium text-slate-700 mb-1">Apellido</label>
-                                    <input
-                                        type="text"
-                                        value={editingUser.lastName || ''}
-                                        onChange={(e) => setEditingUser({ ...editingUser, lastName: e.target.value })}
-                                        className="w-full px-4 py-2 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500 outline-none"
-                                    />
-                                </div>
-                            </div>
-                            <div>
-                                <label className="block text-sm font-medium text-slate-700 mb-1">Email</label>
-                                <input
-                                    type="email"
-                                    value={editingUser.email || ''}
-                                    onChange={(e) => setEditingUser({ ...editingUser, email: e.target.value })}
-                                    className="w-full px-4 py-2 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500 outline-none"
-                                />
-                            </div>
-                            <div>
-                                <label className="block text-sm font-medium text-slate-700 mb-1">Rol</label>
-                                <select
-                                    value={editingUser.role || 'Employee'}
-                                    onChange={(e) => setEditingUser({ ...editingUser, role: e.target.value })}
-                                    className="w-full px-4 py-2 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500 outline-none bg-white"
-                                >
-                                    <option value="Admin">Administrador</option>
-                                    <option value="Employee">Empleado</option>
-                                    <option value="Customer">Cliente</option>
-                                </select>
-                            </div>
-                            <div>
-                                <label className="block text-sm font-medium text-slate-700 mb-1">
-                                    {editingUser.id ? 'Nueva Contraseña (Opcional)' : 'Contraseña'}
-                                </label>
-                                <input
-                                    type="password"
-                                    required={!editingUser.id}
-                                    placeholder={editingUser.id ? "Dejar en blanco para mantener" : "Contraseña segura"}
-                                    onChange={(e) => setEditingUser({ ...editingUser, password: e.target.value })}
-                                    className="w-full px-4 py-2 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500 outline-none"
-                                />
+                            <button onClick={() => setShowUserModal(false)} className="p-2 hover:bg-slate-100 rounded-full transition-colors">
+                                <Plus className="rotate-45 text-slate-400" size={20} />
+                            </button>
+                        </div>
+
+                        <form onSubmit={handleUserSubmit} className="flex-1 overflow-y-auto custom-scrollbar">
+                            <div className="p-6 space-y-8">
+                                {/* Datos Básicos */}
+                                <section>
+                                    <h4 className="text-[10px] font-black text-indigo-400 uppercase tracking-[0.2em] mb-4 flex items-center gap-2">
+                                        <div className="w-4 h-[1px] bg-indigo-200"></div> Información Personal
+                                    </h4>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div className="space-y-1">
+                                            <label className="text-xs font-bold text-slate-600 ml-1">Usuario</label>
+                                            <input
+                                                type="text"
+                                                required
+                                                value={editingUser.username || ''}
+                                                onChange={(e) => setEditingUser({ ...editingUser, username: e.target.value })}
+                                                className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none transition-all font-medium"
+                                                placeholder="Ej: jcalle"
+                                            />
+                                        </div>
+                                        <div className="space-y-1">
+                                            <label className="text-xs font-bold text-slate-600 ml-1">Email</label>
+                                            <input
+                                                type="email"
+                                                required
+                                                value={editingUser.email || ''}
+                                                onChange={(e) => setEditingUser({ ...editingUser, email: e.target.value })}
+                                                className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none transition-all font-medium"
+                                                placeholder="usuario@correo.com"
+                                            />
+                                        </div>
+                                        <div className="space-y-1">
+                                            <label className="text-xs font-bold text-slate-600 ml-1">Nombre</label>
+                                            <input
+                                                type="text"
+                                                value={editingUser.firstName || ''}
+                                                onChange={(e) => setEditingUser({ ...editingUser, firstName: e.target.value })}
+                                                className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none transition-all font-medium"
+                                            />
+                                        </div>
+                                        <div className="space-y-1">
+                                            <label className="text-xs font-bold text-slate-600 ml-1">Apellido</label>
+                                            <input
+                                                type="text"
+                                                value={editingUser.lastName || ''}
+                                                onChange={(e) => setEditingUser({ ...editingUser, lastName: e.target.value })}
+                                                className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none transition-all font-medium"
+                                            />
+                                        </div>
+                                    </div>
+                                </section>
+
+                                {/* Seguridad y Rol */}
+                                <section>
+                                    <h4 className="text-[10px] font-black text-indigo-400 uppercase tracking-[0.2em] mb-4 flex items-center gap-2">
+                                        <div className="w-4 h-[1px] bg-indigo-200"></div> Seguridad y Rol
+                                    </h4>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-left">
+                                        <div className="space-y-1">
+                                            <label className="text-xs font-bold text-slate-600 ml-1">Rol del Sistema</label>
+                                            <div className="relative">
+                                                <select
+                                                    value={editingUser.role || 'Vendedor'}
+                                                    onChange={(e) => {
+                                                        const newRole = e.target.value;
+                                                        // Auto-assign permissions based on role
+                                                        setEditingUser({
+                                                            ...editingUser,
+                                                            role: newRole,
+                                                            permissions: DEFAULT_ROLE_PERMISSIONS[newRole] || []
+                                                        });
+                                                    }}
+                                                    className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500 outline-none bg-white appearance-none font-bold text-indigo-600"
+                                                >
+                                                    <option value="Admin">Administrador (Total)</option>
+                                                    <option value="Gerente">Gerente</option>
+                                                    <option value="Bodeguero">Bodeguero</option>
+                                                    <option value="Vendedor">Vendedor / Cajero</option>
+                                                    <option value="Customer">Usuario Externo</option>
+                                                </select>
+                                                <ChevronDown className="absolute right-3 top-3 text-slate-400 pointer-events-none" size={18} />
+                                            </div>
+                                        </div>
+                                        <div className="space-y-1">
+                                            <label className="text-xs font-bold text-slate-600 ml-1">
+                                                {editingUser.id ? 'Nueva Contraseña (Opcional)' : 'Contraseña'}
+                                            </label>
+                                            <input
+                                                type="password"
+                                                required={!editingUser.id}
+                                                autoComplete="new-password"
+                                                placeholder={editingUser.id ? "Dejar en blanco para mantener" : "Contraseña segura"}
+                                                onChange={(e) => setEditingUser({ ...editingUser, password: e.target.value })}
+                                                className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none transition-all font-medium"
+                                            />
+                                        </div>
+                                    </div>
+                                </section>
+
+                                {/* Permisos Granulares */}
+                                <section className="pb-4">
+                                    <div className="flex justify-between items-center mb-4">
+                                        <h4 className="text-[10px] font-black text-indigo-400 uppercase tracking-[0.2em] flex items-center gap-2">
+                                            <div className="w-4 h-[1px] bg-indigo-200"></div> Permisos Específicos
+                                        </h4>
+                                        {editingUser.role === 'Admin' && (
+                                            <span className="text-[10px] font-bold text-rose-500 bg-rose-50 px-2 py-0.5 rounded-full">
+                                                LOS ADMINS TIENEN ACCESO TOTAL
+                                            </span>
+                                        )}
+                                    </div>
+
+                                    <div className={`grid grid-cols-1 sm:grid-cols-2 gap-y-6 gap-x-8 p-6 bg-slate-50/50 rounded-3xl border border-indigo-50/50 ${editingUser.role === 'Admin' ? 'opacity-40 grayscale pointer-events-none' : ''}`}>
+                                        {Object.entries(
+                                            Object.entries(PERMISSION_LABELS).reduce((acc, [key, val]) => {
+                                                if (!acc[val.category]) acc[val.category] = [];
+                                                acc[val.category].push({ key, ...val });
+                                                return acc;
+                                            }, {} as Record<string, Array<{ key: string, label: string }>>)
+                                        ).map(([category, perms]) => (
+                                            <div key={category} className="space-y-3">
+                                                <h5 className="text-[11px] font-black text-slate-400 uppercase tracking-widest pl-1">{category}</h5>
+                                                <div className="space-y-2">
+                                                    {perms.map(p => {
+                                                        const isChecked = editingUser.permissions?.includes(p.key) || false;
+                                                        return (
+                                                            <label key={p.key} className="flex items-center gap-3 group cursor-pointer">
+                                                                <div className="relative flex items-center justify-center">
+                                                                    <input
+                                                                        type="checkbox"
+                                                                        className="peer hidden"
+                                                                        checked={isChecked}
+                                                                        onChange={(e) => {
+                                                                            const current = editingUser.permissions || [];
+                                                                            const newVal = e.target.checked
+                                                                                ? [...current, p.key]
+                                                                                : current.filter(k => k !== p.key);
+                                                                            setEditingUser({ ...editingUser, permissions: newVal });
+                                                                        }}
+                                                                    />
+                                                                    <div className={`w-5 h-5 rounded-lg border-2 transition-all flex items-center justify-center ${isChecked ? 'bg-indigo-600 border-indigo-600' : 'bg-white border-slate-200 group-hover:border-indigo-300'}`}>
+                                                                        {isChecked && <CheckCircle2 size={12} className="text-white" />}
+                                                                    </div>
+                                                                </div>
+                                                                <span className={`text-sm font-bold transition-colors ${isChecked ? 'text-indigo-950' : 'text-slate-500'}`}>{p.label}</span>
+                                                            </label>
+                                                        );
+                                                    })}
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </section>
                             </div>
 
-                            <div className="flex gap-3 mt-6">
+                            <div className="sticky bottom-0 p-6 bg-white/80 backdrop-blur-md border-t border-indigo-50 flex gap-4">
                                 <button
                                     type="button"
                                     onClick={() => setShowUserModal(false)}
-                                    className="flex-1 py-2 rounded-xl border border-slate-200 hover:bg-slate-50 text-slate-600 font-medium"
+                                    className="flex-1 py-3 px-6 rounded-2xl border border-slate-200 hover:bg-slate-50 text-slate-500 font-black uppercase text-xs tracking-widest transition-all"
                                 >
                                     Cancelar
                                 </button>
                                 <button
                                     type="submit"
-                                    className="flex-1 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold shadow-lg shadow-indigo-500/30"
+                                    className="flex-[2] py-4 rounded-2xl bg-indigo-600 hover:bg-indigo-700 text-white font-black uppercase text-xs tracking-[0.2em] shadow-xl shadow-indigo-600/20 transition-all active:scale-95 flex items-center justify-center gap-2"
                                 >
-                                    Guardar
+                                    <Save size={18} />
+                                    Guardar Usuario
                                 </button>
                             </div>
                         </form>

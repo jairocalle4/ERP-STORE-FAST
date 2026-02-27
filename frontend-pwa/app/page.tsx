@@ -16,10 +16,13 @@ export default function Home() {
   useEffect(() => {
     async function fetchData() {
       try {
-        const prodRes = await fetch("http://localhost:5140/api/v1/products");
-        if (!prodRes.ok) throw new Error("Failed to fetch products");
+        const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5140/api/v1";
+        const prodRes = await fetch(`${API_URL}/products`);
+        if (!prodRes.ok) {
+          throw new Error("Failed to fetch products");
+        }
         const prodData = await prodRes.json();
-        setProducts(prodData);
+        setProducts(prodData.items || []);
       } catch (error) {
         console.error(error);
       } finally {

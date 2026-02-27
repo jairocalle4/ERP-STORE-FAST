@@ -1,4 +1,5 @@
 import api from './api';
+import type { PagedResponse } from './types';
 
 export interface Client {
     id: number;
@@ -13,8 +14,10 @@ export interface Client {
 export type ClientCreateDto = Omit<Client, 'id'>;
 
 export const clientService = {
-    getAll: async () => {
-        const response = await api.get<Client[]>('/clients');
+    getAll: async (page = 1, pageSize = 20) => {
+        const response = await api.get<PagedResponse<Client>>('/clients', {
+            params: { page, pageSize }
+        });
         return response.data;
     },
     getById: async (id: number) => {

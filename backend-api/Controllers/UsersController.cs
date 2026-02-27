@@ -29,7 +29,7 @@ public class UsersController : ControllerBase
         var user = await _context.Users.FindAsync(int.Parse(userId));
         if (user == null) return NotFound();
 
-        return new UserDto(user.Id, user.Username, user.Email, user.FirstName, user.LastName, user.Role.ToString());
+        return new UserDto(user.Id, user.Username, user.Email, user.FirstName, user.LastName, user.Role.ToString(), user.Permissions);
     }
 
     [HttpPut("me")]
@@ -70,7 +70,7 @@ public class UsersController : ControllerBase
     public async Task<ActionResult<IEnumerable<UserDto>>> GetAllUsers()
     {
         var users = await _context.Users
-            .Select(u => new UserDto(u.Id, u.Username, u.Email, u.FirstName, u.LastName, u.Role.ToString()))
+            .Select(u => new UserDto(u.Id, u.Username, u.Email, u.FirstName, u.LastName, u.Role.ToString(), u.Permissions))
             .ToListAsync();
         return users;
     }
@@ -97,13 +97,14 @@ public class UsersController : ControllerBase
             LastName = dto.LastName,
             PasswordHash = dto.Password, // Hash this!
             Role = role,
+            Permissions = dto.Permissions ?? new List<string>(),
             CreatedAt = DateTime.UtcNow
         };
 
         _context.Users.Add(user);
         await _context.SaveChangesAsync();
 
-        return CreatedAtAction(nameof(GetMyProfile), new { }, new UserDto(user.Id, user.Username, user.Email, user.FirstName, user.LastName, user.Role.ToString()));
+        return CreatedAtAction(nameof(GetMyProfile), new { }, new UserDto(user.Id, user.Username, user.Email, user.FirstName, user.LastName, user.Role.ToString(), user.Permissions));
     }
 
     [Authorize(Roles = "Admin")]
@@ -130,6 +131,11 @@ public class UsersController : ControllerBase
         if (Enum.TryParse<Role>(dto.Role, true, out var role))
         {
             user.Role = role;
+        }
+        
+        if (dto.Permissions != null)
+        {
+            user.Permissions = dto.Permissions;
         }
 
         if (!string.IsNullOrEmpty(dto.Password))

@@ -12,7 +12,8 @@ export default function CartDrawer() {
     useEffect(() => {
         async function fetchSettings() {
             try {
-                const res = await fetch("http://localhost:5140/api/v1/CompanySettings");
+                const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5140/api/v1";
+                const res = await fetch(`${API_URL}/CompanySettings`);
                 if (res.ok) {
                     const data = await res.json();
                     if (data.phone) {

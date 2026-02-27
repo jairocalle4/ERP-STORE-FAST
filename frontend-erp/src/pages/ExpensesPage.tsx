@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Plus, Search, Calendar, Trash2, DollarSign, Tag, FileText, Settings } from 'lucide-react';
+import { Plus, Search, Calendar, Trash2, DollarSign, Tag, FileText, Settings, ChevronLeft, ChevronRight } from 'lucide-react';
 import { GlassCard } from '../components/common/GlassCard';
 import { expensesService } from '../services/expenses.service';
 import type { Expense, CreateExpenseDto } from '../services/expenses.service';
@@ -19,6 +19,12 @@ export default function ExpensesPage() {
     const [deleteId, setDeleteId] = useState<number | null>(null);
     const addNotification = useNotificationStore(s => s.addNotification);
 
+    // Pagination State
+    const [currentPage, setCurrentPage] = useState(1);
+    const [totalPages, setTotalPages] = useState(1);
+    const [totalItems, setTotalItems] = useState(0);
+    const pageSize = 15;
+
     // Form State
     const [formData, setFormData] = useState<CreateExpenseDto>({
         description: '',
@@ -30,14 +36,17 @@ export default function ExpensesPage() {
     });
 
     useEffect(() => {
-        fetchExpenses();
+        fetchExpenses(currentPage);
         fetchCategories();
-    }, []);
+    }, [currentPage]);
 
-    const fetchExpenses = async () => {
+    const fetchExpenses = async (page = 1) => {
+        setLoading(true);
         try {
-            const data = await expensesService.getAll();
-            setExpenses(data);
+            const data = await expensesService.getAll(page, pageSize);
+            setExpenses(data.items);
+            setTotalPages(data.totalPages);
+            setTotalItems(data.totalCount);
         } catch (err) {
             console.error('Error fetching expenses', err);
         } finally {
@@ -47,8 +56,8 @@ export default function ExpensesPage() {
 
     const fetchCategories = async () => {
         try {
-            const data = await expenseCategoriesService.getAll();
-            setCategories(data);
+            const data = await expenseCategoriesService.getAll(1, 1000);
+            setCategories(data.items);
         } catch (err) {
             console.error('Error fetching categories', err);
         }
@@ -67,7 +76,7 @@ export default function ExpensesPage() {
                 paymentMethod: 'Efectivo',
                 notes: ''
             });
-            fetchExpenses();
+            fetchExpenses(currentPage);
         } catch (err: any) {
             console.error('Error creating expense', err);
             if (err.response?.status === 400 && err.response?.data?.includes('NO_OPEN_SESSION')) {
@@ -87,7 +96,7 @@ export default function ExpensesPage() {
         try {
             await expensesService.delete(deleteId);
             setDeleteId(null);
-            fetchExpenses();
+            fetchExpenses(currentPage);
         } catch (err) {
             console.error('Error deleting expense', err);
         }
@@ -101,9 +110,9 @@ export default function ExpensesPage() {
         });
     };
 
-    const filteredExpenses = expenses.filter(e =>
-        e.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        e.categoryName.toLowerCase().includes(searchTerm.toLowerCase())
+    const filteredExpenses = (expenses || []).filter(e =>
+        e.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        e.categoryName?.toLowerCase().includes(searchTerm.toLowerCase())
     );
 
     const totalExpenses = filteredExpenses.reduce((sum, e) => sum + e.amount, 0);
@@ -206,6 +215,36 @@ export default function ExpensesPage() {
                             </tbody>
                         </table>
                     </div>
+
+                    {/* Pagination Controls */}
+                    {!loading && totalPages > 1 && (
+                        <div className="mt-6 flex items-center justify-between bg-white/40 p-4 rounded-2xl border border-indigo-50/50">
+                            <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest">
+                                Mostrando <span className="text-indigo-600 font-black">{expenses.length}</span> de <span className="text-indigo-950 font-black">{totalItems}</span> egresos
+                            </div>
+                            <div className="flex gap-2">
+                                <button
+                                    onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                                    disabled={currentPage === 1}
+                                    className="p-2 rounded-xl border border-indigo-100 bg-white hover:bg-indigo-50 hover:text-indigo-600 disabled:opacity-30 disabled:hover:bg-white disabled:hover:text-slate-400 transition-all shadow-sm"
+                                >
+                                    <ChevronLeft size={18} />
+                                </button>
+
+                                <div className="flex items-center px-4 bg-white border border-indigo-100 rounded-xl font-black text-[10px] text-indigo-600 shadow-sm">
+                                    {currentPage} / {totalPages}
+                                </div>
+
+                                <button
+                                    onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                                    disabled={currentPage === totalPages}
+                                    className="p-2 rounded-xl border border-indigo-100 bg-white hover:bg-indigo-50 hover:text-indigo-600 disabled:opacity-30 disabled:hover:bg-white disabled:hover:text-slate-400 transition-all shadow-sm"
+                                >
+                                    <ChevronRight size={18} />
+                                </button>
+                            </div>
+                        </div>
+                    )}
                 </GlassCard>
 
                 <div className="space-y-6">

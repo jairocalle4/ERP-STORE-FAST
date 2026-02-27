@@ -50,11 +50,11 @@ export default function PurchaseFormPage() {
     const fetchInitialData = async () => {
         try {
             const [suppliersData, productsData] = await Promise.all([
-                supplierService.getAll(),
-                productService.getAll(false)
+                supplierService.getAll(1, 1000),
+                productService.getAll(true, 1, 1000)
             ]);
-            setSuppliers(suppliersData);
-            setProducts(productsData);
+            setSuppliers(suppliersData.items);
+            setProducts(productsData.items);
         } catch (err) {
             console.error(err);
             addNotification('Error al cargar datos básicos', 'error');
@@ -331,33 +331,33 @@ export default function PurchaseFormPage() {
 
                 {/* RIGHT: SUMMARY & ACTIONS */}
                 <div className="space-y-6">
-                    <GlassCard className="bg-indigo-900 !text-white !p-8 shadow-2xl shadow-indigo-900/40 relative overflow-hidden">
-                        <div className="absolute -top-10 -right-10 w-40 h-40 bg-white/10 rounded-full blur-3xl"></div>
+                    <div className="bg-slate-900 rounded-2xl p-8 shadow-2xl shadow-indigo-950/20 relative overflow-hidden text-white transition-all duration-300">
+                        <div className="absolute -top-10 -right-10 w-40 h-40 bg-indigo-500/20 rounded-full blur-3xl"></div>
                         <div className="absolute -bottom-10 -left-10 w-32 h-32 bg-purple-500/20 rounded-full blur-2xl"></div>
 
                         <div className="relative z-10">
-                            <h3 className="text-[10px] font-black uppercase tracking-widest text-indigo-200/60 mb-1">Resumen de Inversión</h3>
+                            <h3 className="text-[10px] font-black uppercase tracking-widest text-indigo-300 mb-1">Resumen de Inversión</h3>
                             <div className="flex justify-between items-end mb-8">
-                                <span className="text-5xl font-black tracking-tighter">${calculateTotal().toFixed(2)}</span>
-                                <span className="text-xs font-bold text-indigo-200/50 mb-2">{cart.reduce((a, b) => a + b.quantity, 0)} Items</span>
+                                <span className="text-5xl font-black tracking-tighter text-white">${calculateTotal().toFixed(2)}</span>
+                                <span className="text-xs font-bold text-indigo-300/70 mb-2">{cart.reduce((a, b) => a + b.quantity, 0)} Items</span>
                             </div>
 
                             <div className="space-y-4 pt-6 border-t border-white/10">
-                                <div className="flex justify-between text-xs font-bold text-indigo-200/80">
+                                <div className="flex justify-between text-xs font-bold text-slate-300">
                                     <span>Subtotal</span>
                                     <span>${calculateTotal().toFixed(2)}</span>
                                 </div>
-                                <div className="flex justify-between text-xs font-bold text-indigo-200/80">
+                                <div className="flex justify-between text-xs font-bold text-slate-300">
                                     <span>Retenciones / Imp.</span>
                                     <span>$0.00</span>
                                 </div>
-                                <div className="flex justify-between text-xl font-black pt-4">
+                                <div className="flex justify-between text-xl font-black pt-4 text-white">
                                     <span>TOTAL</span>
                                     <span>${calculateTotal().toFixed(2)}</span>
                                 </div>
                             </div>
                         </div>
-                    </GlassCard>
+                    </div>
 
                     <GlassCard>
                         <div className="space-y-6">

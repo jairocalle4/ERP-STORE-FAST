@@ -3,6 +3,7 @@ using ErpStore.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using ErpStore.Application.DTOs;
 
 namespace ErpStore.Api.Controllers;
 
@@ -19,9 +20,17 @@ public class ClientsController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<ActionResult<IEnumerable<Client>>> GetClients()
+    public async Task<ActionResult<PagedResponse<Client>>> GetClients([FromQuery] int page = 1, [FromQuery] int pageSize = 20)
     {
-        return await _context.Clients.OrderBy(c => c.Name).ToListAsync();
+        var query = _context.Clients.OrderBy(c => c.Name);
+        var totalCount = await query.CountAsync();
+        var items = await query
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync();
+        
+        var totalPages = (int)Math.Ceiling(totalCount / (double)pageSize);
+        return new PagedResponse<Client>(items, totalCount, page, pageSize, totalPages);
     }
 
     [HttpGet("{id}")]

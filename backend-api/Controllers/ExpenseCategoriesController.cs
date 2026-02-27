@@ -20,10 +20,15 @@ public class ExpenseCategoriesController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<ActionResult<IEnumerable<ExpenseCategoryDto>>> GetCategories()
+    public async Task<ActionResult<PagedResponse<ExpenseCategoryDto>>> GetCategories([FromQuery] int page = 1, [FromQuery] int pageSize = 20)
     {
-        return await _context.ExpenseCategories
-            .Where(c => c.IsActive)
+        var query = _context.ExpenseCategories.Where(c => c.IsActive);
+
+        var totalItems = await query.CountAsync();
+        var items = await query
+            .OrderBy(c => c.Name)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
             .Select(c => new ExpenseCategoryDto
             {
                 Id = c.Id,
@@ -32,6 +37,14 @@ public class ExpenseCategoriesController : ControllerBase
                 IsActive = c.IsActive
             })
             .ToListAsync();
+
+        return new PagedResponse<ExpenseCategoryDto>(
+            items,
+            totalItems,
+            page,
+            pageSize,
+            (int)Math.Ceiling(totalItems / (double)pageSize)
+        );
     }
 
     [HttpPost]

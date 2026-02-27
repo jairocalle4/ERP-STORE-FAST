@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Plus, Edit2, Trash2, Search, User } from 'lucide-react';
+import { Plus, Edit2, Trash2, Search, User, ChevronLeft, ChevronRight } from 'lucide-react';
 import { GlassCard } from '../components/common/GlassCard';
 import type { Client, ClientCreateDto } from '../services/client.service';
 import { clientService } from '../services/client.service';
@@ -14,14 +14,23 @@ export default function ClientListPage() {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingClient, setEditingClient] = useState<Client | null>(null);
 
-    useEffect(() => {
-        fetchClients();
-    }, []);
+    // Pagination State
+    const [currentPage, setCurrentPage] = useState(1);
+    const [totalPages, setTotalPages] = useState(1);
+    const [totalItems, setTotalItems] = useState(0);
+    const pageSize = 15;
 
-    const fetchClients = async () => {
+    useEffect(() => {
+        fetchClients(currentPage);
+    }, [currentPage]);
+
+    const fetchClients = async (page = 1) => {
+        setLoading(true);
         try {
-            const data = await clientService.getAll();
-            setClients(data);
+            const data = await clientService.getAll(page, pageSize);
+            setClients(data.items);
+            setTotalPages(data.totalPages);
+            setTotalItems(data.totalCount);
         } catch (err) {
             console.error('Error fetching clients', err);
         } finally {
@@ -33,7 +42,7 @@ export default function ClientListPage() {
         if (window.confirm('¿Estás seguro de eliminar este cliente?')) {
             try {
                 await clientService.delete(id);
-                fetchClients();
+                fetchClients(currentPage);
             } catch (err) {
                 alert('Error al eliminar cliente');
             }
@@ -57,15 +66,15 @@ export default function ClientListPage() {
             } else {
                 await clientService.create(data);
             }
-            fetchClients();
+            fetchClients(currentPage);
         } catch (err) {
             console.error('Error saving client', err);
             throw err; // Re-throw to let modal handle error display
         }
     };
 
-    const filteredClients = clients.filter(c =>
-        c.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    const filteredClients = (clients || []).filter(c =>
+        c.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         c.cedulaRuc?.includes(searchTerm)
     );
 
@@ -159,6 +168,36 @@ export default function ClientListPage() {
                             </tbody>
                         </table>
                     </div>
+
+                    {/* Pagination Controls */}
+                    {!loading && totalPages > 1 && (
+                        <div className="px-6 py-4 bg-slate-50/50 border-t border-indigo-50/50 flex items-center justify-between">
+                            <div className="text-sm text-slate-500 font-medium">
+                                Mostrando <span className="text-indigo-600 font-bold">{clients.length}</span> de <span className="text-slate-800 font-bold">{totalItems}</span> registros
+                            </div>
+                            <div className="flex gap-2">
+                                <button
+                                    onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                                    disabled={currentPage === 1}
+                                    className="p-2 rounded-xl border border-slate-200 bg-white hover:bg-indigo-50 hover:text-indigo-600 disabled:opacity-30 disabled:hover:bg-white disabled:hover:text-slate-400 transition-all shadow-sm"
+                                >
+                                    <ChevronLeft size={20} />
+                                </button>
+
+                                <div className="flex items-center px-4 bg-white border border-slate-200 rounded-xl font-bold text-sm text-indigo-600 shadow-sm">
+                                    {currentPage} / {totalPages}
+                                </div>
+
+                                <button
+                                    onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                                    disabled={currentPage === totalPages}
+                                    className="p-2 rounded-xl border border-slate-200 bg-white hover:bg-indigo-50 hover:text-indigo-600 disabled:opacity-30 disabled:hover:bg-white disabled:hover:text-slate-400 transition-all shadow-sm"
+                                >
+                                    <ChevronRight size={20} />
+                                </button>
+                            </div>
+                        </div>
+                    )}
                 </GlassCard>
             </div>
 

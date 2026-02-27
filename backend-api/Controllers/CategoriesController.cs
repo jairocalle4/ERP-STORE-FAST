@@ -3,6 +3,7 @@ using ErpStore.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using ErpStore.Application.DTOs;
 
 namespace ErpStore.Api.Controllers;
 
@@ -20,31 +21,33 @@ public class CategoriesController : ControllerBase
 
     [HttpGet]
     [AllowAnonymous]
-    public async Task<ActionResult<IEnumerable<Category>>> GetCategories([FromQuery] bool onlyWithProducts = false)
+    public async Task<ActionResult<PagedResponse<Category>>> GetCategories([FromQuery] bool onlyWithProducts = false, [FromQuery] int page = 1, [FromQuery] int pageSize = 100)
     {
+        var query = _context.Categories
+            .Include(c => c.Subcategories.Where(s => s.IsActive))
+            .Where(c => c.IsActive)
+            .AsQueryable();
+
         if (onlyWithProducts)
         {
-            // Get IDs of categories that have at least one active product
             var categoryIdsWithProducts = await _context.Products
                 .Where(p => p.IsActive)
                 .Select(p => p.CategoryId)
                 .Distinct()
                 .ToListAsync();
 
-            var filteredCategories = await _context.Categories
-                .Include(c => c.Subcategories.Where(s => s.IsActive))
-                .Where(c => c.IsActive && categoryIdsWithProducts.Contains(c.Id))
-                .ToListAsync();
-
-            return Ok(filteredCategories);
+            query = query.Where(c => categoryIdsWithProducts.Contains(c.Id));
         }
 
-        var allCategories = await _context.Categories
-            .Include(c => c.Subcategories.Where(s => s.IsActive))
-            .Where(c => c.IsActive)
+        var totalCount = await query.CountAsync();
+        var items = await query
+            .OrderBy(c => c.Name)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
             .ToListAsync();
 
-        return Ok(allCategories);
+        var totalPages = (int)Math.Ceiling(totalCount / (double)pageSize);
+        return new PagedResponse<Category>(items, totalCount, page, pageSize, totalPages);
     }
 
     [HttpGet("{id}")]

@@ -24,8 +24,8 @@ export default function LoginPage() {
                 password,
             });
 
-            const { token, username: user, role } = response.data;
-            login(token, user, role);
+            const { token, username: user, role, permissions } = response.data;
+            login(token, user, role, permissions);
             navigate('/dashboard');
         } catch (err) {
             setError('Credenciales inválidas o error en el servidor');

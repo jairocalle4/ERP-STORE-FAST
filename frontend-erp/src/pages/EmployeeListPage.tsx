@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Plus, Edit2, Trash2, Search, Briefcase } from 'lucide-react';
+import { Plus, Edit2, Trash2, Search, Briefcase, ChevronLeft, ChevronRight } from 'lucide-react';
 import { GlassCard } from '../components/common/GlassCard';
 import type { Employee, EmployeeCreateDto } from '../services/employee.service';
 import { employeeService } from '../services/employee.service';
@@ -14,14 +14,23 @@ export default function EmployeeListPage() {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingEmployee, setEditingEmployee] = useState<Employee | null>(null);
 
-    useEffect(() => {
-        fetchEmployees();
-    }, []);
+    // Pagination State
+    const [currentPage, setCurrentPage] = useState(1);
+    const [totalPages, setTotalPages] = useState(1);
+    const [totalItems, setTotalItems] = useState(0);
+    const pageSize = 15;
 
-    const fetchEmployees = async () => {
+    useEffect(() => {
+        fetchEmployees(currentPage);
+    }, [currentPage]);
+
+    const fetchEmployees = async (page = 1) => {
+        setLoading(true);
         try {
-            const data = await employeeService.getAll();
-            setEmployees(data);
+            const data = await employeeService.getAll(page, pageSize);
+            setEmployees(data.items);
+            setTotalPages(data.totalPages);
+            setTotalItems(data.totalCount);
         } catch (err) {
             console.error('Error fetching employees', err);
         } finally {
@@ -33,7 +42,7 @@ export default function EmployeeListPage() {
         if (window.confirm('¿Estás seguro de eliminar este empleado?')) {
             try {
                 await employeeService.delete(id);
-                fetchEmployees();
+                fetchEmployees(currentPage);
             } catch (err) {
                 alert('Error al eliminar empleado');
             }
@@ -57,15 +66,15 @@ export default function EmployeeListPage() {
             } else {
                 await employeeService.create(data);
             }
-            fetchEmployees();
+            fetchEmployees(currentPage);
         } catch (err) {
             console.error('Error saving employee', err);
             throw err;
         }
     };
 
-    const filteredEmployees = employees.filter(e =>
-        e.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    const filteredEmployees = (employees || []).filter(e =>
+        e.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         e.role?.toLowerCase().includes(searchTerm.toLowerCase())
     );
 
@@ -169,6 +178,36 @@ export default function EmployeeListPage() {
                             </tbody>
                         </table>
                     </div>
+
+                    {/* Pagination Controls */}
+                    {!loading && totalPages > 1 && (
+                        <div className="px-6 py-4 bg-slate-50/50 border-t border-indigo-50/50 flex items-center justify-between">
+                            <div className="text-sm text-slate-500 font-medium">
+                                Mostrando <span className="text-indigo-600 font-bold">{employees.length}</span> de <span className="text-slate-800 font-bold">{totalItems}</span> registros
+                            </div>
+                            <div className="flex gap-2">
+                                <button
+                                    onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                                    disabled={currentPage === 1}
+                                    className="p-2 rounded-xl border border-slate-200 bg-white hover:bg-indigo-50 hover:text-indigo-600 disabled:opacity-30 disabled:hover:bg-white disabled:hover:text-slate-400 transition-all shadow-sm"
+                                >
+                                    <ChevronLeft size={20} />
+                                </button>
+
+                                <div className="flex items-center px-4 bg-white border border-slate-200 rounded-xl font-bold text-sm text-indigo-600 shadow-sm">
+                                    {currentPage} / {totalPages}
+                                </div>
+
+                                <button
+                                    onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                                    disabled={currentPage === totalPages}
+                                    className="p-2 rounded-xl border border-slate-200 bg-white hover:bg-indigo-50 hover:text-indigo-600 disabled:opacity-30 disabled:hover:bg-white disabled:hover:text-slate-400 transition-all shadow-sm"
+                                >
+                                    <ChevronRight size={20} />
+                                </button>
+                            </div>
+                        </div>
+                    )}
                 </GlassCard>
             </div>
 

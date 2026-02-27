@@ -8,6 +8,9 @@ using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Ensure PostgreSQL can read/write DateTime without forcing UTC in EF Core 6+
+AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
+
 // Add services to the container.
 builder.Services.AddControllers()
     .AddJsonOptions(options => 

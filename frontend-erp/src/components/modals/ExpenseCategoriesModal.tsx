@@ -22,8 +22,8 @@ export default function ExpenseCategoriesModal({ isOpen, onClose, onUpdate }: Ex
 
     const fetchCategories = async () => {
         try {
-            const data = await expenseCategoriesService.getAll();
-            setCategories(data);
+            const data = await expenseCategoriesService.getAll(1, 1000);
+            setCategories(data.items);
         } catch (error) {
             console.error('Error loading categories', error);
         }

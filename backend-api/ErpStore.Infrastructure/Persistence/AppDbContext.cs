@@ -1,5 +1,7 @@
 using ErpStore.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
+using System.Text.Json;
+using ErpStore.Domain.Common;
 
 namespace ErpStore.Infrastructure.Persistence;
 
@@ -64,6 +66,14 @@ public class AppDbContext : DbContext
         modelBuilder.Entity<PurchaseDetail>()
             .Property(pd => pd.Subtotal)
             .HasColumnType("decimal(18,2)");
+
+        // User Permissions JSON Conversion
+        modelBuilder.Entity<User>()
+            .Property(u => u.Permissions)
+            .HasConversion(
+                v => JsonSerializer.Serialize(v, (JsonSerializerOptions)null),
+                v => JsonSerializer.Deserialize<List<string>>(v, (JsonSerializerOptions)null) ?? new List<string>()
+            );
             
         // Seed Expense Categories
         var fixedDate = new DateTime(2025, 1, 1, 0, 0, 0, DateTimeKind.Utc);
@@ -96,12 +106,13 @@ public class AppDbContext : DbContext
             new User 
             { 
                 Id = 1, 
-                Username = "admin", 
+                Username = "jairo.ceo", 
                 Email = "admin@erpstore.com", 
-                FirstName = "Admin",
-                LastName = "User",
+                FirstName = "Jairo",
+                LastName = "CEO",
                 Role = Role.Admin, 
                 PasswordHash = "admin123", // In real app, this must be BCrypt hash
+                Permissions = PermissionConstants.GetAllPermissions(),
                 CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc)
             }
         );

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Eye, Search, Calendar, User, Printer } from 'lucide-react';
+import { Eye, Search, Calendar, User, Printer, ChevronLeft, ChevronRight } from 'lucide-react';
 import { GlassCard } from '../components/common/GlassCard';
 import type { Sale } from '../services/sale.service';
 import { saleService } from '../services/sale.service';
@@ -13,14 +13,22 @@ export default function SalesHistoryPage() {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [shouldAutoPrint, setShouldAutoPrint] = useState(false);
 
-    useEffect(() => {
-        fetchSales();
-    }, []);
+    const [currentPage, setCurrentPage] = useState(1);
+    const [totalPages, setTotalPages] = useState(1);
+    const [totalItems, setTotalItems] = useState(0);
+    const pageSize = 10;
 
-    const fetchSales = async () => {
+    useEffect(() => {
+        fetchSales(currentPage);
+    }, [currentPage]);
+
+    const fetchSales = async (page: number) => {
+        setLoading(true);
         try {
-            const data = await saleService.getAll();
-            setSales(data);
+            const data = await saleService.getAll(page, pageSize);
+            setSales(data.items);
+            setTotalPages(data.totalPages);
+            setTotalItems(data.totalCount);
         } catch (err) {
             console.error('Error fetching sales', err);
         } finally {
@@ -49,10 +57,10 @@ export default function SalesHistoryPage() {
         });
     };
 
-    const filteredSales = sales.filter(s =>
+    const filteredSales = (sales || []).filter(s =>
         s.noteNumber?.includes(searchTerm) ||
-        s.client?.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        s.employee?.name.toLowerCase().includes(searchTerm.toLowerCase())
+        s.client?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        s.employee?.name?.toLowerCase().includes(searchTerm.toLowerCase())
     );
 
     return (
@@ -80,6 +88,7 @@ export default function SalesHistoryPage() {
 
                 <div className="overflow-x-auto">
                     <table className="table-clean w-full border-collapse">
+                        {/* ... (existing thead) */}
                         <thead>
                             <tr>
                                 <th># Nota</th>
@@ -153,6 +162,36 @@ export default function SalesHistoryPage() {
                         </tbody>
                     </table>
                 </div>
+
+                {/* Pagination Controls */}
+                {!loading && totalPages > 1 && (
+                    <div className="px-6 py-4 bg-slate-50/50 border-t border-indigo-50/50 flex items-center justify-between">
+                        <div className="text-sm text-slate-500 font-medium">
+                            Mostrando <span className="text-indigo-600 font-bold">{filteredSales.length}</span> de <span className="text-slate-800 font-bold">{totalItems}</span> registros
+                        </div>
+                        <div className="flex gap-2">
+                            <button
+                                onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                                disabled={currentPage === 1}
+                                className="p-2 rounded-xl border border-slate-200 bg-white hover:bg-indigo-50 hover:text-indigo-600 disabled:opacity-30 disabled:hover:bg-white disabled:hover:text-slate-400 transition-all shadow-sm"
+                            >
+                                <ChevronLeft size={20} />
+                            </button>
+
+                            <div className="flex items-center px-4 bg-white border border-slate-200 rounded-xl font-bold text-sm text-indigo-600 shadow-sm">
+                                {currentPage} / {totalPages}
+                            </div>
+
+                            <button
+                                onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                                disabled={currentPage === totalPages}
+                                className="p-2 rounded-xl border border-slate-200 bg-white hover:bg-indigo-50 hover:text-indigo-600 disabled:opacity-30 disabled:hover:bg-white disabled:hover:text-slate-400 transition-all shadow-sm"
+                            >
+                                <ChevronRight size={20} />
+                            </button>
+                        </div>
+                    </div>
+                )}
             </GlassCard>
 
             <SaleDetailsModal
@@ -163,7 +202,7 @@ export default function SalesHistoryPage() {
                 }}
                 sale={selectedSale}
                 autoPrint={shouldAutoPrint}
-                onVoid={fetchSales}
+                onVoid={() => fetchSales(currentPage)}
             />
         </div>
     );

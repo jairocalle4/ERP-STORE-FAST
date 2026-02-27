@@ -1,4 +1,5 @@
 import api from './api';
+import type { PagedResponse } from './types';
 
 export interface Expense {
     id: number;
@@ -22,8 +23,10 @@ export interface CreateExpenseDto {
 }
 
 export const expensesService = {
-    getAll: async () => {
-        const response = await api.get<Expense[]>('/expenses');
+    getAll: async (page = 1, pageSize = 20) => {
+        const response = await api.get<PagedResponse<Expense>>('/expenses', {
+            params: { page, pageSize }
+        });
         return response.data;
     },
 
