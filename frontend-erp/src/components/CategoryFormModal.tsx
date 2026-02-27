@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Save, Layers, Loader2 } from 'lucide-react';
+import { X, Save, Loader2 } from 'lucide-react';
 import api from '../services/api';
 import { useNotificationStore } from '../store/useNotificationStore';
 

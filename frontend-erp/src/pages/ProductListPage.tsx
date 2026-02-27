@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import api from '../services/api';
-import axios from 'axios';
+
 import { Plus, Edit2, Trash2, Search, Filter, Package, Eye, RefreshCw, ArrowUpDown, History, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
 import { GlassCard } from '../components/common/GlassCard';

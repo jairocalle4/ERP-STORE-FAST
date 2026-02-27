@@ -30,7 +30,7 @@ export default function ReportsPage() {
     const [topProducts, setTopProducts] = useState<TopProduct[]>([]);
     const [inventoryValuation, setInventoryValuation] = useState<InventoryValuation[]>([]);
     const [salesProfit, setSalesProfit] = useState<SaleProfit[]>([]);
-    const [loading, setLoading] = useState(true);
+
     const [activeTab, setActiveTab] = useState<'financial' | 'inventory' | 'details'>('financial');
 
     useEffect(() => {
@@ -38,7 +38,6 @@ export default function ReportsPage() {
     }, [dateRange]);
 
     const fetchData = async () => {
-        setLoading(true);
         try {
             const start = new Date(dateRange.start);
             const end = new Date(dateRange.end);
@@ -58,8 +57,6 @@ export default function ReportsPage() {
             setSalesProfit(profitData);
         } catch (error) {
             console.error("Error loading reports", error);
-        } finally {
-            setLoading(false);
         }
     };
 
@@ -274,7 +271,7 @@ export default function ReportsPage() {
                                     dataKey="totalValue"
                                     nameKey="categoryName"
                                 >
-                                    {inventoryValuation.map((entry, index) => (
+                                    {inventoryValuation.map((_, index) => (
                                         <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} strokeWidth={0} />
                                     ))}
                                 </Pie>
