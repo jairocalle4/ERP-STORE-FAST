@@ -101,9 +101,16 @@ export default function ProductCard({ product, onClick }: ProductCardProps) {
                     </div>
 
                     {product.videoUrl && !isHovered && !isOutOfStock && (
-                        <div className="absolute top-4 right-4 bg-white/80 backdrop-blur-md text-foreground p-2 rounded-full shadow-lg z-20">
+                        <button
+                            onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                setIsHovered(true);
+                            }}
+                            className="absolute top-4 right-4 bg-white/80 backdrop-blur-md text-foreground p-2 rounded-full shadow-lg z-30 transition-transform active:scale-90"
+                        >
                             <Play size={12} fill="currentColor" />
-                        </div>
+                        </button>
                     )}
                 </div>
 
