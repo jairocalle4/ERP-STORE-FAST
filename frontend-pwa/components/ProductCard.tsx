@@ -22,6 +22,24 @@ export default function ProductCard({ product, onClick }: ProductCardProps) {
         setIsWishlisted(wishlist.includes(product.id));
     }, [product.id]);
 
+    // Added logic: Stop video playback when scrolling the page
+    useEffect(() => {
+        if (!isHovered) return;
+
+        const handleScroll = () => {
+            setIsHovered(false);
+        };
+
+        // Escuchamos el scroll de la ventana y los toques en mobile (deslizamiento)
+        window.addEventListener('scroll', handleScroll, { passive: true });
+        window.addEventListener('touchmove', handleScroll, { passive: true });
+
+        return () => {
+            window.removeEventListener('scroll', handleScroll);
+            window.removeEventListener('touchmove', handleScroll);
+        };
+    }, [isHovered]);
+
     const toggleWishlist = (e: React.MouseEvent) => {
         e.preventDefault();
         e.stopPropagation();
@@ -54,13 +72,25 @@ export default function ProductCard({ product, onClick }: ProductCardProps) {
                 {/* Image Container */}
                 <div className={`relative aspect-[4/5] bg-white rounded-xl md:rounded-[1.8rem] mb-3 md:mb-4 flex items-center justify-center overflow-hidden border border-slate-100 p-4 shadow-inner ${isOutOfStock ? 'grayscale' : ''}`}>
                     {product.videoUrl && isHovered ? (
-                        <video
-                            src={product.videoUrl}
-                            autoPlay
-                            muted
-                            loop
-                            className="h-full w-full object-cover rounded-[1.2rem]"
-                        />
+                        <div className="relative w-full h-full">
+                            <video
+                                src={product.videoUrl}
+                                autoPlay
+                                muted
+                                loop
+                                className="h-full w-full object-cover rounded-[1.2rem]"
+                            />
+                            {/* Invisible overlay to catch clicks and pause video */}
+                            <button
+                                className="absolute inset-0 w-full h-full z-10"
+                                onClick={(e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    setIsHovered(false);
+                                }}
+                                aria-label="Detener video"
+                            />
+                        </div>
                     ) : product.images && product.images.length > 0 ? (
                         <img
                             src={product.images.find(img => img.isCover)?.url || product.images[0].url}

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { Product } from "@/types/product";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
@@ -14,6 +14,9 @@ export default function ProductDetailsClient({ id }: { id: string }) {
     const [loading, setLoading] = useState(true);
     const [selectedImage, setSelectedImage] = useState<string>("");
     const [isVideoMode, setIsVideoMode] = useState(false);
+    const [isVideoModalOpen, setIsVideoModalOpen] = useState(false);
+
+    const carouselRef = useRef<HTMLDivElement>(null);
     const { addToCart } = useCart();
     const router = useRouter();
 
@@ -34,6 +37,18 @@ export default function ProductDetailsClient({ id }: { id: string }) {
         }
         fetchProduct();
     }, [id]);
+
+    // Lock body scroll when modal is open
+    useEffect(() => {
+        if (isVideoModalOpen) {
+            document.body.style.overflow = "hidden";
+        } else {
+            document.body.style.overflow = "";
+        }
+        return () => {
+            document.body.style.overflow = "";
+        };
+    }, [isVideoModalOpen]);
 
     if (loading) {
         return (
@@ -101,6 +116,40 @@ export default function ProductDetailsClient({ id }: { id: string }) {
         return <p className="text-sm md:text-base text-slate-600 leading-relaxed font-medium">{desc}</p>;
     };
 
+    // Handle manual scroll to sync active thumbnail
+    const handleScroll = () => {
+        if (!carouselRef.current || !product || !product.images) return;
+        const scrollPosition = carouselRef.current.scrollLeft;
+        const index = Math.round(scrollPosition / carouselRef.current.clientWidth);
+        if (product.images[index] && product.images[index].url !== selectedImage) {
+            setSelectedImage(product.images[index].url);
+        }
+    };
+
+    const scrollToIndex = (index: number) => {
+        if (!carouselRef.current) return;
+        carouselRef.current.scrollTo({
+            left: index * carouselRef.current.clientWidth,
+            behavior: "smooth"
+        });
+    };
+
+    const scrollNext = () => {
+        if (!product || !product.images) return;
+        const currentIndex = product.images.findIndex(img => img.url === selectedImage);
+        if (currentIndex < product.images.length - 1) {
+            scrollToIndex(currentIndex + 1);
+        }
+    };
+
+    const scrollPrev = () => {
+        if (!product || !product.images) return;
+        const currentIndex = product.images.findIndex(img => img.url === selectedImage);
+        if (currentIndex > 0) {
+            scrollToIndex(currentIndex - 1);
+        }
+    };
+
     return (
         <div className="min-h-screen flex flex-col bg-slate-50">
             <Navbar />
@@ -128,27 +177,77 @@ export default function ProductDetailsClient({ id }: { id: string }) {
 
                     <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12">
                         {/* Left Column: Gallery (7 cols) */}
-                        <div className="lg:col-span-7 space-y-6">
-                            <div className="relative aspect-square md:aspect-[4/3] lg:aspect-square bg-white rounded-[2rem] md:rounded-[3rem] shadow-xl shadow-slate-200/50 overflow-hidden border border-white">
-                                {isVideoMode && product.videoUrl ? (
-                                    <video
-                                        src={product.videoUrl}
-                                        autoPlay
-                                        muted
-                                        loop
-                                        controls
-                                        className="w-full h-full object-cover"
-                                    />
-                                ) : (
-                                    <img
-                                        src={selectedImage}
-                                        alt={product.name}
-                                        className="w-full h-full object-contain p-8 md:p-12 animate-fade-in hover:scale-105 transition-transform duration-700"
-                                    />
+                        <div className="lg:col-span-7 space-y-4">
+                            <div className="relative aspect-square md:aspect-[4/3] lg:aspect-square bg-white rounded-[2rem] md:rounded-[3rem] shadow-xl shadow-slate-200/50 overflow-hidden border border-white group">
+                                <div
+                                    ref={carouselRef}
+                                    onScroll={handleScroll}
+                                    className="relative w-full h-full overflow-x-auto flex snap-x snap-mandatory scroll-smooth [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
+                                >
+                                    {product.images?.map((img, idx) => (
+                                        <div key={img.id || idx} className="w-full h-full flex-shrink-0 snap-center flex items-center justify-center">
+                                            <img
+                                                src={img.url}
+                                                alt={product.name}
+                                                className="max-w-full max-h-full object-contain p-8 md:p-12 pointer-events-none select-none transition-transform duration-500 group-hover:scale-105"
+                                                draggable="false"
+                                            />
+                                        </div>
+                                    ))}
+                                </div>
+
+                                {/* Desktop Navigation Arrows */}
+                                {product.images && product.images.length > 1 && (
+                                    <>
+                                        <button
+                                            onClick={scrollPrev}
+                                            className="absolute left-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white/80 backdrop-blur shadow-md items-center justify-center text-slate-700 hover:bg-primary hover:text-white transition-all opacity-0 group-hover:opacity-100 z-10 hidden md:flex active:scale-95"
+                                            aria-label="Anterior foto"
+                                        >
+                                            <span className="text-2xl mb-1">&lsaquo;</span>
+                                        </button>
+                                        <button
+                                            onClick={scrollNext}
+                                            className="absolute right-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white/80 backdrop-blur shadow-md items-center justify-center text-slate-700 hover:bg-primary hover:text-white transition-all opacity-0 group-hover:opacity-100 z-10 hidden md:flex active:scale-95"
+                                            aria-label="Siguiente foto"
+                                        >
+                                            <span className="text-2xl mb-1">&rsaquo;</span>
+                                        </button>
+                                    </>
+                                )}
+
+                                {/* Mobile Pagination Dots */}
+                                {product.images && product.images.length > 1 && (
+                                    <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-1.5 z-10 md:hidden bg-black/20 backdrop-blur-sm px-2.5 py-1.5 rounded-full">
+                                        {product.images.map((img, idx) => (
+                                            <button
+                                                key={`dot-${idx}`}
+                                                onClick={() => scrollToIndex(idx)}
+                                                className={`transition-all duration-300 rounded-full ${selectedImage === img.url
+                                                        ? 'w-4 h-1.5 bg-white'
+                                                        : 'w-1.5 h-1.5 bg-white/50 hover:bg-white/80'
+                                                    }`}
+                                                aria-label={`Foto ${idx + 1}`}
+                                            />
+                                        ))}
+                                    </div>
+                                )}
+
+                                {/* Play Button Overlay (Temu Style) */}
+                                {product.videoUrl && (
+                                    <button
+                                        onClick={() => setIsVideoModalOpen(true)}
+                                        className="absolute bottom-6 left-6 bg-white/90 backdrop-blur-md px-4 py-2 rounded-full shadow-lg flex items-center gap-2 group hover:scale-105 transition-all text-slate-700 hover:text-primary border border-white"
+                                    >
+                                        <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center group-hover:bg-primary transition-colors">
+                                            <Play size={12} className="text-primary group-hover:text-white transition-colors" fill="currentColor" />
+                                        </div>
+                                        <span className="text-[10px] sm:text-xs font-bold uppercase tracking-widest">Ver Video</span>
+                                    </button>
                                 )}
 
                                 {/* Floating Badges */}
-                                <div className="absolute top-6 left-6 flex flex-col gap-2">
+                                <div className="absolute top-6 left-6 flex flex-col gap-2 pointer-events-none">
                                     {product.stock > 0 ? (
                                         <span className="bg-emerald-500/90 backdrop-blur text-white px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest shadow-lg shadow-emerald-500/30">
                                             En Stock
@@ -187,25 +286,18 @@ export default function ProductDetailsClient({ id }: { id: string }) {
                                 </div>
                             </div>
 
-                            {/* Thumbnails Grid */}
-                            <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 gap-3">
-                                {product.videoUrl && (
-                                    <button
-                                        onClick={() => setIsVideoMode(true)}
-                                        className={`aspect-square rounded-2xl overflow-hidden border-2 transition-all relative group ${isVideoMode ? 'border-primary ring-2 ring-primary/20' : 'border-white bg-white hover:border-slate-300'}`}
-                                    >
-                                        <div className="absolute inset-0 flex items-center justify-center bg-slate-900/10 group-hover:bg-slate-900/20 transition-all">
-                                            <Play size={24} className="text-white drop-shadow-md" fill="currentColor" />
-                                        </div>
-                                    </button>
-                                )}
+                            {/* Thumbnails Horizontal List (Desktop Only) */}
+                            <div className="hidden md:flex overflow-x-auto gap-3 py-2 px-1 snap-x scroll-smooth [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
                                 {product.images?.map((img, idx) => (
                                     <button
                                         key={img.id || idx}
-                                        onClick={() => { setSelectedImage(img.url); setIsVideoMode(false); }}
-                                        className={`aspect-square rounded-2xl overflow-hidden border-2 bg-white transition-all p-1 ${selectedImage === img.url && !isVideoMode ? 'border-primary ring-2 ring-primary/20 scale-95' : 'border-transparent hover:border-slate-200'}`}
+                                        onClick={() => {
+                                            scrollToIndex(idx);
+                                            setIsVideoMode(false);
+                                        }}
+                                        className={`flex-shrink-0 w-20 h-20 md:w-24 md:h-24 snap-center rounded-2xl overflow-hidden border-2 bg-white transition-all p-1 ${selectedImage === img.url && !isVideoMode ? 'border-primary ring-2 ring-primary/20 scale-95 shadow-md' : 'border-transparent hover:border-slate-200 shadow-sm opacity-80 hover:opacity-100'}`}
                                     >
-                                        <img src={img.url} alt="" className="w-full h-full object-contain" />
+                                        <img src={img.url} alt="" className="w-full h-full object-contain pointer-events-none" />
                                     </button>
                                 ))}
                             </div>
@@ -314,6 +406,49 @@ export default function ProductDetailsClient({ id }: { id: string }) {
             </main>
 
             <Footer />
-        </div>
+
+            {/* Video Fullscreen Modal Overlay (Temu Style) */}
+            {
+                isVideoModalOpen && product.videoUrl && (
+                    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/95 backdrop-blur-sm animate-fade-in">
+                        <button
+                            onClick={() => setIsVideoModalOpen(false)}
+                            className="absolute top-6 right-6 w-12 h-12 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition-all z-[110]"
+                        >
+                            <span className="text-2xl font-light">×</span>
+                        </button>
+
+                        <div className="w-full max-w-4xl h-full md:h-[80vh] flex flex-col items-center justify-center px-4 relative">
+                            <video
+                                src={product.videoUrl}
+                                autoPlay
+                                controls
+                                className="w-full max-h-[70vh] object-contain rounded-2xl"
+                            />
+
+                            {/* Quick Add to Cart from Video Mode */}
+                            <div className="absolute bottom-8 left-0 right-0 px-6 flex justify-center">
+                                <button
+                                    onClick={() => {
+                                        if (!isOutOfStock) {
+                                            addToCart(product);
+                                            setIsVideoModalOpen(false);
+                                        }
+                                    }}
+                                    disabled={isOutOfStock}
+                                    className={`w-full max-w-md py-4 rounded-full flex items-center justify-center gap-3 transition-all duration-300 font-bold uppercase tracking-widest text-sm sm:text-base ${isOutOfStock
+                                        ? 'bg-slate-800 text-slate-500 cursor-not-allowed'
+                                        : 'bg-primary text-white hover:bg-primary/90 shadow-2xl shadow-primary/30 active:scale-95'
+                                        }`}
+                                >
+                                    <ShoppingCart size={20} />
+                                    {isOutOfStock ? 'Agotado' : 'Añadir al Carrito'}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )
+            }
+        </div >
     );
 }
