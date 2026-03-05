@@ -50,9 +50,9 @@ export default function Navbar({ showSearch, searchValue, onSearchChange }: Navb
 
     return (
         <>
-            <div className={`fixed top-0 left-0 right-0 z-[60] transition-transform duration-300 ${isVisible ? "translate-y-0" : "-translate-y-full"}`}>
+            <div className={`fixed top-0 left-0 right-0 z-[60] transition-transform duration-300 ease-out will-change-transform transform-gpu ${isVisible ? "translate-y-0" : "-translate-y-full"}`}>
                 <nav
-                    className={`transition-all duration-500 ${isScrolled || isMenuOpen
+                    className={`transition-all duration-300 ease-out ${isScrolled || isMenuOpen
                         ? "glass-card mx-2 sm:mx-4 mt-2 sm:mt-4 rounded-2xl py-3 px-4 sm:px-6 shadow-lg shadow-primary/5"
                         : "bg-transparent py-4 sm:py-6 px-4 sm:px-8"
                         }`}
@@ -69,7 +69,6 @@ export default function Navbar({ showSearch, searchValue, onSearchChange }: Navb
                                         className="bg-transparent border-none outline-none w-full text-sm font-medium text-slate-800 placeholder:text-slate-400"
                                         value={searchValue || ""}
                                         onChange={(e) => onSearchChange?.(e.target.value)}
-                                        autoFocus
                                     />
                                 </div>
                             ) : (
