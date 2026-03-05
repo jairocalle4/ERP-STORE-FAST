@@ -18,6 +18,11 @@
     <PackageReference Include="MailKit" Version="4.8.0" />
     <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" Version="9.0.1" />
     <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="9.0.1" />
+    <!-- Facturación Electrónica SRI -->
+    <PackageReference Include="QuestPDF" Version="2025.3.0" />
+    <PackageReference Include="QRCoder" Version="1.6.0" />
+    <PackageReference Include="System.ServiceModel.Http" Version="8.1.2" />
+    <PackageReference Include="System.ServiceModel.Primitives" Version="8.1.2" />
   </ItemGroup>
 
   <PropertyGroup>

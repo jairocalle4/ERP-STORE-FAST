@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react';
-import { Eye, Search, Calendar, User, Printer, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Eye, Search, Calendar, User, Printer, ChevronLeft, ChevronRight, FileText, Download } from 'lucide-react';
 import { GlassCard } from '../components/common/GlassCard';
 import type { Sale } from '../services/sale.service';
 import { saleService } from '../services/sale.service';
 import SaleDetailsModal from '../components/modals/SaleDetailsModal';
+import { electronicBillingService } from '../services/electronic-billing.service';
 
 export default function SalesHistoryPage() {
     const [sales, setSales] = useState<Sale[]>([]);
@@ -97,6 +98,7 @@ export default function SalesHistoryPage() {
                                 <th>Vendedor</th>
                                 <th className="text-right">Total</th>
                                 <th className="text-center">Estado</th>
+                                <th className="text-center">FE</th>
                                 <th className="text-right">Acciones</th>
                             </tr>
                         </thead>
@@ -138,8 +140,26 @@ export default function SalesHistoryPage() {
                                                 </span>
                                             )}
                                         </td>
+                                        {/* FE Status Badge */}
+                                        <td className="text-center">
+                                            {(sale as any).isElectronic ? (
+                                                <span className={`inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-bold uppercase tracking-wider ${(sale as any).electronicStatus === 'AUTORIZADO'
+                                                        ? 'bg-emerald-100 text-emerald-700'
+                                                        : (sale as any).electronicStatus === 'PENDIENTE'
+                                                            ? 'bg-amber-100 text-amber-700'
+                                                            : (sale as any).electronicStatus === 'NO_AUTORIZADO'
+                                                                ? 'bg-orange-100 text-orange-700'
+                                                                : 'bg-rose-100 text-rose-700'
+                                                    }`}>
+                                                    <FileText size={10} />
+                                                    {(sale as any).electronicStatus ?? 'FE'}
+                                                </span>
+                                            ) : (
+                                                <span className="text-slate-300 text-xs">—</span>
+                                            )}
+                                        </td>
                                         <td className="text-right">
-                                            <div className="flex items-center justify-end gap-2">
+                                            <div className="flex items-center justify-end gap-1">
                                                 <button
                                                     onClick={() => handleSeeDetails(sale.id)}
                                                     className="p-2 text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
@@ -154,6 +174,24 @@ export default function SalesHistoryPage() {
                                                 >
                                                     <Printer size={18} />
                                                 </button>
+                                                {(sale as any).isElectronic && (
+                                                    <>
+                                                        <button
+                                                            onClick={() => electronicBillingService.descargarXml(sale.id, sale.noteNumber || String(sale.id))}
+                                                            className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                                                            title="Descargar XML"
+                                                        >
+                                                            <Download size={16} />
+                                                        </button>
+                                                        <button
+                                                            onClick={() => electronicBillingService.descargarRide(sale.id, sale.noteNumber || String(sale.id))}
+                                                            className="p-2 text-purple-600 hover:bg-purple-50 rounded-lg transition-colors"
+                                                            title="Descargar RIDE (PDF)"
+                                                        >
+                                                            <FileText size={16} />
+                                                        </button>
+                                                    </>
+                                                )}
                                             </div>
                                         </td>
                                     </tr>

@@ -37,7 +37,7 @@ public class AppDbContext : DbContext
     {
         base.OnModelCreating(modelBuilder);
         
-        modelBuilder.HasPostgresExtension("unaccent");
+        // NOTE: HasPostgresExtension removed — project uses SQLite
 
         // Product configuration
         modelBuilder.Entity<Product>()
@@ -56,6 +56,11 @@ public class AppDbContext : DbContext
         modelBuilder.Entity<Expense>()
             .Property(e => e.Amount)
             .HasColumnType("decimal(18,2)");
+
+        // CompanySetting — IvaRate
+        modelBuilder.Entity<CompanySetting>()
+            .Property(c => c.IvaRate)
+            .HasColumnType("decimal(5,2)");
 
         modelBuilder.Entity<Purchase>()
             .Property(p => p.Total)

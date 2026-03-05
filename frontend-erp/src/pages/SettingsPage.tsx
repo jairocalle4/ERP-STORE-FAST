@@ -1,8 +1,10 @@
-import { useEffect, useState } from 'react';
-import { Building2, Save, MapPin, Phone, Mail, Hash, Calendar, ShieldCheck, Eye, EyeOff } from 'lucide-react';
+import { useEffect, useState, useRef } from 'react';
+import { Building2, Save, MapPin, Phone, Mail, Hash, Calendar, ShieldCheck, Eye, EyeOff, FileText, Upload, CheckCircle, AlertCircle, Zap } from 'lucide-react';
 import { GlassCard } from '../components/common/GlassCard';
 import { companyService } from '../services/company.service';
 import type { CompanySetting } from '../services/company.service';
+import { electronicBillingService } from '../services/electronic-billing.service';
+import type { ElectronicBillingSettings } from '../services/electronic-billing.service';
 import { useNotificationStore } from '../store/useNotificationStore';
 import api from '../services/api';
 
@@ -15,9 +17,73 @@ export default function SettingsPage() {
     const [testEmailResult, setTestEmailResult] = useState<{ ok: boolean; msg: string; detail?: string } | null>(null);
     const addNotification = useNotificationStore(state => state.addNotification);
 
+    // === Facturación Electrónica ===
+    const [feSettings, setFeSettings] = useState<Omit<ElectronicBillingSettings, 'hasSignature'>>({
+        electronicBillingEnabled: false,
+        tributaryRegime: 'RIMPE_NEGOCIO_POPULAR',
+        sriEnvironment: '1',
+        commercialName: '',
+        sriEstablishment: '001',
+        sriPointOfIssue: '001',
+        ivaRate: 15
+    });
+    const [feHasSignature, setFeHasSignature] = useState(false);
+    const [savingFe, setSavingFe] = useState(false);
+    const [uploadingFirma, setUploadingFirma] = useState(false);
+    const [showFirmaPass, setShowFirmaPass] = useState(false);
+    const [firmaPassword, setFirmaPassword] = useState('');
+    const [firmaFile, setFirmaFile] = useState<File | null>(null);
+    const firmaInputRef = useRef<HTMLInputElement>(null);
+
     useEffect(() => {
         fetchSettings();
+        fetchFeSettings();
     }, []);
+
+    const fetchFeSettings = async () => {
+        try {
+            const data = await electronicBillingService.obtenerConfiguracion();
+            setFeHasSignature(data.hasSignature);
+            setFeSettings({
+                electronicBillingEnabled: data.electronicBillingEnabled,
+                tributaryRegime: data.tributaryRegime ?? 'RIMPE_NEGOCIO_POPULAR',
+                sriEnvironment: data.sriEnvironment ?? '1',
+                commercialName: data.commercialName ?? '',
+                sriEstablishment: data.sriEstablishment ?? '001',
+                sriPointOfIssue: data.sriPointOfIssue ?? '001',
+                ivaRate: data.ivaRate ?? 15
+            });
+        } catch { /* ok if not set yet */ }
+    };
+
+    const handleSaveFe = async () => {
+        setSavingFe(true);
+        try {
+            await electronicBillingService.guardarConfiguracion(feSettings);
+            addNotification('Configuración de Facturación Electrónica guardada', 'success');
+        } catch {
+            addNotification('Error al guardar la configuración de FE', 'error');
+        } finally {
+            setSavingFe(false);
+        }
+    };
+
+    const handleSubirFirma = async () => {
+        if (!firmaFile) return addNotification('Selecciona un archivo .p12 primero', 'error');
+        if (!firmaPassword) return addNotification('Ingresa la contraseña de la firma', 'error');
+        setUploadingFirma(true);
+        try {
+            await electronicBillingService.subirFirma(firmaFile, firmaPassword);
+            setFeHasSignature(true);
+            setFirmaFile(null);
+            setFirmaPassword('');
+            addNotification('¡Firma electrónica cargada exitosamente!', 'success');
+        } catch {
+            addNotification('Error al subir la firma. Verifica el archivo y la contraseña.', 'error');
+        } finally {
+            setUploadingFirma(false);
+        }
+    };
 
     const fetchSettings = async () => {
         try {
@@ -434,6 +500,231 @@ export default function SettingsPage() {
                                     placeholder="Ej: Gracias por su compra. No se aceptan devoluciones..."
                                 />
                             </div>
+                        </div>
+                    </GlassCard>
+
+                    {/* ══════════════════════════════════════════
+                        NUEVA SECCIÓN: FACTURACIÓN ELECTRÓNICA SRI
+                    ══════════════════════════════════════════ */}
+                    <GlassCard className="p-8 space-y-6 md:col-span-2 border-2 border-indigo-100">
+                        <div className="flex justify-between items-start mb-2">
+                            <h3 className="text-lg font-bold text-indigo-800 flex items-center gap-2">
+                                <FileText className="text-indigo-600" size={20} />
+                                Facturación Electrónica SRI
+                            </h3>
+                            <div className={`px-3 py-1 rounded-full border flex items-center gap-2 text-xs font-black uppercase tracking-widest ${feSettings.electronicBillingEnabled
+                                ? 'bg-emerald-50 border-emerald-200 text-emerald-700'
+                                : 'bg-slate-100 border-slate-200 text-slate-500'
+                                }`}>
+                                <div className={`w-2 h-2 rounded-full ${feSettings.electronicBillingEnabled ? 'bg-emerald-500 animate-pulse' : 'bg-slate-400'
+                                    }`} />
+                                {feSettings.electronicBillingEnabled ? 'Activo' : 'Inactivo'}
+                            </div>
+                        </div>
+
+                        {/* Toggle Activar */}
+                        <div className="flex items-center justify-between p-4 bg-indigo-50/60 rounded-2xl border border-indigo-100">
+                            <div>
+                                <p className="font-black text-slate-800">Activar Facturación Electrónica</p>
+                                <p className="text-xs text-slate-500 mt-0.5">Habilita la emisión de comprobantes electrónicos al SRI</p>
+                            </div>
+                            <button
+                                type="button"
+                                onClick={() => setFeSettings(s => ({ ...s, electronicBillingEnabled: !s.electronicBillingEnabled }))}
+                                className={`relative w-14 h-7 rounded-full transition-all duration-300 ${feSettings.electronicBillingEnabled ? 'bg-indigo-600' : 'bg-slate-300'
+                                    }`}
+                            >
+                                <span className={`absolute top-0.5 left-0.5 w-6 h-6 bg-white rounded-full shadow transition-all duration-300 ${feSettings.electronicBillingEnabled ? 'translate-x-7' : 'translate-x-0'
+                                    }`} />
+                            </button>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+                            {/* Régimen */}
+                            <div>
+                                <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-2 ml-1">Régimen Tributario</label>
+                                <select
+                                    value={feSettings.tributaryRegime ?? 'RIMPE_NEGOCIO_POPULAR'}
+                                    onChange={e => setFeSettings(s => ({ ...s, tributaryRegime: e.target.value }))}
+                                    className="w-full px-4 py-3 bg-white/50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500/50 outline-none text-sm"
+                                >
+                                    <option value="RIMPE_NEGOCIO_POPULAR">RIMPE – Negocio Popular</option>
+                                    <option value="RIMPE_EMPRENDEDOR">RIMPE – Emprendedor</option>
+                                    <option value="GENERAL">Régimen General</option>
+                                </select>
+                            </div>
+                            {/* Ambiente */}
+                            <div>
+                                <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-2 ml-1">Ambiente SRI</label>
+                                <select
+                                    value={feSettings.sriEnvironment ?? '1'}
+                                    onChange={e => setFeSettings(s => ({ ...s, sriEnvironment: e.target.value }))}
+                                    className="w-full px-4 py-3 bg-white/50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500/50 outline-none text-sm"
+                                >
+                                    <option value="1">🟡 Pruebas (Certificación)</option>
+                                    <option value="2">🟢 Producción</option>
+                                </select>
+                                {feSettings.sriEnvironment === '2' && (
+                                    <p className="text-[10px] text-amber-600 font-bold mt-1">⚠ Las facturas emitidas en Producción tienen validez legal.</p>
+                                )}
+                            </div>
+                            {/* IVA */}
+                            <div>
+                                <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-2 ml-1">Tasa IVA (%)</label>
+                                <div className="relative">
+                                    <input
+                                        type="number"
+                                        step="0.5"
+                                        min="0"
+                                        max="30"
+                                        value={feSettings.ivaRate}
+                                        onChange={e => setFeSettings(s => ({ ...s, ivaRate: parseFloat(e.target.value) || 0 }))}
+                                        className="w-full px-4 py-3 bg-white/50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500/50 outline-none font-mono text-sm"
+                                    />
+                                    <span className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 font-bold text-sm">%</span>
+                                </div>
+                                <p className="text-[10px] text-slate-400 mt-1 italic">RIMPE Negocio Popular → 0% automático</p>
+                            </div>
+                            {/* Nombre Comercial */}
+                            <div>
+                                <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-2 ml-1">Nombre Comercial (RIDE)</label>
+                                <input
+                                    type="text"
+                                    placeholder="Ej: Tec-Store Jairo"
+                                    value={feSettings.commercialName ?? ''}
+                                    onChange={e => setFeSettings(s => ({ ...s, commercialName: e.target.value }))}
+                                    className="w-full px-4 py-3 bg-white/50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500/50 outline-none text-sm"
+                                />
+                            </div>
+                            {/* Establecimiento */}
+                            <div>
+                                <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-2 ml-1">Establecimiento</label>
+                                <input
+                                    type="text"
+                                    placeholder="001"
+                                    maxLength={3}
+                                    value={feSettings.sriEstablishment ?? '001'}
+                                    onChange={e => setFeSettings(s => ({ ...s, sriEstablishment: e.target.value }))}
+                                    className="w-full px-4 py-3 bg-white/50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500/50 outline-none font-mono text-sm"
+                                />
+                            </div>
+                            {/* Punto Emisión */}
+                            <div>
+                                <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-2 ml-1">Punto de Emisión</label>
+                                <input
+                                    type="text"
+                                    placeholder="001"
+                                    maxLength={3}
+                                    value={feSettings.sriPointOfIssue ?? '001'}
+                                    onChange={e => setFeSettings(s => ({ ...s, sriPointOfIssue: e.target.value }))}
+                                    className="w-full px-4 py-3 bg-white/50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500/50 outline-none font-mono text-sm"
+                                />
+                            </div>
+                        </div>
+
+                        {/* Firma Electrónica .p12 */}
+                        <div className="p-5 rounded-2xl bg-gradient-to-br from-indigo-50 to-violet-50 border border-indigo-100 space-y-4">
+                            <div className="flex items-center justify-between">
+                                <h4 className="font-black text-indigo-800 flex items-center gap-2">
+                                    <ShieldCheck size={18} className="text-indigo-600" />
+                                    Firma Electrónica (.p12)
+                                </h4>
+                                {feHasSignature ? (
+                                    <div className="flex items-center gap-2 bg-emerald-100 px-3 py-1 rounded-full border border-emerald-200">
+                                        <CheckCircle size={14} className="text-emerald-600" />
+                                        <span className="text-xs font-black text-emerald-700">Firma Configurada</span>
+                                    </div>
+                                ) : (
+                                    <div className="flex items-center gap-2 bg-amber-100 px-3 py-1 rounded-full border border-amber-200">
+                                        <AlertCircle size={14} className="text-amber-600" />
+                                        <span className="text-xs font-black text-amber-700">Sin Firma</span>
+                                    </div>
+                                )}
+                            </div>
+
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                {/* Upload .p12 */}
+                                <div>
+                                    <label className="block text-xs font-black text-slate-500 uppercase tracking-widest mb-2">Archivo .p12 / .pfx</label>
+                                    <div
+                                        onClick={() => firmaInputRef.current?.click()}
+                                        className="cursor-pointer border-2 border-dashed border-indigo-200 rounded-xl p-4 flex flex-col items-center gap-2 hover:border-indigo-400 transition-colors bg-white/60"
+                                    >
+                                        <Upload size={22} className="text-indigo-400" />
+                                        <span className="text-xs text-slate-500 font-medium text-center">
+                                            {firmaFile ? (
+                                                <span className="text-indigo-700 font-black flex items-center gap-1">
+                                                    <CheckCircle size={14} /> {firmaFile.name}
+                                                </span>
+                                            ) : 'Haz clic para seleccionar tu firma .p12'}
+                                        </span>
+                                    </div>
+                                    <input
+                                        ref={firmaInputRef}
+                                        type="file"
+                                        accept=".p12,.pfx"
+                                        className="hidden"
+                                        onChange={e => setFirmaFile(e.target.files?.[0] ?? null)}
+                                    />
+                                </div>
+                                {/* Contraseña */}
+                                <div className="space-y-3">
+                                    <div>
+                                        <label className="block text-xs font-black text-slate-500 uppercase tracking-widest mb-2">Contraseña del .p12</label>
+                                        <div className="relative">
+                                            <input
+                                                type={showFirmaPass ? 'text' : 'password'}
+                                                placeholder="Contraseña de la firma"
+                                                value={firmaPassword}
+                                                onChange={e => setFirmaPassword(e.target.value)}
+                                                className="w-full pr-12 pl-4 py-3 bg-white border border-indigo-200 rounded-xl focus:ring-2 focus:ring-indigo-500/50 outline-none text-sm"
+                                            />
+                                            <button
+                                                type="button"
+                                                onClick={() => setShowFirmaPass(v => !v)}
+                                                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-indigo-500"
+                                            >
+                                                {showFirmaPass ? <EyeOff size={16} /> : <Eye size={16} />}
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <button
+                                        type="button"
+                                        onClick={handleSubirFirma}
+                                        disabled={uploadingFirma || !firmaFile}
+                                        className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-black text-xs uppercase tracking-widest transition-all disabled:opacity-50 active:scale-95"
+                                    >
+                                        {uploadingFirma ? (
+                                            <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                                        ) : <Upload size={15} />}
+                                        {uploadingFirma ? 'Subiendo...' : 'Cargar Firma'}
+                                    </button>
+                                </div>
+                            </div>
+
+                            {!feHasSignature && (
+                                <div className="p-3 bg-amber-50 rounded-xl border border-amber-200">
+                                    <p className="text-xs text-amber-700 font-medium leading-relaxed">
+                                        <span className="font-black">📋 Sin firma .p12:</span> El sistema generará y validará el XML correctamente, pero no podrá enviarlo al SRI hasta que configures tu firma electrónica.
+                                        Obtén tu firma en el <strong>Registro Civil</strong> o <strong>Security Data</strong> (~$25-35).
+                                    </p>
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Botón guardar FE */}
+                        <div className="flex justify-end pt-2">
+                            <button
+                                type="button"
+                                onClick={handleSaveFe}
+                                disabled={savingFe}
+                                className="flex items-center gap-2 px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-black text-xs uppercase tracking-widest transition-all disabled:opacity-60 active:scale-95 shadow-lg shadow-indigo-200"
+                            >
+                                {savingFe ? (
+                                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                                ) : <Zap size={15} />}
+                                {savingFe ? 'Guardando...' : 'Guardar Config. FE'}
+                            </button>
                         </div>
                     </GlassCard>
                 </div>
