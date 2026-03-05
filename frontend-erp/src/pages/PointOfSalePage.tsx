@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import {
     Search, ShoppingCart, Plus, Minus, Trash2,
     User, Check, Package, Tag,
-    ChevronRight, CreditCard, X, LayoutGrid, Eye
+    ChevronRight, CreditCard, X, LayoutGrid, Eye, FileText
 } from 'lucide-react';
 import { productService, type Product } from '../services/product.service';
 import { clientService, type Client, type ClientCreateDto } from '../services/client.service';
@@ -12,6 +12,8 @@ import ClientFormModal from '../components/modals/ClientFormModal';
 import SaleDetailsModal from '../components/modals/SaleDetailsModal';
 import api from '../services/api';
 import ConfirmModal from '../components/modals/ConfirmModal';
+import { electronicBillingService } from '../services/electronic-billing.service';
+import type { ElectronicBillingResult } from '../services/electronic-billing.service';
 
 interface CartItem {
     product: Product;
@@ -45,6 +47,10 @@ export default function PointOfSalePage() {
     const [paymentMethod, setPaymentMethod] = useState<'Efectivo' | 'Transferencia'>('Efectivo');
     const [isClosedSessionModalOpen, setIsClosedSessionModalOpen] = useState(false);
     const [isMobileCartOpen, setIsMobileCartOpen] = useState(false);
+    // === Facturación Electrónica ===
+    const [emitirFE, setEmitirFE] = useState(false);
+    const [feResult, setFeResult] = useState<ElectronicBillingResult | null>(null);
+    const [emittingFe, setEmittingFe] = useState(false);
 
     // Pagination / Infinite Scroll
     const [visibleLimit, setVisibleLimit] = useState(24);
@@ -156,6 +162,7 @@ export default function PointOfSalePage() {
         }
 
         setIsProcessing(true);
+        setFeResult(null);
         try {
             const saleData: CreateSaleDto = {
                 employeeId: 1, // To be replaced by auth context
@@ -170,6 +177,23 @@ export default function PointOfSalePage() {
             };
 
             const newSale = await saleService.create(saleData);
+
+            // === Emitir Factura Electrónica (si el toggle está activo) ===
+            if (emitirFE && newSale?.id) {
+                setEmittingFe(true);
+                try {
+                    const result = await electronicBillingService.emitirFactura(newSale.id);
+                    setFeResult(result);
+                } catch (feErr: any) {
+                    setFeResult({
+                        success: false,
+                        status: 'ERROR',
+                        errorMessage: feErr?.response?.data?.message ?? 'Error al emitir FE'
+                    });
+                } finally {
+                    setEmittingFe(false);
+                }
+            }
 
             setCompletedSale(newSale);
             setShowSuccess(true);
@@ -566,6 +590,22 @@ export default function PointOfSalePage() {
                                         {calculateTotal().toFixed(2)}
                                     </span>
                                 </div>
+                                {/* FE Toggle */}
+                                <div className="flex items-center justify-between px-3 py-2.5 bg-indigo-50/70 rounded-xl border border-indigo-100">
+                                    <div className="flex items-center gap-2">
+                                        <FileText size={14} className="text-indigo-500" />
+                                        <span className="text-xs font-black text-indigo-800">Factura Electrónica</span>
+                                    </div>
+                                    <button
+                                        type="button"
+                                        onClick={() => setEmitirFE(v => !v)}
+                                        className={`relative w-11 h-6 rounded-full transition-all duration-300 ${emitirFE ? 'bg-indigo-600' : 'bg-slate-300'
+                                            }`}
+                                    >
+                                        <span className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-all duration-300 ${emitirFE ? 'translate-x-5' : 'translate-x-0'
+                                            }`} />
+                                    </button>
+                                </div>
                             </div>
 
                             <button
@@ -600,7 +640,25 @@ export default function PointOfSalePage() {
                             <Check size={40} className="text-white" strokeWidth={4} />
                         </div>
                         <h2 className="text-3xl font-black text-slate-800 tracking-tight mb-2">¡Venta Exitosa!</h2>
-                        <p className="text-slate-500 font-bold mb-8">La transacción ha sido procesada correctamente.</p>
+                        <p className="text-slate-500 font-bold mb-4">La transacción ha sido procesada correctamente.</p>
+
+                        {/* FE Result */}
+                        {emitirFE && (
+                            <div className={`mb-6 p-4 rounded-2xl border text-sm font-bold flex items-center gap-3 text-left ${emittingFe
+                                    ? 'bg-indigo-50 border-indigo-200 text-indigo-700'
+                                    : feResult?.status === 'AUTORIZADO'
+                                        ? 'bg-emerald-50 border-emerald-200 text-emerald-800'
+                                        : 'bg-rose-50 border-rose-200 text-rose-700'
+                                }`}>
+                                {emittingFe ? (
+                                    <><div className="w-5 h-5 border-2 border-indigo-300 border-t-indigo-600 rounded-full animate-spin shrink-0" /><span>Emitiendo factura electrónica...</span></>
+                                ) : feResult?.status === 'AUTORIZADO' ? (
+                                    <><Check size={20} className="text-emerald-600 shrink-0" /><div><p>✅ Factura Autorizada por el SRI</p><p className="text-xs font-mono mt-1 text-emerald-600 truncate">{feResult.authorizationNumber}</p></div></>
+                                ) : (
+                                    <><FileText size={20} className="text-rose-500 shrink-0" /><div><p>⚠ {feResult?.errorMessage ?? 'Sin respuesta del SRI'}</p><p className="text-[10px] font-normal mt-1">Puedes reintentar desde Historial de Ventas.</p></div></>
+                                )}
+                            </div>
+                        )}
 
                         <div className="space-y-3">
                             <button
@@ -611,7 +669,7 @@ export default function PointOfSalePage() {
                                 Ver Detalles / Imprimir
                             </button>
                             <button
-                                onClick={() => { setShowSuccess(false); setCompletedSale(null); }}
+                                onClick={() => { setShowSuccess(false); setCompletedSale(null); setFeResult(null); }}
                                 className="w-full py-4 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-2xl font-black uppercase tracking-widest text-[10px] transition-all"
                             >
                                 Nueva Venta
