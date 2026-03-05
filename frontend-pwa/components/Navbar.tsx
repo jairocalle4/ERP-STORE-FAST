@@ -1,6 +1,6 @@
 "use client";
 
-import { Search, ShoppingBag, Menu, X } from "lucide-react";
+import { Search, ShoppingCart, Menu, X } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 import { useState, useEffect } from "react";
@@ -27,21 +27,8 @@ export default function Navbar({ showSearch, searchValue, onSearchChange }: Navb
     const nameLast = name.slice(half);
 
     useEffect(() => {
-        let lastScrollY = window.scrollY;
-
         const handleScroll = () => {
-            const currentScrollY = window.scrollY;
-            setIsScrolled(currentScrollY > 20);
-
-            if (currentScrollY > lastScrollY && currentScrollY > 80) {
-                // Scrolling down -> hide navbar
-                setIsVisible(false);
-            } else if (currentScrollY < lastScrollY) {
-                // Scrolling up -> show navbar
-                setIsVisible(true);
-            }
-
-            lastScrollY = currentScrollY;
+            setIsScrolled(window.scrollY > 20);
         };
 
         window.addEventListener("scroll", handleScroll, { passive: true });
@@ -50,7 +37,7 @@ export default function Navbar({ showSearch, searchValue, onSearchChange }: Navb
 
     return (
         <>
-            <div className={`fixed top-0 left-0 right-0 z-[60] transition-transform duration-300 ease-out will-change-transform transform-gpu ${isVisible ? "translate-y-0" : "-translate-y-full"}`}>
+            <div className="fixed top-0 left-0 right-0 z-[60]">
                 <nav
                     className={`transition-all duration-300 ease-out ${isScrolled || isMenuOpen
                         ? "glass-card mx-2 sm:mx-4 mt-2 sm:mt-4 rounded-2xl py-3 px-4 sm:px-6 shadow-lg shadow-primary/5"
@@ -108,9 +95,9 @@ export default function Navbar({ showSearch, searchValue, onSearchChange }: Navb
                             {/* User removed as per request */}
                             <button
                                 onClick={() => setIsCartOpen(true)}
-                                className="relative p-2.5 rounded-xl premium-button shadow-lg shadow-primary/20 group"
+                                className="relative p-2.5 rounded-xl premium-button shadow-lg shadow-primary/20 group hover:scale-105 active:scale-95 transition-all"
                             >
-                                <ShoppingBag size={20} className="group-hover:scale-110 transition-transform" />
+                                <ShoppingCart size={20} className="group-hover:scale-110 transition-transform" />
                                 {totalItems > 0 && (
                                     <span className="absolute -top-1 -right-1 w-5 h-5 bg-foreground text-white text-[10px] font-bold flex items-center justify-center rounded-full border-2 border-primary">
                                         {totalItems}
