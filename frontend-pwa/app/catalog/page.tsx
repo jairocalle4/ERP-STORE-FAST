@@ -3,6 +3,7 @@
 import { useEffect, useState, Suspense } from "react";
 import ProductCard from "@/components/ProductCard";
 import Navbar from "@/components/Navbar";
+import InstallPwaPrompt from "@/components/InstallPwaPrompt";
 import Footer from "@/components/Footer";
 import { Product } from "@/types/product";
 import { Search, SlidersHorizontal, ShoppingBag, Star } from "lucide-react";
@@ -22,6 +23,7 @@ function CatalogContent() {
     const [page, setPage] = useState(1);
     const [hasMore, setHasMore] = useState(true);
     const [loadingMore, setLoadingMore] = useState(false);
+    const [scrolledPastSearch, setScrolledPastSearch] = useState(false);
     const PAGE_SIZE = 8;
 
     // Categorías se cargan una sola vez: solo las que tienen productos activos
@@ -189,25 +191,40 @@ function CatalogContent() {
     // });
     const filteredProducts = products; // Use backend results directly
 
+    // Scroll detection for Navbar Dynamic Search
+    useEffect(() => {
+        const handleScroll = () => {
+            // About 180px is where the search bar usually scrolls out of view on mobile
+            setScrolledPastSearch(window.scrollY > 180);
+        };
+        window.addEventListener("scroll", handleScroll, { passive: true });
+        return () => window.removeEventListener("scroll", handleScroll);
+    }, []);
+
     return (
         <div className="flex flex-col min-h-screen bg-white">
-            <Navbar />
+            <Navbar
+                showSearch={scrolledPastSearch}
+                searchValue={searchQuery}
+                onSearchChange={setSearchQuery}
+            />
+            <InstallPwaPrompt />
 
-            <main className="flex-grow pt-24 md:pt-32 pb-24">
-                <div className="max-w-7xl mx-auto px-6">
+            <main className="flex-grow pt-20 md:pt-28 pb-24">
+                <div className="max-w-7xl mx-auto px-2 sm:px-6">
                     {/* Header */}
-                    <div className="flex flex-col md:flex-row md:items-end justify-between gap-8 mb-12">
-                        <div className="space-y-4">
-                            <h1 className="text-3xl sm:text-5xl md:text-6xl font-outfit font-black tracking-tighter uppercase leading-none">
+                    <div className="flex flex-col md:flex-row md:items-end justify-between gap-5 mb-8 px-2">
+                        <div className="space-y-3">
+                            <h1 className="text-4xl sm:text-5xl md:text-6xl font-outfit font-black tracking-tighter uppercase leading-none">
                                 CATÁLOGO <span className="gradient-text">COMPLETO.</span>
                             </h1>
-                            <p className="text-muted-foreground max-w-lg">
+                            <p className="text-sm sm:text-base text-muted-foreground max-w-lg">
                                 Explora nuestra colección completa de productos de alta calidad, seleccionados especialmente para ti.
                             </p>
                         </div>
 
-                        <div className="flex items-center gap-4 bg-slate-50 p-2 rounded-2xl border border-slate-100 w-full sm:w-96">
-                            <Search size={20} className="ml-3 text-muted-foreground" />
+                        <div className="flex items-center gap-3 bg-slate-50 p-2 rounded-2xl border border-slate-100 w-full sm:w-96 shadow-sm focus-within:ring-2 ring-primary/20 transition-all">
+                            <Search size={18} className="ml-3 text-muted-foreground" />
                             <input
                                 type="text"
                                 placeholder="Buscar productos..."
@@ -219,7 +236,7 @@ function CatalogContent() {
                     </div>
 
                     {/* Filters Bar */}
-                    <div className="flex items-center gap-4 overflow-x-auto pb-6 mb-12 custom-scrollbar border-b border-slate-50">
+                    <div className="flex items-center gap-3 overflow-x-auto pb-4 mb-8 custom-scrollbar border-b border-slate-50 px-2">
                         <div className="flex items-center gap-2 px-4 py-2 bg-foreground text-white rounded-xl text-xs font-bold uppercase tracking-widest shrink-0">
                             <SlidersHorizontal size={14} />
                             <span>Filtros</span>
@@ -254,7 +271,7 @@ function CatalogContent() {
                     </div>
 
                     {/* Results Info */}
-                    <div className="flex justify-between items-center mb-8">
+                    <div className="flex justify-between items-center mb-8 px-2">
                         <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest">
                             Mostrando {filteredProducts.length} productos
                         </p>
@@ -262,9 +279,9 @@ function CatalogContent() {
 
                     {/* Grid */}
                     {loading && products.length === 0 ? (
-                        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-8">
+                        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 md:gap-8">
                             {[...Array(8)].map((_, i) => (
-                                <div key={i} className="glass-card rounded-2xl md:rounded-[2rem] p-3 h-[300px] md:h-[450px] animate-pulse">
+                                <div key={i} className="glass-card rounded-2xl md:rounded-[2rem] p-2 md:p-3 h-[300px] md:h-[450px] animate-pulse">
                                     <div className="aspect-[4/5] bg-slate-200 rounded-xl md:rounded-[1.8rem] mb-4"></div>
                                     <div className="h-4 bg-slate-200 rounded w-1/2 mb-2"></div>
                                     <div className="h-6 bg-slate-200 rounded w-3/4"></div>
@@ -274,7 +291,7 @@ function CatalogContent() {
                     ) : (
                         <>
                             {filteredProducts.length > 0 ? (
-                                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-8 transition-all">
+                                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 md:gap-8 transition-all">
                                     {filteredProducts.map((product) => (
                                         <ProductCard
                                             key={product.id}
