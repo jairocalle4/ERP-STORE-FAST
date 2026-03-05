@@ -1,10 +1,11 @@
 import React from 'react';
 import { createPortal } from 'react-dom';
-import { X, Printer, Calendar, User, Package, Hash, CreditCard, Download, Trash2 } from 'lucide-react';
+import { X, Printer, Calendar, User, Package, Hash, CreditCard, Download, Trash2, FileText } from 'lucide-react';
 import type { Sale } from '../../services/sale.service';
 import { saleService } from '../../services/sale.service';
 import { companyService, type CompanySetting } from '../../services/company.service';
 import { useNotificationStore } from '../../store/useNotificationStore';
+import { electronicBillingService } from '../../services/electronic-billing.service';
 
 interface SaleDetailsModalProps {
     isOpen: boolean;
@@ -61,50 +62,75 @@ const SaleDetailsModal: React.FC<SaleDetailsModalProps> = ({ isOpen, onClose, sa
     const handlePrint = () => {
         if (!sale) return;
 
+        const saleAny = sale as any;
+        const isElectronic = !!saleAny.isElectronic;
+        const isAuthorized = saleAny.electronicStatus === 'AUTORIZADO';
+        const authNumber = saleAny.authorizationNumber || '';
+        const authDate = saleAny.authorizationDate
+            ? new Date(saleAny.authorizationDate).toLocaleString('es-EC')
+            : '';
+        const accessKey = saleAny.accessKey || '';
+
+        // Formato clave de acceso en bloques de 10 para facilitar lectura
+        const accessKeyFormatted = accessKey
+            ? accessKey.match(/.{1,10}/g)?.join(' ') ?? accessKey
+            : '';
+
         const windowPrint = window.open('', '', 'left=0,top=0,width=800,height=900,toolbar=0,scrollbars=0,status=0');
         if (!windowPrint) return;
 
         windowPrint.document.write(`
             <html>
                 <head>
-                    <title>Ticket de Venta # ${sale.noteNumber || sale.id}</title>
+                    <title>${isElectronic && isAuthorized ? 'FACTURA ELECTRÓNICA' : 'Ticket de Venta'} # ${sale.noteNumber || sale.id}</title>
                     <style>
                         @page { size: 80mm auto; margin: 0; }
                         body { 
                             font-family: 'Courier New', Courier, monospace; 
                             width: 80mm; 
-                            padding: 5mm;
+                            padding: 4mm;
                             margin: 0;
-                            font-size: 12px;
-                            line-height: 1.2;
+                            font-size: 11px;
+                            line-height: 1.3;
                         }
                         .text-center { text-align: center; }
                         .text-right { text-align: right; }
                         .bold { font-weight: bold; }
-                        .divider { border-top: 1px dashed #000; margin: 5mm 0; }
-                        .header { margin-bottom: 5mm; }
-                        .store-name { font-size: 16px; font-weight: bold; margin-bottom: 2mm; }
-                        .info-row { display: flex; justify-content: space-between; margin-bottom: 1mm; }
-                        table { width: 100%; border-collapse: collapse; margin: 3mm 0; }
-                        th { text-align: left; border-bottom: 1px solid #000; padding-bottom: 1mm; }
-                        td { padding: 1mm 0; vertical-align: top; }
-                        .total-section { margin-top: 3mm; }
-                        .total-row { display: flex; justify-content: space-between; font-weight: bold; font-size: 14px; }
-                        .footer { margin-top: 8mm; font-size: 10px; }
+                        .divider { border-top: 1px dashed #000; margin: 4mm 0; }
+                        .divider-solid { border-top: 1px solid #000; margin: 4mm 0; }
+                        .header { margin-bottom: 4mm; }
+                        .store-name { font-size: 15px; font-weight: bold; margin-bottom: 1mm; }
+                        .doc-type { font-size: 12px; font-weight: bold; border: 1px solid #000; padding: 2mm; margin: 2mm 0; display: inline-block; }
+                        .info-row { display: flex; justify-content: space-between; margin-bottom: 1mm; font-size: 11px; }
+                        table { width: 100%; border-collapse: collapse; margin: 2mm 0; }
+                        th { text-align: left; border-bottom: 1px solid #000; padding-bottom: 1mm; font-size: 10px; }
+                        td { padding: 1mm 0; vertical-align: top; font-size: 11px; }
+                        .total-section { margin-top: 2mm; }
+                        .total-row { display: flex; justify-content: space-between; font-weight: bold; font-size: 13px; }
+                        .sub-row { display: flex; justify-content: space-between; font-size: 10px; color: #444; margin-bottom: 0.5mm; }
+                        .footer { margin-top: 6mm; font-size: 9px; }
+                        .sri-section { margin-top: 3mm; padding: 2mm; border: 1px solid #000; font-size: 9px; }
+                        .sri-title { font-weight: bold; font-size: 10px; text-align: center; margin-bottom: 2mm; }
+                        .access-key { font-size: 7.5px; letter-spacing: 0.5px; word-break: break-all; text-align: center; margin: 1mm 0; }
+                        .rimpe-legend { font-size: 9px; text-align: center; font-style: italic; border-top: 1px dashed #000; margin-top: 2mm; padding-top: 2mm; }
+                        .auth-ok { font-weight: bold; text-align: center; font-size: 11px; }
+                        .auth-pending { font-size: 9px; text-align: center; color: #555; font-style: italic; }
                     </style>
                 </head>
                 <body>
                     <div class="text-center header">
                         <div class="store-name">${company?.name || 'ERP STORE FAST'}</div>
-                        <div>RUC: ${company?.ruc || '0999999999001'}</div>
-                        <div>Matriz: ${company?.address || 'Calle Principal 123'}</div>
-                        <div>Telf: ${company?.phone || '0991693863'}</div>
+                        ${isElectronic ? `<div class="doc-type">FACTURA</div>` : ''}
+                        <div>RUC: ${company?.ruc || '0000000000001'}</div>
+                        <div>Dir: ${company?.address || ''}</div>
+                        <div>Telf: ${company?.phone || ''}</div>
+                        ${isElectronic ? `<div>Est: ${company?.establishment || '001'} &nbsp; P.E: ${company?.pointOfIssue || '001'}</div>` : ''}
                     </div>
 
                     <div class="divider"></div>
 
                     <div class="info-row">
-                        <span># NOTA:</span>
+                        <span>${isElectronic ? 'Nº FACTURA:' : '# NOTA:'}</span>
                         <span class="bold">${sale.noteNumber || `V-${sale.id}`}</span>
                     </div>
                     <div class="info-row">
@@ -138,13 +164,13 @@ const SaleDetailsModal: React.FC<SaleDetailsModalProps> = ({ isOpen, onClose, sa
                             </tr>
                         </thead>
                         <tbody>
-                            ${sale.saleDetails?.map(detail => `
+                            ${(sale.saleDetails || []).map(detail => `
                                 <tr>
                                     <td>${detail.quantity} x ${detail.productName || detail.product?.name || 'Producto'}</td>
                                     <td class="text-right">$${(detail.unitPrice * detail.quantity).toFixed(2)}</td>
                                 </tr>
                                 <tr>
-                                    <td colspan="2" style="font-size: 10px; color: #666; padding-top: 0;">P.U: $${detail.unitPrice.toFixed(2)}</td>
+                                    <td colspan="2" style="font-size: 9px; color: #666; padding-top: 0;">P.U: $${detail.unitPrice.toFixed(2)}</td>
                                 </tr>
                             `).join('')}
                         </tbody>
@@ -153,11 +179,35 @@ const SaleDetailsModal: React.FC<SaleDetailsModalProps> = ({ isOpen, onClose, sa
                     <div class="divider"></div>
 
                     <div class="total-section">
+                        <div class="sub-row"><span>SUBTOTAL IVA 0%:</span><span>$${sale.total.toFixed(2)}</span></div>
+                        <div class="sub-row"><span>SUBTOTAL IVA ${isElectronic ? '15' : '0'}%:</span><span>$0.00</span></div>
+                        <div class="sub-row"><span>IVA (15%):</span><span>$0.00</span></div>
+                        <div class="divider-solid"></div>
                         <div class="total-row">
                             <span>TOTAL A PAGAR:</span>
                             <span>$${sale.total.toFixed(2)}</span>
                         </div>
                     </div>
+
+                    ${isElectronic ? `
+                    <div class="sri-section">
+                        <div class="sri-title">★ COMPROBANTE ELECTRÓNICO SRI ★</div>
+                        ${isAuthorized ? `
+                            <div class="auth-ok">✓ AUTORIZADO</div>
+                            <div class="info-row" style="margin-top:1mm;"><span>Nº AUTORIZACIÓN:</span></div>
+                            <div style="font-size:8px; word-break:break-all; text-align:center; margin:0.5mm 0;">${authNumber}</div>
+                            <div class="info-row"><span>FECHA AUTORIZACIÓN:</span><span>${authDate}</span></div>
+                        ` : `
+                            <div class="auth-pending">○ PENDIENTE DE AUTORIZACIÓN</div>
+                        `}
+                        <div class="info-row" style="margin-top:1mm;"><span>CLAVE DE ACCESO:</span></div>
+                        <div class="access-key">${accessKeyFormatted}</div>
+                        <div class="rimpe-legend">
+                            CONTRIBUYENTE RÉGIMEN RIMPE<br/>
+                            NEGOCIO POPULAR - NO COBRA IVA
+                        </div>
+                    </div>
+                    ` : ''}
 
                     <div class="footer text-center">
                         <div class="bold">¡GRACIAS POR SU COMPRA!</div>
@@ -316,17 +366,24 @@ const SaleDetailsModal: React.FC<SaleDetailsModalProps> = ({ isOpen, onClose, sa
                         <div className="mt-8 flex justify-end">
                             <div className="w-64 space-y-3 bg-slate-900 p-6 rounded-[2rem] text-white shadow-2xl shadow-slate-900/20">
                                 <div className="flex justify-between items-center opacity-60">
-                                    <span className="text-[10px] font-black uppercase tracking-widest">Base Imponible</span>
-                                    <span className="font-bold text-sm">${(sale.total / 1.15).toFixed(2)}</span>
+                                    <span className="text-[10px] font-black uppercase tracking-widest">Subtotal IVA 0%</span>
+                                    <span className="font-bold text-sm">${sale.total.toFixed(2)}</span>
                                 </div>
-                                <div className="flex justify-between items-center opacity-60">
-                                    <span className="text-[10px] font-black uppercase tracking-widest">IVA (15%)</span>
-                                    <span className="font-bold text-sm">${(sale.total - (sale.total / 1.15)).toFixed(2)}</span>
+                                <div className="flex justify-between items-center opacity-40">
+                                    <span className="text-[10px] font-black uppercase tracking-widest">IVA (0%)</span>
+                                    <span className="font-bold text-sm">$0.00</span>
                                 </div>
                                 <div className="pt-3 border-t border-white/10 flex justify-between items-end">
                                     <span className="text-xs font-black uppercase tracking-widest">Total Final</span>
                                     <span className="text-2xl font-black text-indigo-400 tracking-tighter">${sale.total.toFixed(2)}</span>
                                 </div>
+                                {(sale as any).isElectronic && (
+                                    <div className="pt-2 border-t border-white/10">
+                                        <p className="text-[9px] text-center font-black uppercase tracking-widest text-emerald-400">
+                                            {(sale as any).electronicStatus === 'AUTORIZADO' ? '✓ Factura Electrónica Autorizada' : '⏳ FE: ' + ((sale as any).electronicStatus ?? 'Pendiente')}
+                                        </p>
+                                    </div>
+                                )}
                             </div>
                         </div>
                     </div>
@@ -376,13 +433,27 @@ const SaleDetailsModal: React.FC<SaleDetailsModalProps> = ({ isOpen, onClose, sa
                                 <Printer size={18} />
                                 Imprimir Ticket
                             </button>
-                            <button
-                                onClick={handlePrint}
-                                className="px-6 py-4 bg-slate-900 hover:bg-black text-white rounded-[1.5rem] font-black uppercase tracking-widest text-[10px] transition-all flex items-center gap-3 shadow-xl shadow-slate-900/20"
-                            >
-                                <Download size={18} />
-                                PDF
-                            </button>
+                            {/* FE: XML & RIDE download buttons if authorized */}
+                            {(sale as any).isElectronic && (
+                                <>
+                                    <button
+                                        onClick={() => electronicBillingService.descargarXml(sale.id, sale.noteNumber || String(sale.id))}
+                                        className="px-4 py-4 bg-blue-600 hover:bg-blue-700 text-white rounded-[1.5rem] font-black uppercase tracking-widest text-[10px] transition-all flex items-center gap-2 shadow-lg shadow-blue-200"
+                                        title="Descargar XML Autorizado"
+                                    >
+                                        <Download size={16} />
+                                        XML
+                                    </button>
+                                    <button
+                                        onClick={() => electronicBillingService.descargarRide(sale.id, sale.noteNumber || String(sale.id))}
+                                        className="px-4 py-4 bg-purple-600 hover:bg-purple-700 text-white rounded-[1.5rem] font-black uppercase tracking-widest text-[10px] transition-all flex items-center gap-2 shadow-lg shadow-purple-200"
+                                        title="Descargar RIDE (PDF SRI)"
+                                    >
+                                        <FileText size={16} />
+                                        RIDE
+                                    </button>
+                                </>
+                            )}
                         </div>
                     </div>
                 </div>
