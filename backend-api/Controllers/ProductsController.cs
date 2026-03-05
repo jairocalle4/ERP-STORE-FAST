@@ -4,6 +4,8 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using ErpStore.Application.DTOs;
+using System.Text;
+using System.Globalization;
 
 namespace ErpStore.Api.Controllers;
 
@@ -52,10 +54,18 @@ public class ProductsController : ControllerBase
  
         if (!string.IsNullOrEmpty(search))
         {
-            var searchLower = search.ToLower();
-            query = query.Where(p => p.Name.ToLower().Contains(searchLower) 
-                || (p.Description != null && p.Description.ToLower().Contains(searchLower))
-                || (p.SKU != null && p.SKU.ToLower().Contains(searchLower)));
+            var cleanSearch = RemoveDiacritics(search).Trim();
+            var searchTerms = cleanSearch.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+
+            foreach (var term in searchTerms)
+            {
+                var likeTerm = $"%{term}%";
+                query = query.Where(p => 
+                    EF.Functions.ILike(EF.Functions.Unaccent(p.Name), likeTerm) 
+                    || (p.Description != null && EF.Functions.ILike(EF.Functions.Unaccent(p.Description), likeTerm))
+                    || (p.SKU != null && EF.Functions.ILike(EF.Functions.Unaccent(p.SKU), likeTerm))
+                );
+            }
         }
  
         if (page < 1) page = 1;
@@ -251,5 +261,25 @@ public class ProductsController : ControllerBase
     private bool ProductExists(int id)
     {
         return _context.Products.Any(e => e.Id == id);
+    }
+
+    private static string RemoveDiacritics(string text)
+    {
+        if (string.IsNullOrWhiteSpace(text)) return text;
+
+        var normalizedString = text.Normalize(NormalizationForm.FormD);
+        var stringBuilder = new StringBuilder(capacity: normalizedString.Length);
+
+        for (int i = 0; i < normalizedString.Length; i++)
+        {
+            char c = normalizedString[i];
+            var unicodeCategory = CharUnicodeInfo.GetUnicodeCategory(c);
+            if (unicodeCategory != UnicodeCategory.NonSpacingMark)
+            {
+                stringBuilder.Append(c);
+            }
+        }
+
+        return stringBuilder.ToString().Normalize(NormalizationForm.FormC);
     }
 }

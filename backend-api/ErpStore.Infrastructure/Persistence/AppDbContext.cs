@@ -37,6 +37,8 @@ public class AppDbContext : DbContext
     {
         base.OnModelCreating(modelBuilder);
         
+        modelBuilder.HasPostgresExtension("unaccent");
+
         // Product configuration
         modelBuilder.Entity<Product>()
             .Property(p => p.Price)
