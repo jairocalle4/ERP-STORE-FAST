@@ -393,11 +393,16 @@ export default function PointOfSalePage() {
                 <div
                     id="cart-section"
                     className={`
-                        fixed top-0 left-0 w-full h-full z-[100] bg-white flex flex-col transition-transform duration-500 md:static md:z-auto md:w-auto md:h-full md:bg-transparent md:col-span-5 xl:col-span-4 2xl:col-span-3 md:translate-y-0
+                        fixed top-0 left-0 w-full h-full z-[100] bg-white flex flex-col transition-transform duration-500
+                        md:static md:z-auto md:w-auto md:bg-transparent md:col-span-5 xl:col-span-4 2xl:col-span-3 md:translate-y-0
                         ${isMobileCartOpen ? 'translate-y-0' : 'translate-y-full md:translate-y-0'}
                     `}
                 >
-                    <div className="h-full flex flex-col bg-white md:bg-white/60 landscape:md:bg-white/60 backdrop-blur-xl md:rounded-[2.5rem] border-t md:border border-white/60 shadow-2xl shadow-indigo-500/5 overflow-hidden min-h-0">
+                    {/* max-h on desktop is set via inline style since tailwind calc() can't reference CSS vars easily */}
+                    <div
+                        className="h-full flex flex-col bg-white md:bg-white/60 landscape:md:bg-white/60 backdrop-blur-xl md:rounded-[2.5rem] border-t md:border border-white/60 shadow-2xl shadow-indigo-500/5 overflow-hidden"
+                        style={{ maxHeight: 'calc(100vh - 100px)' }}
+                    >
 
                         {/* Mobile Cart Header (Only visible on mobile) */}
                         <div className="md:hidden flex items-center justify-between p-4 border-b border-indigo-50 bg-white shadow-sm shrink-0">
@@ -417,12 +422,21 @@ export default function PointOfSalePage() {
                                 </span>
                             </h2>
 
-                            <div className="w-16"></div> {/* Spacer for balance */}
+                            {cart.length > 0 ? (
+                                <button
+                                    onClick={() => setCart([])}
+                                    className="text-xs font-black text-rose-400 hover:text-rose-600 px-2 py-1 bg-rose-50 rounded-lg transition-colors"
+                                >
+                                    Vaciar
+                                </button>
+                            ) : (
+                                <div className="w-16"></div>
+                            )}
                         </div>
 
 
                         {/* Consumidor Final Toggle */}
-                        <div className="p-6 border-b border-indigo-100/30">
+                        <div className="p-6 border-b border-indigo-100/30 shrink-0">
                             <div className="flex items-center justify-between bg-white p-4 rounded-3xl border border-indigo-50 shadow-sm">
                                 <div className="flex items-center gap-3">
                                     <div className={`w-8 h-8 rounded-xl flex items-center justify-center transition-colors ${selectedClient?.cedulaRuc === '9999999999' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/30' : 'bg-slate-100 text-slate-400'}`}>
@@ -430,41 +444,54 @@ export default function PointOfSalePage() {
                                     </div>
                                     <p className="text-sm font-bold text-slate-800">Consumidor Final</p>
                                 </div>
-                                <label className="relative inline-flex items-center cursor-pointer">
-                                    <input
-                                        type="checkbox"
-                                        className="sr-only peer"
-                                        checked={selectedClient?.cedulaRuc === '9999999999'}
-                                        onChange={(e) => {
-                                            if (e.target.checked) {
-                                                const cf = clients.find(c => c.cedulaRuc === '9999999999');
-                                                if (cf) setSelectedClient(cf);
-                                            } else {
-                                                setSelectedClient(null);
-                                            }
-                                        }}
-                                    />
-                                    <div className="w-12 h-7 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-indigo-600"></div>
-                                </label>
+                                <div className="flex items-center gap-2">
+                                    {cart.length > 0 && (
+                                        <button
+                                            type="button"
+                                            onClick={() => setCart([])}
+                                            className="text-[10px] font-black text-rose-400 hover:text-rose-600 px-2 py-1 bg-rose-50 hover:bg-rose-100 rounded-lg transition-colors uppercase tracking-wider"
+                                        >
+                                            Vaciar todo
+                                        </button>
+                                    )}
+                                    <label className="relative inline-flex items-center cursor-pointer">
+                                        <input
+                                            type="checkbox"
+                                            className="sr-only peer"
+                                            checked={selectedClient?.cedulaRuc === '9999999999'}
+                                            onChange={(e) => {
+                                                if (e.target.checked) {
+                                                    const cf = clients.find(c => c.cedulaRuc === '9999999999');
+                                                    if (cf) setSelectedClient(cf);
+                                                } else {
+                                                    // Switch to manual client selection — clear client
+                                                    setSelectedClient(null);
+                                                    setClientSearch('');
+                                                }
+                                            }}
+                                        />
+                                        <div className="w-12 h-7 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-indigo-600"></div>
+                                    </label>
+                                </div>
                             </div>
 
-                            {/* Client Selector (Hidden when CF is active) */}
-                            {selectedClient?.cedulaRuc !== '9999999999' && (
-                                <div className="mt-3 flex items-center gap-3 bg-white p-3 rounded-2xl border border-indigo-50 shadow-sm animate-scale-in">
-                                    <div className="w-8 h-8 rounded-lg bg-indigo-50 flex items-center justify-center text-indigo-600">
+                            {/* Selected non-CF client display */}
+                            {selectedClient && selectedClient.cedulaRuc !== '9999999999' && (
+                                <div className="mt-3 flex items-center gap-3 bg-emerald-50 p-3 rounded-2xl border border-emerald-100 shadow-sm animate-scale-in">
+                                    <div className="w-8 h-8 rounded-lg bg-emerald-100 flex items-center justify-center text-emerald-600">
                                         <User size={14} />
                                     </div>
                                     <div className="grow min-w-0">
                                         <p className="text-[11px] font-black text-slate-800 truncate uppercase tracking-tight">{selectedClient?.name}</p>
-                                        <p className="text-[9px] font-bold text-indigo-400 tracking-widest">{selectedClient?.cedulaRuc}</p>
+                                        <p className="text-[9px] font-bold text-emerald-500 tracking-widest">{selectedClient?.cedulaRuc}</p>
                                     </div>
-                                    <button onClick={() => setSelectedClient(null)} className="p-1.5 text-slate-300 hover:text-rose-500 hover:bg-rose-50 rounded-lg transition-all">
+                                    <button onClick={() => { setSelectedClient(null); setClientSearch(''); }} className="p-1.5 text-slate-300 hover:text-rose-500 hover:bg-rose-50 rounded-lg transition-all">
                                         <X size={14} />
                                     </button>
                                 </div>
                             )}
 
-                            {/* Client Search (Search triggered if no client is selected or if we want to change) */}
+                            {/* Client Search — only when no client selected and not CF */}
                             {!selectedClient && (
                                 <div className="mt-3 flex gap-2">
                                     <div className="relative grow">
@@ -472,17 +499,22 @@ export default function PointOfSalePage() {
                                         <input
                                             type="text"
                                             className="w-full pl-9 pr-4 py-2.5 bg-white border border-slate-100 rounded-xl text-xs focus:ring-4 focus:ring-indigo-500/5 focus:border-indigo-500/50 outline-none transition-all placeholder:text-slate-400"
-                                            placeholder="Buscar cliente..."
+                                            placeholder="Buscar cliente por nombre o CI..."
                                             value={clientSearch}
                                             onChange={e => setClientSearch(e.target.value)}
                                         />
                                         {clientSearch && (
                                             <div className="absolute top-full left-0 right-0 bg-white border border-slate-200 rounded-xl mt-1 shadow-2xl z-30 max-h-40 overflow-y-auto p-1.5 space-y-1">
-                                                {filteredClients.map(client => (
+                                                {filteredClients.length === 0 ? (
+                                                    <p className="p-2 text-xs text-slate-400 text-center">Sin resultados</p>
+                                                ) : filteredClients.map(client => (
                                                     <div
                                                         key={client.id}
                                                         className="p-2 hover:bg-indigo-50 rounded-lg cursor-pointer transition-colors group"
-                                                        onClick={() => { setSelectedClient(client); setClientSearch(''); }}
+                                                        onClick={() => {
+                                                            setSelectedClient(client);
+                                                            setClientSearch('');
+                                                        }}
                                                     >
                                                         <div className="font-bold text-slate-800 text-[11px] group-hover:text-indigo-600">{client.name}</div>
                                                         <div className="text-[9px] text-slate-400 font-bold uppercase tracking-widest">{client.cedulaRuc}</div>
@@ -501,8 +533,8 @@ export default function PointOfSalePage() {
                             )}
                         </div>
 
-                        {/* Cart Items List */}
-                        <div className="grow overflow-y-auto p-6 space-y-4 custom-scrollbar">
+                        {/* Cart Items List — scrollable, grows to fill space but bottom sections stay fixed */}
+                        <div className="grow min-h-0 overflow-y-auto p-6 space-y-4 custom-scrollbar">
                             {cart.length === 0 ? (
                                 <div className="h-full flex flex-col items-center justify-center text-center p-8">
                                     <div className="w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center mb-6">
@@ -550,7 +582,7 @@ export default function PointOfSalePage() {
                         </div>
 
                         {/* Payment Method Selection - Compact */}
-                        <div className="px-5 py-3 border-t border-indigo-50/50 bg-slate-50/30">
+                        <div className="px-5 py-3 border-t border-indigo-50/50 bg-slate-50/30 shrink-0">
                             <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 px-1">Método de Pago</p>
                             <div className="grid grid-cols-2 gap-3">
                                 <button
@@ -580,8 +612,8 @@ export default function PointOfSalePage() {
                             </div>
                         </div>
 
-                        {/* Summary & Checkout - Compact */}
-                        <div className="p-5 bg-white border-t-2 border-slate-50 shadow-[0_-20px_50px_rgba(0,0,0,0.03)]">
+                        {/* Summary & Checkout - Compact, always visible at bottom */}
+                        <div className="p-5 bg-white border-t-2 border-slate-50 shadow-[0_-20px_50px_rgba(0,0,0,0.03)] shrink-0">
                             <div className="space-y-2 mb-4">
                                 <div className="flex justify-between items-end px-1">
                                     <span className="text-sm font-black text-slate-800 uppercase tracking-widest">Total a Pagar</span>

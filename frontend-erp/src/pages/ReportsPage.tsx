@@ -228,15 +228,79 @@ export default function ReportsPage() {
                     </GlassCard>
 
                     <GlassCard className="p-6 border-0 h-[450px] flex flex-col">
-                        <h3 className="text-lg font-bold text-slate-800 mb-6 flex items-center gap-2">
+                        <h3 className="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
                             <CreditCard size={20} className="text-indigo-600" />
                             Métodos de Pago
                         </h3>
-                        {/* Mock data visualization since we don't have aggregated payment methods yet but added to DTO */}
-                        <div className="flex-1 flex items-center justify-center flex-col text-center p-8 bg-slate-50 rounded-2xl border border-dashed border-slate-200">
-                            <CreditCard size={48} className="text-slate-300 mb-4" />
-                            <p className="text-slate-500 font-medium">Esta gráfica estará disponible cuando se registren suficientes ventas con diferentes métodos de pago.</p>
-                        </div>
+                        {(() => {
+                            // Aggregate from salesProfit (each row has paymentMethod + totalRevenue)
+                            const methodMap: Record<string, number> = {};
+                            salesProfit.forEach(row => {
+                                const m = row.paymentMethod || 'Otros';
+                                methodMap[m] = (methodMap[m] || 0) + row.totalRevenue;
+                            });
+                            const entries = Object.entries(methodMap).sort((a, b) => b[1] - a[1]);
+                            const grandTotal = entries.reduce((s, [, v]) => s + v, 0);
+                            const paymentColors: Record<string, string> = {
+                                'Efectivo': '#10b981',
+                                'Transferencia': '#4f46e5',
+                                'Tarjeta': '#f59e0b',
+                                'Credito': '#ec4899',
+                                'Otros': '#94a3b8'
+                            };
+                            const piePay = entries.map(([name, value]) => ({
+                                name,
+                                value,
+                                pct: grandTotal > 0 ? Math.round((value / grandTotal) * 100) : 0,
+                                color: paymentColors[name] ?? COLORS[entries.indexOf([name, value].slice() as [string, number]) % COLORS.length]
+                            }));
+
+                            if (piePay.length === 0) {
+                                return (
+                                    <div className="flex-1 flex items-center justify-center flex-col text-center p-8 bg-slate-50 rounded-2xl border border-dashed border-slate-200">
+                                        <CreditCard size={48} className="text-slate-300 mb-4" />
+                                        <p className="text-slate-500 font-medium">Sin datos para el período seleccionado</p>
+                                    </div>
+                                );
+                            }
+
+                            return (
+                                <div className="flex-1 flex flex-col">
+                                    <div className="flex-1 relative">
+                                        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                                            <div className="text-center">
+                                                <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Total</p>
+                                                <p className="text-xl font-black text-slate-700">{formatCurrency(grandTotal)}</p>
+                                            </div>
+                                        </div>
+                                        <ResponsiveContainer width="100%" height={200}>
+                                            <PieChart>
+                                                <Pie data={piePay} cx="50%" cy="50%" innerRadius={65} outerRadius={88} paddingAngle={3} dataKey="value" nameKey="name">
+                                                    {piePay.map((entry, index) => (
+                                                        <Cell key={`pm-${index}`} fill={entry.color} strokeWidth={0} />
+                                                    ))}
+                                                </Pie>
+                                                <Tooltip formatter={(value: any) => formatCurrency(Number(value))} contentStyle={{ borderRadius: '10px', border: 'none', fontSize: '12px' }} />
+                                            </PieChart>
+                                        </ResponsiveContainer>
+                                    </div>
+                                    <div className="space-y-2 mt-2">
+                                        {piePay.map((item, idx) => (
+                                            <div key={idx} className="flex items-center justify-between text-sm bg-slate-50 rounded-xl px-3 py-2">
+                                                <div className="flex items-center gap-2">
+                                                    <div className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: item.color }} />
+                                                    <span className="font-bold text-slate-700">{item.name}</span>
+                                                </div>
+                                                <div className="flex items-center gap-3">
+                                                    <span className="text-xs text-slate-400 font-bold">{item.pct}%</span>
+                                                    <span className="font-black text-slate-800 text-xs">{formatCurrency(item.value)}</span>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            );
+                        })()}
                     </GlassCard>
                 </div>
             )}

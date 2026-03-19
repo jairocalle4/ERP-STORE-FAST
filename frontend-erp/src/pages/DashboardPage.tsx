@@ -3,18 +3,26 @@ import { Package, ShoppingCart, Settings, TrendingUp, AlertCircle, Wallet, Arrow
 import { Link } from "react-router-dom";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import { dashboardService } from "../services/dashboard.service";
+import { reportsService, type TopProduct } from '../services/reports.service';
 import { BASE_API_URL } from '../services/api';
 import type { DashboardStats } from "../services/dashboard.service";
 
+const PIE_COLORS = ['#4f46e5', '#10b981', '#f59e0b', '#ec4899', '#06b6d4'];
+
 export default function DashboardPage() {
     const [statsData, setStatsData] = useState<DashboardStats | null>(null);
+    const [topProducts, setTopProducts] = useState<TopProduct[]>([]);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
         const loadStats = async () => {
             try {
-                const data = await dashboardService.getStats();
+                const [data, topData] = await Promise.all([
+                    dashboardService.getStats(),
+                    reportsService.getTopProducts(new Date(new Date().setDate(new Date().getDate() - 30)), new Date())
+                ]);
                 setStatsData(data);
+                setTopProducts(topData);
             } catch (err) {
                 console.error("Error loading dashboard stats:", err);
             } finally {
@@ -24,12 +32,13 @@ export default function DashboardPage() {
         loadStats();
     }, []);
 
-    const pieData = [
-        { name: 'Airpods Pro 2G', value: 40, color: '#4f46e5' },
-        { name: 'Cable HDMI 2.0', value: 20, color: '#10b981' },
-        { name: 'Case iPhone 15', value: 15, color: '#f59e0b' },
-        { name: 'Cargador 20W', value: 25, color: '#ec4899' },
-    ];
+    const totalSold = topProducts.reduce((sum, p) => sum + p.quantitySold, 0);
+    const pieData = topProducts.map((p, i) => ({
+        name: p.productName,
+        value: totalSold > 0 ? Math.round((p.quantitySold / totalSold) * 100) : 0,
+        qty: p.quantitySold,
+        color: PIE_COLORS[i % PIE_COLORS.length]
+    }));
 
     const stats = [
         {
@@ -89,9 +98,9 @@ export default function DashboardPage() {
                         <ArrowUpRight size={20} />
                         Nueva Venta
                     </Link>
-                    <button className="bg-white hover:bg-slate-50 px-3 py-2.5 rounded-xl border border-slate-200 text-slate-600 transition-colors">
+                    <Link to="/reports" className="bg-white hover:bg-slate-50 px-3 py-2.5 rounded-xl border border-slate-200 text-slate-600 transition-colors flex items-center" title="Ver Reportes">
                         <PieIcon size={20} />
-                    </button>
+                    </Link>
                 </div>
             </div>
 
@@ -169,40 +178,60 @@ export default function DashboardPage() {
 
                 {/* Top Products Chart */}
                 <div className="glass-panel p-6 rounded-2xl flex flex-col">
-                    <div className="mb-6">
-                        <h3 className="text-lg font-bold text-slate-800">Top 5 Más Vendidos</h3>
-                        <p className="text-sm text-slate-400 font-medium">Distribución por volumen (30 días)</p>
-                    </div>
-                    <div className="flex-1 flex flex-col items-center justify-center min-h-[250px]">
-                        <ResponsiveContainer width="100%" height={220}>
-                            <PieChart>
-                                <Pie
-                                    data={pieData}
-                                    innerRadius={65}
-                                    outerRadius={85}
-                                    paddingAngle={5}
-                                    dataKey="value"
-                                >
-                                    {pieData.map((entry, index) => (
-                                        <Cell key={`cell-${index}`} fill={entry.color} stroke="none" />
-                                    ))}
-                                </Pie>
-                                <Tooltip contentStyle={{ borderRadius: '12px', border: 'none' }} />
-                            </PieChart>
-                        </ResponsiveContainer>
-
-                        <div className="w-full mt-4 space-y-3">
-                            {pieData.map((item, idx) => (
-                                <div key={idx} className="flex items-center justify-between text-sm">
-                                    <div className="flex items-center gap-2">
-                                        <div className="w-3 h-3 rounded-full" style={{ backgroundColor: item.color }}></div>
-                                        <span className="text-slate-600 font-medium">{item.name}</span>
-                                    </div>
-                                    <span className="font-bold text-slate-800">{item.value}%</span>
-                                </div>
-                            ))}
+                    <div className="mb-4 flex items-center justify-between">
+                        <div>
+                            <h3 className="text-lg font-bold text-slate-800">Top 5 Más Vendidos</h3>
+                            <p className="text-sm text-slate-400 font-medium">Por unidades vendidas (30 días)</p>
                         </div>
+                        <Link to="/reports" className="text-xs font-bold text-indigo-600 hover:text-indigo-800 bg-indigo-50 hover:bg-indigo-100 px-2 py-1 rounded-lg transition-colors">
+                            Ver más →
+                        </Link>
                     </div>
+
+                    {pieData.length === 0 ? (
+                        <div className="flex-1 flex flex-col items-center justify-center text-center min-h-[250px] bg-slate-50 rounded-2xl border border-dashed border-slate-200">
+                            <ShoppingCart size={40} className="text-slate-200 mb-3" />
+                            <p className="font-bold text-slate-400 text-sm">Sin ventas registradas</p>
+                            <p className="text-xs text-slate-300 mt-1">Los datos aparecerán al registrar ventas</p>
+                        </div>
+                    ) : (
+                        <div className="flex-1 flex flex-col items-center justify-center min-h-[250px]">
+                            <ResponsiveContainer width="100%" height={200}>
+                                <PieChart>
+                                    <Pie
+                                        data={pieData}
+                                        innerRadius={60}
+                                        outerRadius={80}
+                                        paddingAngle={4}
+                                        dataKey="value"
+                                    >
+                                        {pieData.map((entry, index) => (
+                                            <Cell key={`cell-${index}`} fill={entry.color} stroke="none" />
+                                        ))}
+                                    </Pie>
+                                    <Tooltip
+                                        contentStyle={{ borderRadius: '12px', border: 'none', fontSize: '12px' }}
+                                        formatter={(value, _name, props) => [`${value}% (${props.payload.qty} uds)`, props.payload.name]}
+                                    />
+                                </PieChart>
+                            </ResponsiveContainer>
+
+                            <div className="w-full mt-2 space-y-2">
+                                {pieData.map((item, idx) => (
+                                    <div key={idx} className="flex items-center justify-between text-sm">
+                                        <div className="flex items-center gap-2 min-w-0">
+                                            <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: item.color }}></div>
+                                            <span className="text-slate-600 font-medium truncate text-xs">{item.name}</span>
+                                        </div>
+                                        <div className="flex items-center gap-2 shrink-0 ml-2">
+                                            <span className="text-[10px] text-slate-400 font-bold">{item.qty} uds</span>
+                                            <span className="font-black text-slate-800 text-xs w-8 text-right">{item.value}%</span>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    )}
                 </div>
             </div>
 

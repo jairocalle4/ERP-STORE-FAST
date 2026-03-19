@@ -8,6 +8,7 @@ import { useNotificationStore } from '../store/useNotificationStore';
 import CategoryFormModal from '../components/CategoryFormModal';
 import SubcategoryFormModal from '../components/SubcategoryFormModal';
 
+
 interface Category {
     id: number;
     name: string;
@@ -64,7 +65,14 @@ export default function ProductFormPage() {
 
     useEffect(() => {
         fetchCategories();
-        if (isEdit) fetchProduct();
+        if (isEdit) {
+            fetchProduct();
+        } else {
+            // Auto-generate SKU for new products
+            api.get('/products/next-sku').then(res => {
+                setFormData(prev => ({ ...prev, sku: res.data?.nextSku ?? '' }));
+            }).catch(() => {});
+        }
     }, [id]);
 
     const fetchCategories = async () => {

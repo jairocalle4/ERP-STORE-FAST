@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import {
     ArrowLeft, Save, Loader2, Trash2,
     Search, FileText, ShoppingCart,
-    PlusCircle, MinusCircle, Package
+    PlusCircle, MinusCircle, Package, X, Plus
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { GlassCard } from '../components/common/GlassCard';
@@ -11,6 +11,10 @@ import { purchaseService, type CreatePurchaseDto } from '../services/purchase.se
 import { supplierService, type Supplier } from '../services/supplier.service';
 import { productService, type Product } from '../services/product.service';
 import { useNotificationStore } from '../store/useNotificationStore';
+import api from '../services/api';
+
+const normalizeStr = (s: string) =>
+    s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
 
 interface CartItem {
     productId: number;
@@ -41,6 +45,20 @@ export default function PurchaseFormPage() {
 
     const [cart, setCart] = useState<CartItem[]>([]);
     const [searchTerm, setSearchTerm] = useState('');
+
+    // Quick product creation modal
+    const [showNewProductModal, setShowNewProductModal] = useState(false);
+    const [creatingProduct, setCreatingProduct] = useState(false);
+    const [newProductForm, setNewProductForm] = useState({
+        name: '',
+        categoryId: 0,
+        cost: 0,
+        price: 0,
+        sku: '',
+        barcode: ''
+    });
+    const [categories, setCategories] = useState<{ id: number; name: string }[]>([]);
+    const [nextSku, setNextSku] = useState('');
     const [showProductSearch, setShowProductSearch] = useState(false);
 
     useEffect(() => {
@@ -49,12 +67,18 @@ export default function PurchaseFormPage() {
 
     const fetchInitialData = async () => {
         try {
-            const [suppliersData, productsData] = await Promise.all([
+            const [suppliersData, productsData, catRes, skuRes] = await Promise.all([
                 supplierService.getAll(1, 1000),
-                productService.getAll(true, 1, 1000)
+                productService.getAll(true, 1, 1000),
+                api.get('/categories', { params: { pageSize: 1000 } }),
+                api.get('/products/next-sku')
             ]);
             setSuppliers(suppliersData.items);
             setProducts(productsData.items);
+            setCategories(catRes.data.items);
+            const autoSku = skuRes.data?.nextSku ?? '';
+            setNextSku(autoSku);
+            setNewProductForm(f => ({ ...f, sku: autoSku }));
         } catch (err) {
             console.error(err);
             addNotification('Error al cargar datos básicos', 'error');
@@ -134,12 +158,71 @@ export default function PurchaseFormPage() {
         }
     };
 
-    const filteredProducts = products.filter(p =>
-        p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        p.sku.toLowerCase().includes(searchTerm.toLowerCase())
-    );
+    const filteredProducts = products.filter(p => {
+        const q = normalizeStr(searchTerm);
+        return normalizeStr(p.name).includes(q) || normalizeStr(p.sku || '').includes(q);
+    });
+
+    const handleCreateQuickProduct = async () => {
+        if (!newProductForm.name.trim()) {
+            addNotification('El nombre del producto es obligatorio', 'warning');
+            return;
+        }
+        if (!newProductForm.categoryId) {
+            addNotification('Selecciona una categoría', 'warning');
+            return;
+        }
+        if (newProductForm.price <= 0) {
+            addNotification('El precio de venta debe ser mayor a 0', 'warning');
+            return;
+        }
+        setCreatingProduct(true);
+        try {
+            const payload = {
+                name: newProductForm.name,
+                categoryId: newProductForm.categoryId,
+                cost: newProductForm.cost,
+                price: newProductForm.price,
+                sku: newProductForm.sku || nextSku,
+                barcode: newProductForm.barcode || null,
+                stock: 0,
+                minStock: 3,
+                isActive: true,
+                description: '',
+                discountPercentage: 0,
+                images: []
+            };
+            const res = await api.post('/products', payload);
+            const created: Product = res.data;
+            // Add to products list
+            setProducts(prev => [created, ...prev]);
+            // Auto-add to purchase cart
+            setCart(prev => [...prev, {
+                productId: created.id,
+                name: created.name,
+                sku: created.sku || '',
+                quantity: 1,
+                unitPrice: created.cost || 0,
+                subtotal: created.cost || 0
+            }]);
+            addNotification(`Producto "${created.name}" creado y agregado a la compra`, 'success');
+            setShowNewProductModal(false);
+            setSearchTerm('');
+            setShowProductSearch(false);
+            // Reset form
+            const skuRes = await api.get('/products/next-sku');
+            const newSku = skuRes.data?.nextSku ?? '';
+            setNextSku(newSku);
+            setNewProductForm({ name: '', categoryId: 0, cost: 0, price: 0, sku: newSku, barcode: '' });
+        } catch (err: any) {
+            addNotification(err?.response?.data || 'Error al crear el producto', 'error');
+        } finally {
+            setCreatingProduct(false);
+        }
+    };
 
     return (
+        <>
         <div className="space-y-6 animate-fade-in pb-10">
             <div className="flex items-center gap-4">
                 <Link to="/purchases" className="p-2 bg-white/50 rounded-xl shadow-sm text-indigo-600 hover:bg-indigo-50 transition-colors">
@@ -228,20 +311,37 @@ export default function PurchaseFormPage() {
                                     }}
                                 />
                                 {showProductSearch && (
-                                    <div className="absolute top-full left-0 right-0 bg-white border border-slate-200 rounded-xl mt-2 shadow-2xl z-20 max-h-60 overflow-y-auto p-2 space-y-1 animate-scale-in">
-                                        {filteredProducts.map(p => (
-                                            <div
-                                                key={p.id}
-                                                className="p-3 hover:bg-indigo-50 rounded-lg cursor-pointer flex items-center justify-between group"
-                                                onClick={() => addToCart(p)}
-                                            >
-                                                <div>
-                                                    <p className="font-bold text-sm text-slate-800">{p.name}</p>
-                                                    <p className="text-[10px] text-slate-400 font-mono">{p.sku}</p>
-                                                </div>
-                                                <PlusCircle size={18} className="text-slate-300 group-hover:text-indigo-600" />
+                                    <div className="absolute top-full left-0 right-0 bg-white border border-slate-200 rounded-xl mt-2 shadow-2xl z-20 max-h-64 overflow-y-auto p-2 space-y-1 animate-scale-in">
+                                        {filteredProducts.length === 0 ? (
+                                            <div className="p-3 text-center">
+                                                <p className="text-sm text-slate-400 font-medium mb-2">No se encontró "{searchTerm}"</p>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => {
+                                                        setShowNewProductModal(true);
+                                                        setNewProductForm(f => ({ ...f, name: searchTerm }));
+                                                    }}
+                                                    className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-indigo-600 text-white rounded-xl font-bold text-sm hover:bg-indigo-700 transition-all active:scale-95"
+                                                >
+                                                    <Plus size={16} />
+                                                    Crear nuevo producto
+                                                </button>
                                             </div>
-                                        ))}
+                                        ) : (
+                                            filteredProducts.map(p => (
+                                                <div
+                                                    key={p.id}
+                                                    className="p-3 hover:bg-indigo-50 rounded-lg cursor-pointer flex items-center justify-between group"
+                                                    onClick={() => addToCart(p)}
+                                                >
+                                                    <div>
+                                                        <p className="font-bold text-sm text-slate-800">{p.name}</p>
+                                                        <p className="text-[10px] text-slate-400 font-mono">{p.sku}</p>
+                                                    </div>
+                                                    <PlusCircle size={18} className="text-slate-300 group-hover:text-indigo-600" />
+                                                </div>
+                                            ))
+                                        )}
                                     </div>
                                 )}
                             </div>
@@ -398,5 +498,110 @@ export default function PurchaseFormPage() {
                 </div>
             </form>
         </div>
+
+            {/* Quick Product Creation Modal */}
+            {showNewProductModal && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4">
+                    <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md p-8 animate-scale-in">
+                        <div className="flex items-center justify-between mb-6">
+                            <h3 className="text-xl font-black text-slate-800 flex items-center gap-2">
+                                <Package size={20} className="text-indigo-600" />
+                                Nuevo Producto Rápido
+                            </h3>
+                            <button type="button" onClick={() => setShowNewProductModal(false)} className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-xl">
+                                <X size={18} />
+                            </button>
+                        </div>
+
+                        <div className="space-y-4">
+                            <div>
+                                <label className="label-premium">Nombre del Producto *</label>
+                                <input
+                                    type="text"
+                                    className="input-premium"
+                                    value={newProductForm.name}
+                                    onChange={e => setNewProductForm(f => ({ ...f, name: e.target.value }))}
+                                    placeholder="Ej: Arroz Superior 5kg"
+                                />
+                            </div>
+                            <div>
+                                <label className="label-premium">Categoría *</label>
+                                <select
+                                    className="select-premium"
+                                    value={newProductForm.categoryId}
+                                    onChange={e => setNewProductForm(f => ({ ...f, categoryId: Number(e.target.value) }))}
+                                >
+                                    <option value={0}>Seleccionar categoría</option>
+                                    {categories.map(c => (
+                                        <option key={c.id} value={c.id}>{c.name}</option>
+                                    ))}
+                                </select>
+                            </div>
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label className="label-premium">Precio de Costo ($)</label>
+                                    <input
+                                        type="number" step="0.01"
+                                        className="input-premium"
+                                        value={newProductForm.cost}
+                                        onChange={e => setNewProductForm(f => ({ ...f, cost: parseFloat(e.target.value) || 0 }))}
+                                    />
+                                </div>
+                                <div>
+                                    <label className="label-premium">Precio de Venta ($) *</label>
+                                    <input
+                                        type="number" step="0.01"
+                                        className="input-premium"
+                                        value={newProductForm.price}
+                                        onChange={e => setNewProductForm(f => ({ ...f, price: parseFloat(e.target.value) || 0 }))}
+                                    />
+                                </div>
+                            </div>
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label className="label-premium">SKU (auto-generado)</label>
+                                    <input
+                                        type="text"
+                                        className="input-premium font-mono"
+                                        value={newProductForm.sku}
+                                        onChange={e => setNewProductForm(f => ({ ...f, sku: e.target.value }))}
+                                        placeholder={nextSku}
+                                    />
+                                </div>
+                                <div>
+                                    <label className="label-premium">Código de Barras <span className="text-slate-400 font-normal">(opcional)</span></label>
+                                    <input
+                                        type="text"
+                                        className="input-premium font-mono"
+                                        value={newProductForm.barcode}
+                                        onChange={e => setNewProductForm(f => ({ ...f, barcode: e.target.value }))}
+                                        placeholder="Escanea o vacío"
+                                    />
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="flex gap-3 mt-6">
+                            <button
+                                type="button"
+                                onClick={() => setShowNewProductModal(false)}
+                                className="flex-1 py-3 bg-slate-100 text-slate-600 rounded-2xl font-bold hover:bg-slate-200 transition-colors"
+                            >
+                                Cancelar
+                            </button>
+                            <button
+                                type="button"
+                                onClick={handleCreateQuickProduct}
+                                disabled={creatingProduct}
+                                className="flex-1 py-3 bg-indigo-600 text-white rounded-2xl font-black hover:bg-indigo-700 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+                            >
+                                {creatingProduct ? <Loader2 size={18} className="animate-spin" /> : <Save size={18} />}
+                                Crear y Agregar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+        </>
     );
 }

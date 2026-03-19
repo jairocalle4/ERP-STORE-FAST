@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef } from 'react';
-import { Building2, Save, MapPin, Phone, Mail, Hash, Calendar, ShieldCheck, Eye, EyeOff, FileText, Upload, CheckCircle, AlertCircle, Zap } from 'lucide-react';
+import { Building2, Save, MapPin, Phone, Mail, Hash, ShieldCheck, Eye, EyeOff, FileText, Upload, CheckCircle, AlertCircle, Zap } from 'lucide-react';
 import { GlassCard } from '../components/common/GlassCard';
 import { companyService } from '../services/company.service';
 import type { CompanySetting } from '../services/company.service';
@@ -59,7 +59,10 @@ export default function SettingsPage() {
     const handleSaveFe = async () => {
         setSavingFe(true);
         try {
+            // Guarda la configuración de FE (establecimiento, ambiente, régimen, etc.)
             await electronicBillingService.guardarConfiguracion(feSettings);
+            // Guarda también el secuencial y el mensaje legal (pertenecen a CompanySetting)
+            if (settings) await companyService.updateSettings(settings);
             addNotification('Configuración de Facturación Electrónica guardada', 'success');
         } catch {
             addNotification('Error al guardar la configuración de FE', 'error');
@@ -249,144 +252,209 @@ export default function SettingsPage() {
                         </div>
                     </GlassCard>
 
-                    {/* Email Alerts Config (SMTP) */}
+                    {/* Email Alerts Config — Redesigned with method selector */}
                     <GlassCard className="p-8 space-y-6 md:col-span-2">
-                        <div className="flex justify-between items-start mb-2">
+                        {/* Header */}
+                        <div className="flex justify-between items-center">
                             <h3 className="text-lg font-bold text-indigo-800 flex items-center gap-2">
                                 <Mail className="text-indigo-600" size={20} />
-                                Configuración de Envío de Alertas (Correo Saliente)
+                                Configuración de Correo Saliente
                             </h3>
-                            <div className="bg-indigo-50 px-3 py-1 rounded-full border border-indigo-100 flex items-center gap-2">
-                                <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
-                                <span className="text-[10px] font-black text-indigo-600 uppercase tracking-widest">Sistema Activo</span>
+                            <div className={`px-3 py-1 rounded-full border flex items-center gap-2 text-[10px] font-black uppercase tracking-widest ${
+                                settings?.brevoApiKey
+                                    ? 'bg-violet-50 border-violet-200 text-violet-700'
+                                    : 'bg-indigo-50 border-indigo-100 text-indigo-600'
+                            }`}>
+                                <div className={`w-2 h-2 rounded-full animate-pulse ${settings?.brevoApiKey ? 'bg-violet-500' : 'bg-emerald-500'}`}></div>
+                                {settings?.brevoApiKey ? 'Brevo API' : 'SMTP'}
                             </div>
                         </div>
 
-                        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-                            <div className="md:col-span-4 p-4 bg-indigo-50/50 rounded-2xl border border-indigo-100/50 mb-2">
-                                <label className="block text-xs font-black text-indigo-900/60 uppercase tracking-widest mb-3 ml-1">Seleccionar Proveedor Sugerido</label>
-                                <div className="flex flex-wrap gap-2">
-                                    {[
-                                        { name: 'Gmail', server: 'smtp.gmail.com', port: 587 },
-                                        { name: 'Outlook / Hotmail', server: 'smtp.office365.com', port: 587 },
-                                        { name: 'Yahoo', server: 'smtp.mail.yahoo.com', port: 465 },
-                                        { name: 'iCloud', server: 'smtp.mail.me.com', port: 587 }
-                                    ].map(prov => (
-                                        <button
-                                            key={prov.name}
-                                            type="button"
-                                            onClick={() => setSettings(s => s ? { ...s, smtpServer: prov.server, smtpPort: prov.port } : null)}
-                                            className="px-4 py-2 bg-white border border-indigo-200 rounded-xl text-xs font-bold text-indigo-600 hover:bg-indigo-600 hover:text-white transition-all shadow-sm active:scale-95"
-                                        >
-                                            {prov.name}
-                                        </button>
-                                    ))}
+                        {/* === Shared: Email remitente — always visible === */}
+                        <div>
+                            <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-2 ml-1">
+                                Correo Remitente (De:)
+                            </label>
+                            <input
+                                type="email"
+                                placeholder="tu-correo@empresa.com"
+                                value={settings?.smtpUser || ''}
+                                onChange={e => setSettings(s => s ? { ...s, smtpUser: e.target.value } : null)}
+                                className="w-full px-4 py-3 bg-white/80 border-2 border-indigo-200 rounded-xl focus:ring-2 focus:ring-indigo-500/50 outline-none transition-all text-sm font-medium"
+                            />
+                            <div className="mt-2 flex items-start gap-2 px-3 py-2 bg-amber-50 border border-amber-200 rounded-xl">
+                                <span className="text-amber-500 text-sm shrink-0 mt-0.5">⚠</span>
+                                <p className="text-[11px] text-amber-700 leading-relaxed font-medium">
+                                    Es el correo que aparece como <span className="font-black">"De:"</span> en todos los envíos.
+                                    Si usas <span className="font-black">Gmail / Outlook</span>, debe ser <span className="font-black underline">exactamente</span> la misma cuenta con la que generaste la Contraseña de Aplicación — no puede ser distinto, el servidor lo rechazará.
+                                </p>
+                            </div>
+                        </div>
+
+                        {/* === Method Selector tabs === */}
+                        <div>
+                            <p className="text-xs font-black text-slate-400 uppercase tracking-widest mb-3 ml-1">Método de Envío</p>
+                            <div className="grid grid-cols-2 gap-3">
+                                {/* Tab: Brevo */}
+                                <button
+                                    type="button"
+                                    onClick={() => {/* just visual — brevo takes priority when api key is set */}}
+                                    className={`relative flex flex-col items-start gap-1 p-4 rounded-2xl border-2 text-left transition-all ${
+                                        settings?.brevoApiKey
+                                            ? 'border-violet-400 bg-violet-50 shadow-sm shadow-violet-100'
+                                            : 'border-slate-200 bg-white/50 hover:border-violet-200'
+                                    }`}
+                                >
+                                    {settings?.brevoApiKey && (
+                                        <span className="absolute top-3 right-3 w-2.5 h-2.5 rounded-full bg-violet-500 animate-pulse" />
+                                    )}
+                                    <span className="text-base">🚀</span>
+                                    <span className="font-black text-sm text-violet-800">Brevo API</span>
+                                    <span className="text-[11px] text-violet-600 leading-relaxed">Recomendado. Gratuito 300 correos/día. Funciona aunque el ISP bloquee los puertos SMTP.</span>
+                                </button>
+                                {/* Tab: SMTP */}
+                                <button
+                                    type="button"
+                                    onClick={() => {/* visual only */}}
+                                    className={`relative flex flex-col items-start gap-1 p-4 rounded-2xl border-2 text-left transition-all ${
+                                        !settings?.brevoApiKey
+                                            ? 'border-indigo-400 bg-indigo-50 shadow-sm shadow-indigo-100'
+                                            : 'border-slate-200 bg-white/50 hover:border-indigo-200'
+                                    }`}
+                                >
+                                    {!settings?.brevoApiKey && (
+                                        <span className="absolute top-3 right-3 w-2.5 h-2.5 rounded-full bg-indigo-500 animate-pulse" />
+                                    )}
+                                    <span className="text-base">📧</span>
+                                    <span className="font-black text-sm text-indigo-800">SMTP Manual</span>
+                                    <span className="text-[11px] text-indigo-600 leading-relaxed">Gmail, Outlook, Yahoo, etc. Requiere Contraseña de Aplicación.</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        {/* === BREVO panel === */}
+                        <div className={`rounded-2xl border-2 p-5 space-y-3 transition-all ${
+                            settings?.brevoApiKey
+                                ? 'border-violet-300 bg-violet-50/60'
+                                : 'border-slate-100 bg-slate-50/50 opacity-60'
+                        }`}>
+                            <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-2">
+                                    <div className="w-7 h-7 rounded-lg bg-violet-100 flex items-center justify-center">
+                                        <Mail size={14} className="text-violet-600" />
+                                    </div>
+                                    <span className="font-black text-violet-800 text-sm">Brevo API Key</span>
+                                </div>
+                                <a
+                                    href="https://app.brevo.com/settings/keys/api"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="text-[11px] font-bold text-violet-600 underline hover:text-violet-800"
+                                >
+                                    → Obtener gratis
+                                </a>
+                            </div>
+                            <input
+                                type="text"
+                                placeholder="xkeysib-xxxxxxxxxxxxxxxxxxxxxxxx..."
+                                value={settings?.brevoApiKey || ''}
+                                onChange={e => setSettings(s => s ? { ...s, brevoApiKey: e.target.value } : null)}
+                                className="w-full px-4 py-3 bg-white border border-violet-200 rounded-xl focus:ring-2 focus:ring-violet-400/50 outline-none transition-all text-sm font-mono"
+                            />
+                            <p className="text-[10px] text-violet-500 font-medium">
+                                {settings?.brevoApiKey
+                                    ? '✅ Brevo está activo y tiene prioridad sobre SMTP.'
+                                    : 'Deja vacío para usar SMTP. Si se llena, Brevo tiene prioridad automáticamente.'}
+                            </p>
+                        </div>
+
+                        {/* === SMTP panel — collapsed when Brevo is active === */}
+                        <div className={`space-y-4 transition-all ${settings?.brevoApiKey ? 'opacity-40 pointer-events-none select-none' : ''}`}>
+                            <div className="flex items-center gap-3">
+                                <div className="h-px flex-1 bg-slate-200" />
+                                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                                    {settings?.brevoApiKey ? 'SMTP (inactivo — Brevo tiene prioridad)' : 'Configuración SMTP'}
+                                </span>
+                                <div className="h-px flex-1 bg-slate-200" />
+                            </div>
+
+                            {/* Provider shortcuts */}
+                            <div className="flex flex-wrap gap-2">
+                                {[
+                                    { name: 'Gmail', server: 'smtp.gmail.com', port: 587 },
+                                    { name: 'Outlook', server: 'smtp.office365.com', port: 587 },
+                                    { name: 'Yahoo', server: 'smtp.mail.yahoo.com', port: 465 },
+                                    { name: 'iCloud', server: 'smtp.mail.me.com', port: 587 }
+                                ].map(prov => (
                                     <button
+                                        key={prov.name}
                                         type="button"
-                                        onClick={() => setSettings(s => s ? { ...s, smtpServer: '', smtpPort: 587 } : null)}
-                                        className="px-4 py-2 bg-slate-100 border border-slate-200 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-200 transition-all"
+                                        onClick={() => setSettings(s => s ? { ...s, smtpServer: prov.server, smtpPort: prov.port } : null)}
+                                        className={`px-3 py-1.5 bg-white border rounded-xl text-xs font-bold transition-all active:scale-95 ${
+                                            settings?.smtpServer === prov.server
+                                                ? 'border-indigo-400 text-indigo-700 bg-indigo-50'
+                                                : 'border-slate-200 text-slate-600 hover:border-indigo-300'
+                                        }`}
                                     >
-                                        Personalizado
+                                        {prov.name}
                                     </button>
-                                </div>
+                                ))}
                             </div>
 
-                            <div className="md:col-span-2">
-                                <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-2 ml-1">Servidor SMTP</label>
-                                <input
-                                    type="text"
-                                    placeholder="smtp.gmail.com"
-                                    value={settings?.smtpServer || ''}
-                                    onChange={e => setSettings(s => s ? { ...s, smtpServer: e.target.value } : null)}
-                                    className="w-full px-4 py-3 bg-white/50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500/50 outline-none transition-all font-mono text-sm"
-                                />
-                            </div>
-                            <div>
-                                <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-2 ml-1">Puerto</label>
-                                <input
-                                    type="number"
-                                    placeholder="587"
-                                    value={settings?.smtpPort || 587}
-                                    onChange={e => setSettings(s => s ? { ...s, smtpPort: parseInt(e.target.value) } : null)}
-                                    className="w-full px-4 py-3 bg-white/50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500/50 outline-none transition-all font-mono text-sm"
-                                />
-                            </div>
-                            <div>
-                                <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-2 ml-1">Seguridad</label>
-                                <div className="mt-3 flex items-center gap-2">
-                                    <div className="w-4 h-4 rounded-full bg-emerald-500 shadow-lg shadow-emerald-200"></div>
-                                    <span className="text-xs font-bold text-slate-500 uppercase">Siempre SSL/TLS</span>
-                                </div>
-                            </div>
-
-                            <div className="md:col-span-2">
-                                <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-2 ml-1">Usuario / Email de Envío</label>
-                                <input
-                                    type="email"
-                                    placeholder="tu-correo@empresa.com"
-                                    value={settings?.smtpUser || ''}
-                                    onChange={e => setSettings(s => s ? { ...s, smtpUser: e.target.value } : null)}
-                                    className="w-full px-4 py-3 bg-white/50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500/50 outline-none transition-all text-sm"
-                                />
-                            </div>
-                            <div className="md:col-span-2">
-                                <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-2 ml-1">Contraseña de Aplicación</label>
-                                <div className="relative">
+                            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                                <div className="md:col-span-2">
+                                    <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-2 ml-1">Servidor SMTP</label>
                                     <input
-                                        type={showSmtpPass ? 'text' : 'password'}
-                                        placeholder="••••••••••••••••"
-                                        value={settings?.smtpPass || ''}
-                                        onChange={e => setSettings(s => s ? { ...s, smtpPass: e.target.value } : null)}
-                                        className="w-full pr-12 pl-4 py-3 bg-white/50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500/50 outline-none transition-all text-sm font-mono"
+                                        type="text"
+                                        placeholder="smtp.gmail.com"
+                                        value={settings?.smtpServer || ''}
+                                        onChange={e => setSettings(s => s ? { ...s, smtpServer: e.target.value } : null)}
+                                        className="w-full px-4 py-3 bg-white/50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500/50 outline-none transition-all font-mono text-sm"
                                     />
-                                    <button
-                                        type="button"
-                                        onClick={() => setShowSmtpPass(v => !v)}
-                                        className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-slate-300 hover:text-indigo-500 transition-colors rounded-lg"
-                                        title={showSmtpPass ? 'Ocultar contraseña' : 'Mostrar contraseña'}
-                                    >
-                                        {showSmtpPass ? <EyeOff size={18} /> : <Eye size={18} />}
-                                    </button>
                                 </div>
-                                <p className="text-[10px] text-slate-400 mt-2 italic leading-relaxed">
-                                    <span className="font-bold text-indigo-600">⚠ Muy Importante:</span> En Gmail y Outlook no se usa su clave normal. Debe generar una <span className="underline">Contraseña de Aplicación</span> en la cuenta de Google/Microsoft.
-                                </p>
-                            </div>
-
-                            {/* Brevo API Key — solución cuando el ISP bloquea SMTP */}
-                            <div className="md:col-span-2 p-4 rounded-2xl bg-violet-50 border border-violet-100">
-                                <div className="flex items-start gap-3 mb-3">
-                                    <div className="w-8 h-8 rounded-lg bg-violet-100 flex items-center justify-center shrink-0 mt-0.5">
-                                        <Mail size={16} className="text-violet-600" />
-                                    </div>
-                                    <div>
-                                        <h4 className="font-black text-violet-800 text-sm">🚀 Brevo API Key — Recomendado</h4>
-                                        <p className="text-[11px] text-violet-600 mt-0.5 leading-relaxed">
-                                            Si el SMTP no funciona (error de conexión), es porque tu proveedor de internet bloquea los puertos 587/465.
-                                            Usa <strong>Brevo</strong> (antes Sendinblue) — gratuito hasta 300 correos/día y funciona siempre.
-                                            <a href="https://app.brevo.com/settings/keys/api" target="_blank" rel="noopener noreferrer" className="ml-1 underline font-bold hover:text-violet-800">
-                                                → Obtener API Key gratis
-                                            </a>
-                                        </p>
+                                <div>
+                                    <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-2 ml-1">Puerto</label>
+                                    <input
+                                        type="number"
+                                        value={settings?.smtpPort || 587}
+                                        onChange={e => setSettings(s => s ? { ...s, smtpPort: parseInt(e.target.value) } : null)}
+                                        className="w-full px-4 py-3 bg-white/50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500/50 outline-none transition-all font-mono text-sm"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-2 ml-1">Seguridad</label>
+                                    <div className="flex items-center gap-2 mt-3.5">
+                                        <div className="w-3.5 h-3.5 rounded-full bg-emerald-500 shadow shadow-emerald-200" />
+                                        <span className="text-xs font-bold text-slate-500">SSL/TLS</span>
                                     </div>
                                 </div>
-                                <label className="block text-xs font-black text-violet-500 uppercase tracking-widest mb-2">Brevo API Key</label>
-                                <input
-                                    type="text"
-                                    placeholder="xkeysib-xxxxxxxxxxxxxxxxxxxxxxxx..."
-                                    value={settings?.brevoApiKey || ''}
-                                    onChange={e => setSettings(s => s ? { ...s, brevoApiKey: e.target.value } : null)}
-                                    className="w-full px-4 py-3 bg-white border border-violet-200 rounded-xl focus:ring-2 focus:ring-violet-400/50 outline-none transition-all text-sm font-mono"
-                                />
-                                <p className="text-[10px] text-violet-500 mt-1.5 font-medium">
-                                    ✅ Si se configura aquí, se usa en lugar del SMTP para enviar correos (tiene prioridad).
-                                    El correo de envío será el configurado en "Usuario / Email de Envío".
-                                </p>
+                                <div className="md:col-span-4">
+                                    <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-2 ml-1">Contraseña de Aplicación</label>
+                                    <div className="relative max-w-md">
+                                        <input
+                                            type={showSmtpPass ? 'text' : 'password'}
+                                            placeholder="••••••••••••••••"
+                                            value={settings?.smtpPass || ''}
+                                            onChange={e => setSettings(s => s ? { ...s, smtpPass: e.target.value } : null)}
+                                            className="w-full pr-12 pl-4 py-3 bg-white/50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500/50 outline-none transition-all text-sm font-mono"
+                                        />
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowSmtpPass(v => !v)}
+                                            className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-slate-300 hover:text-indigo-500 transition-colors"
+                                        >
+                                            {showSmtpPass ? <EyeOff size={17} /> : <Eye size={17} />}
+                                        </button>
+                                    </div>
+                                    <p className="text-[10px] text-slate-400 mt-1.5 italic">
+                                        Gmail / Outlook: usa una <span className="underline font-semibold">Contraseña de Aplicación</span>, no tu clave habitual.
+                                    </p>
+                                </div>
                             </div>
                         </div>
 
                         {/* Test Email Button */}
-                        <div className="pt-2 flex items-center gap-4 flex-wrap">
+                        <div className="pt-2 flex items-center gap-4 flex-wrap border-t border-slate-100">
 
                             <button
                                 type="button"
@@ -432,79 +500,8 @@ export default function SettingsPage() {
                         </div>
                     </GlassCard>
 
-                    {/* Tax Info (SRI) */}
-                    <GlassCard className="p-8 space-y-6 md:col-span-2">
-                        <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2 mb-2">
-                            <ShieldCheck className="text-indigo-600" size={20} />
-                            Configuración SRI / Facturación
-                        </h3>
-
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                            <div>
-                                <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-2 ml-1">Establecimiento</label>
-                                <input
-                                    type="text"
-                                    placeholder="001"
-                                    value={settings?.establishment || ''}
-                                    onChange={e => setSettings(s => s ? { ...s, establishment: e.target.value } : null)}
-                                    className="w-full px-4 py-3 bg-white/50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500/50 outline-none transition-all font-mono"
-                                />
-                            </div>
-                            <div>
-                                <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-2 ml-1">Punto de Emisión</label>
-                                <input
-                                    type="text"
-                                    placeholder="001"
-                                    value={settings?.pointOfIssue || ''}
-                                    onChange={e => setSettings(s => s ? { ...s, pointOfIssue: e.target.value } : null)}
-                                    className="w-full px-4 py-3 bg-white/50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500/50 outline-none transition-all font-mono"
-                                />
-                            </div>
-                            <div>
-                                <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-2 ml-1">Secuencial Actual</label>
-                                <input
-                                    type="number"
-                                    value={settings?.currentSequence || 0}
-                                    onChange={e => setSettings(s => s ? { ...s, currentSequence: parseInt(e.target.value) } : null)}
-                                    className="w-full px-4 py-3 bg-white/50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500/50 outline-none transition-all font-mono"
-                                />
-                            </div>
-                            <div className="md:col-span-2">
-                                <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-2 ml-1">Autorización SRI</label>
-                                <input
-                                    type="text"
-                                    value={settings?.sriAuth || ''}
-                                    onChange={e => setSettings(s => s ? { ...s, sriAuth: e.target.value } : null)}
-                                    className="w-full px-4 py-3 bg-white/50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500/50 outline-none transition-all font-mono"
-                                />
-                            </div>
-                            <div>
-                                <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-2 ml-1">Fecha de Caducidad</label>
-                                <div className="relative">
-                                    <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-                                    <input
-                                        type="date"
-                                        value={settings?.expirationDate ? settings.expirationDate.split('T')[0] : ''}
-                                        onChange={e => setSettings(s => s ? { ...s, expirationDate: e.target.value } : null)}
-                                        className="w-full pl-10 pr-4 py-3 bg-white/50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500/50 outline-none transition-all"
-                                    />
-                                </div>
-                            </div>
-                            <div className="md:col-span-3">
-                                <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-2 ml-1">Mensaje Legal (Pie de Ticket)</label>
-                                <textarea
-                                    rows={3}
-                                    value={settings?.legalMessage || ''}
-                                    onChange={e => setSettings(s => s ? { ...s, legalMessage: e.target.value } : null)}
-                                    className="w-full px-4 py-3 bg-white/50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500/50 outline-none transition-all resize-none"
-                                    placeholder="Ej: Gracias por su compra. No se aceptan devoluciones..."
-                                />
-                            </div>
-                        </div>
-                    </GlassCard>
-
                     {/* ══════════════════════════════════════════
-                        NUEVA SECCIÓN: FACTURACIÓN ELECTRÓNICA SRI
+                        FACTURACIÓN ELECTRÓNICA SRI (sección unificada)
                     ══════════════════════════════════════════ */}
                     <GlassCard className="p-8 space-y-6 md:col-span-2 border-2 border-indigo-100">
                         <div className="flex justify-between items-start mb-2">
@@ -619,6 +616,38 @@ export default function SettingsPage() {
                                     onChange={e => setFeSettings(s => ({ ...s, sriPointOfIssue: e.target.value }))}
                                     className="w-full px-4 py-3 bg-white/50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500/50 outline-none font-mono text-sm"
                                 />
+                            </div>
+                        </div>
+
+                        {/* ── Secuencial y Mensaje Legal ── */}
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+                            <div>
+                                <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-2 ml-1">Secuencial Actual</label>
+                                <div className="relative">
+                                    <Hash size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                                    <input
+                                        type="number"
+                                        min={0}
+                                        value={settings?.currentSequence ?? 0}
+                                        onChange={e => setSettings(s => s ? { ...s, currentSequence: parseInt(e.target.value) || 0 } : null)}
+                                        className="w-full pl-10 pr-4 py-3 bg-white/50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500/50 outline-none transition-all font-mono text-sm"
+                                    />
+                                </div>
+                                <p className="text-[10px] text-slate-400 mt-1 italic">
+                                    Último n° usado. La próxima factura será #{(settings?.currentSequence ?? 0) + 1}.
+                                    En producción reinicia en <span className="font-bold">0</span>.
+                                </p>
+                            </div>
+                            <div className="md:col-span-2">
+                                <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-2 ml-1">Mensaje Legal (Pie de Ticket)</label>
+                                <textarea
+                                    rows={2}
+                                    value={settings?.legalMessage || ''}
+                                    onChange={e => setSettings(s => s ? { ...s, legalMessage: e.target.value } : null)}
+                                    className="w-full px-4 py-3 bg-white/50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500/50 outline-none transition-all resize-none text-sm"
+                                    placeholder="Ej: Contribuyente Negocio Popular – Régimen RIMPE."
+                                />
+                                <p className="text-[10px] text-slate-400 mt-1 italic">Aparece al pie del ticket térmico impreso.</p>
                             </div>
                         </div>
 

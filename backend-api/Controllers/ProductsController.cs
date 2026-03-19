@@ -83,6 +83,27 @@ public class ProductsController : ControllerBase
         return new PagedResponse<Product>(items, totalCount, page, pageSize, totalPages);
     }
 
+    [HttpGet("next-sku")]
+    public async Task<IActionResult> GetNextSku()
+    {
+        // Find the max numeric suffix among existing SKUs like "SKU-0001"
+        var skus = await _context.Products
+            .Where(p => p.SKU != null && p.SKU.StartsWith("SKU-"))
+            .Select(p => p.SKU!)
+            .ToListAsync();
+
+        int maxNum = 0;
+        foreach (var sku in skus)
+        {
+            var suffix = sku.Replace("SKU-", "");
+            if (int.TryParse(suffix, out int num) && num > maxNum)
+                maxNum = num;
+        }
+
+        var nextSku = $"SKU-{(maxNum + 1):D4}";
+        return Ok(new { nextSku });
+    }
+
     [HttpGet("{id}")]
     [AllowAnonymous]
     public async Task<ActionResult<Product>> GetProduct(int id)
