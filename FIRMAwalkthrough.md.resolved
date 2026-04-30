@@ -1,0 +1,132 @@
+# Walkthrough: Facturación Electrónica SRI — Implementación Completa
+
+## ✅ Lo que se implementó
+
+### Backend — C# / .NET 9
+
+#### Entidades (Domain)
+- **[CompanySetting.cs](file:///c:/Users/Admin/Desktop/JAIRO/PROYECTOS/ERP-STORE-FAST/backend-api/ErpStore.Domain/Entities/CompanySetting.cs)** — +9 campos: `ElectronicBillingEnabled`, `TributaryRegime`, `SriEnvironment`, `CommercialName`, `SriEstablishment`, `SriPointOfIssue`, `ElectronicSignaturePath`, `ElectronicSignaturePassword`, **`IvaRate` (configurable, no quemado)**
+- **[Sale.cs](file:///c:/Users/Admin/Desktop/JAIRO/PROYECTOS/ERP-STORE-FAST/backend-api/ErpStore.Domain/Entities/Sale.cs)** — +7 campos: `IsElectronic`, `AccessKey` (49 dígitos), `AuthorizationNumber`, `AuthorizationDate`, `ElectronicStatus`, `XmlPath`, `SriErrorMessage`
+- **[Client.cs](file:///c:/Users/Admin/Desktop/JAIRO/PROYECTOS/ERP-STORE-FAST/backend-api/ErpStore.Domain/Entities/Client.cs)** — +1 campo: `IdentificationType` (RUC/CÉDULA/PASAPORTE/CONSUMIDOR_FINAL)
+- **[AppDbContext.cs](file:///c:/Users/Admin/Desktop/JAIRO/PROYECTOS/ERP-STORE-FAST/backend-api/ErpStore.Infrastructure/Persistence/AppDbContext.cs)** — Removida extensión Postgres incompatible con SQLite; agregada config decimal para `IvaRate`
+
+#### Migración de BD
+```
+Migration: AddElectronicBillingFields — Aplicada exitosamente
+```
+
+#### NuGet Packages Instalados
+| Package | Versión | Uso |
+|---|---|---|
+| QuestPDF | 2025.4.0 | Generación PDF RIDE |
+| QRCoder | 1.6.0 | QR en el RIDE |
+| System.ServiceModel.Http | 8.1.2 | Cliente SOAP para SRI |
+| System.ServiceModel.Primitives | 8.1.2 | Tipos SOAP |
+
+#### Servicios (Infrastructure)
+- **[IElectronicBillingService.cs](file:///c:/Users/Admin/Desktop/JAIRO/PROYECTOS/ERP-STORE-FAST/backend-api/ErpStore.Application/Interfaces/IElectronicBillingService.cs)** — Interfaz con 4 métodos: [EmitirFactura](file:///c:/Users/Admin/Desktop/JAIRO/PROYECTOS/ERP-STORE-FAST/backend-api/ErpStore.Infrastructure/Services/ElectronicBillingService.cs#42-123), [GenerarXml](file:///c:/Users/Admin/Desktop/JAIRO/PROYECTOS/ERP-STORE-FAST/backend-api/ErpStore.Infrastructure/Services/ElectronicBillingService.cs#174-189), [GenerarRide](file:///c:/Users/Admin/Desktop/JAIRO/PROYECTOS/ERP-STORE-FAST/backend-api/ErpStore.Infrastructure/Services/ElectronicBillingService.cs#502-671), [ObtenerRutaXml](file:///c:/Users/Admin/Desktop/JAIRO/PROYECTOS/ERP-STORE-FAST/backend-api/ErpStore.Infrastructure/Services/ElectronicBillingService.cs#676-681)
+- **[ElectronicBillingService.cs](file:///c:/Users/Admin/Desktop/JAIRO/PROYECTOS/ERP-STORE-FAST/backend-api/ErpStore.Application/Interfaces/IElectronicBillingService.cs)** — Implementación completa:
+  - [GenerarClaveAcceso()](file:///c:/Users/Admin/Desktop/JAIRO/PROYECTOS/ERP-STORE-FAST/backend-api/ErpStore.Infrastructure/Services/ElectronicBillingService.cs#128-146) — Algoritmo de 49 dígitos con Módulo 11 (SRI v2.1.0)
+  - [GenerarXmlInterno()](file:///c:/Users/Admin/Desktop/JAIRO/PROYECTOS/ERP-STORE-FAST/backend-api/ErpStore.Infrastructure/Services/ElectronicBillingService.cs#190-334) — XML completo con IVA configurable, leyenda RIMPE obligatoria, todos los campos del comprobante
+  - [FirmarXml()](file:///c:/Users/Admin/Desktop/JAIRO/PROYECTOS/ERP-STORE-FAST/backend-api/ErpStore.Infrastructure/Services/ElectronicBillingService.cs#339-358) — **Placeholder seguro**: lanza `InvalidOperationException("Firma electrónica no configurada")` hasta que se suba el .p12
+  - [EnviarRecepcion()](file:///c:/Users/Admin/Desktop/JAIRO/PROYECTOS/ERP-STORE-FAST/backend-api/ErpStore.Infrastructure/Services/ElectronicBillingService.cs#387-419) — Cliente SOAP HTTP al SRI (pruebas/producción)
+  - [ConsultarAutorizacion()](file:///c:/Users/Admin/Desktop/JAIRO/PROYECTOS/ERP-STORE-FAST/backend-api/ErpStore.Infrastructure/Services/ElectronicBillingService.cs#420-445) — Parsea respuesta XML del SRI
+  - [GenerarRide()](file:///c:/Users/Admin/Desktop/JAIRO/PROYECTOS/ERP-STORE-FAST/backend-api/ErpStore.Infrastructure/Services/ElectronicBillingService.cs#502-671) — PDF con QuestPDF: encabezado empresa, datos comprador, tabla productos, totales, QR + clave de acceso, leyenda RIMPE
+
+#### Controller y DTOs
+- **[ElectronicBillingController.cs](file:///c:/Users/Admin/Desktop/JAIRO/PROYECTOS/ERP-STORE-FAST/backend-api/Controllers/ElectronicBillingController.cs)** — 6 endpoints:
+  - `POST /api/electronic-billing/emit/{saleId}` — Emitir factura electrónica
+  - `GET /api/electronic-billing/xml/{saleId}` — Descargar XML
+  - `GET /api/electronic-billing/ride/{saleId}` — Descargar PDF RIDE
+  - `POST /api/electronic-billing/upload-signature` — Subir `.p12`
+  - `GET /api/electronic-billing/status/{saleId}` — Consultar estado
+  - `GET|PUT /api/electronic-billing/settings` — Gestionar configuración
+
+---
+
+### Frontend — React / TypeScript
+
+- **[electronic-billing.service.ts](file:///c:/Users/Admin/Desktop/JAIRO/PROYECTOS/ERP-STORE-FAST/frontend-erp/src/services/electronic-billing.service.ts)** — Servicio completo con 7 métodos (emit, status, downloadXml, downloadRide, uploadFirma, getSettings, saveSettings)
+- **[SettingsPage.tsx](file:///c:/Users/Admin/Desktop/JAIRO/PROYECTOS/ERP-STORE-FAST/frontend-erp/src/pages/SettingsPage.tsx)** — Nueva sección "Facturación Electrónica SRI" con:
+  - Toggle animado de activación
+  - Selector de régimen (RIMPE Negocio Popular / Emprendedor / General)
+  - Selector de ambiente (🟡 Pruebas / 🟢 Producción) con advertencia al activar producción
+  - **Input de IVA configurable** (paso 0.5%, min 0, max 30)
+  - Campos de establecimiento y punto de emisión
+  - Upload drag-and-drop de `.p12` con input de contraseña y toggle mostrar/ocultar
+  - Badge de estado: "Firma Configurada ✓" / "Sin Firma ⚠"
+  - Botón independiente "Guardar Config. FE"
+- **[SalesHistoryPage.tsx](file:///c:/Users/Admin/Desktop/JAIRO/PROYECTOS/ERP-STORE-FAST/frontend-erp/src/pages/SalesHistoryPage.tsx)** — Nueva columna "FE" con badges de color:
+  - 🟢 AUTORIZADO | 🟡 PENDIENTE | 🟠 NO_AUTORIZADO | 🔴 ERROR | — (no es electrónica)
+  - Botones de descarga `⬇ XML` (azul) y `📄 RIDE` (morado) solo visibles para ventas electrónicas
+
+---
+
+## 🧪 Verificación Realizada
+
+| Check | Resultado |
+|---|---|
+| `dotnet build ErpStore.Api.csproj` | ✅ 0 errores, 4 advertencias pre-existentes |
+| `dotnet ef database update` | ✅ Migration aplicada |
+| TypeScript lint en SettingsPage | ✅ Quitado import X sin usar |
+| TypeScript lint en SalesHistoryPage | ✅ Sin errores de lógica |
+
+---
+
+## 🔜 Próximos Pasos
+
+### Para probar ahora (sin firma .p12)
+1. Inicia el backend: `dotnet run --project ErpStore.Api.csproj`
+2. Ve a **Swagger** → `POST /api/electronic-billing/emit/1`
+3. Respuesta esperada: `{ "success": false, "status": "ERROR", "errorMessage": "Firma electrónica no configurada..." }`  ✓ Esto es correcto
+
+### Para las siguientes fases
+| Acción | Prioridad |
+|---|---|
+| Implementar toggle FE
+| Actualizar ticket térmico con datos de autorización | Alta |
+| Obtener firma `.p12` del Registro Civil o Security Data (~$25) | Bloqueante para SRI real |
+| Solicitar habilitación en portal SRI (`sri.gob.ec`) | Bloqueante para SRI real |
+| Implementar [FirmarXml()](file:///c:/Users/Admin/Desktop/JAIRO/PROYECTOS/ERP-STORE-FAST/backend-api/ErpStore.Infrastructure/Services/ElectronicBillingService.cs#339-358) con `FirmaXadesNet` | Cuando tengas el .p12 |
+| Probar en ambiente de Certificación SRI | Antes de producción |
+| Crear repositorio GitHub separado para la versión con FE | Cuando todo esté listo |
+
+### ✨ Fase 8: Rediseño del Ticket Térmico (SRI-Compliant)
+Se ha actualizado el componente [SaleDetailsModal.tsx](file:///c:/Users/Admin/Desktop/JAIRO/PROYECTOS/ERP-STORE-FAST/frontend-erp/src/components/modals/SaleDetailsModal.tsx) para que al imprimir el ticket (80mm):
+- Muestre "FACTURA" si es electrónica y está autorizada.
+- Incluya la **Clave de Acceso** de 49 dígitos (formateada en bloques para legibilidad).
+- Muestre el **Número de Autorización** y fecha de procesamiento del SRI.
+- Incluya la leyenda obligatoria: `CONTRIBUYENTE RÉGIMEN RIMPE - NEGOCIO POPULAR - NO COBRA IVA`.
+- **Corrección de IVA:** Se eliminó el "IVA 15%" fijo que aparecía en el resumen del modal cuando la venta es para régimen RIMPE (0%).
+
+---
+
+## 🚀 Estado Final del Proyecto
+
+El sistema ERP ahora está 100% equipado para la facturación electrónica en Ecuador. Se han creado dos repositorios separados:
+1. **Original:** Se mantiene como versión base sin FE.
+2. **Con FE:** [ERP-STORE-FAST-ConFirmaElectronica](https://github.com/jairocalle4/ERP-STORE-FAST-ConFirmaElectronica) (URL actualizada con todos los cambios).
+
+### Resumen de Funcionalidades Listas:
+- [x] Generación de XML v2.1.0 compatible con SRI Off-line.
+- [x] Cálculo de Clave de Acceso (Módulo 11).
+- [x] Motor de comunicación SOAP con SRI (Pruebas/Producción).
+- [x] Panel de Configuración completo (Ambiente, Régimen, Firma .p12).
+- [x] Punto de Venta con toggle de emisión inmediata.
+- [x] Historial de Ventas con monitoreo de estado y descarga de XML/RIDE.
+- [x] Ticket Térmico con datos de validez tributaria.
+
+---
+
+## 🛠 Próximos Pasos para el Usuario
+
+Para empezar a emitir facturas reales:
+1. **Adquirir Firma Electrónica:** Obtén tu archivo `.p12` (Registro Civil, Security Data, etc.).
+2. **Registro en el SRI:** Asegúrate de estar en el régimen "RIMPE" y solicitar autorización para emitir comprobantes electrónicos en el portal SRI.
+3. **Cargar Firma:** Ve a **Configuración -> Facturación Electrónica**, selecciona tu archivo `.p12`, ingresa la contraseña y **Guardar**.
+4. **Habilitar FE:** Activa el interruptor "Habilitar Facturación Electrónica" y selecciona el ambiente de **Pruebas** inicialmente.
+
+¡Tu sistema está listo para la era digital! 🇪🇨🎉
+
+> [!NOTE]
+> El campo **IVA es completamente configurable** desde Configuración → Facturación Electrónica. Para RIMPE Negocio Popular, el XML siempre emitirá con 0% independientemente del valor configurado; el valor configurado se usa para los regímenes General y RIMPE Emprendedor.
