@@ -5,7 +5,7 @@ import {
 } from 'recharts';
 import {
     FileText, TrendingUp, Package, DollarSign, Calendar,
-    ArrowDownRight, CreditCard, Activity
+    ArrowDownRight, CreditCard, Activity, Download, Loader2
 } from 'lucide-react';
 import { GlassCard } from '../components/common/GlassCard';
 import {
@@ -16,6 +16,9 @@ import {
     type InventoryValuation,
     type SaleProfit
 } from '../services/reports.service';
+import { productService, type Product } from '../services/product.service';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 
 const COLORS = ['#4f46e5', '#ec4899', '#06b6d4', '#8b5cf6', '#10b981', '#f59e0b', '#ef4444'];
 
@@ -32,6 +35,7 @@ export default function ReportsPage() {
     const [salesProfit, setSalesProfit] = useState<SaleProfit[]>([]);
 
     const [activeTab, setActiveTab] = useState<'financial' | 'inventory' | 'details'>('financial');
+    const [isExportingPDF, setIsExportingPDF] = useState(false);
 
     useEffect(() => {
         fetchData();
@@ -77,6 +81,140 @@ export default function ReportsPage() {
     };
 
     const formatCurrency = (value: number) => `$${value.toFixed(2)}`;
+
+    // ─── PDF Export: full product inventory ────────────────────────────────────
+    const handleExportInventoryPDF = async () => {
+        setIsExportingPDF(true);
+        try {
+            // Fetch ALL active products (large page size)
+            let allProducts: Product[] = [];
+            let page = 1;
+            while (true) {
+                const data = await productService.getAll(false, page, 500);
+                allProducts = [...allProducts, ...(data.items || [])];
+                if (page >= data.totalPages) break;
+                page++;
+            }
+
+            const doc = new jsPDF({ orientation: 'landscape', unit: 'pt', format: 'a4' });
+            const pageW = doc.internal.pageSize.getWidth();
+            const today = new Date().toLocaleDateString('es-EC', { year: 'numeric', month: 'long', day: 'numeric' });
+
+            // ── Header bar ──────────────────────────────────────────────────────
+            doc.setFillColor(79, 70, 229); // indigo-600
+            doc.rect(0, 0, pageW, 54, 'F');
+
+            // Title
+            doc.setFont('helvetica', 'bold');
+            doc.setFontSize(18);
+            doc.setTextColor(255, 255, 255);
+            doc.text('REPORTE DE INVENTARIO DE PRODUCTOS', 32, 30);
+
+            doc.setFontSize(10);
+            doc.setFont('helvetica', 'normal');
+            doc.text(`Generado: ${today}`, 32, 46);
+
+            // ── Summary stats ────────────────────────────────────────────────────
+            const totalStock = allProducts.reduce((s, p) => s + p.stock, 0);
+            const totalCostValue = allProducts.reduce((s, p) => s + p.cost * p.stock, 0);
+            const totalSaleValue = allProducts.reduce((s, p) => s + p.price * p.stock, 0);
+            const lowStock = allProducts.filter(p => p.stock > 0 && p.stock <= (p.minStock || 5)).length;
+            const outOfStock = allProducts.filter(p => p.stock === 0).length;
+
+            const summaryY = 70;
+            const colW = (pageW - 64) / 5;
+            const stats = [
+                { label: 'Total Productos', value: String(allProducts.length) },
+                { label: 'Total Unidades', value: String(totalStock) },
+                { label: 'Valor en Costo', value: formatCurrency(totalCostValue) },
+                { label: 'Valor en Venta', value: formatCurrency(totalSaleValue) },
+                { label: 'Stock Bajo / Agotado', value: `${lowStock} / ${outOfStock}` },
+            ];
+
+            stats.forEach((stat, i) => {
+                const x = 32 + i * colW;
+                doc.setFillColor(241, 245, 249); // slate-100
+                doc.roundedRect(x, summaryY, colW - 8, 42, 6, 6, 'F');
+                doc.setFont('helvetica', 'bold');
+                doc.setFontSize(14);
+                doc.setTextColor(30, 41, 59); // slate-800
+                doc.text(stat.value, x + (colW - 8) / 2, summaryY + 20, { align: 'center' });
+                doc.setFont('helvetica', 'normal');
+                doc.setFontSize(8);
+                doc.setTextColor(100, 116, 139); // slate-500
+                doc.text(stat.label.toUpperCase(), x + (colW - 8) / 2, summaryY + 34, { align: 'center' });
+            });
+
+            // ── Product Table ────────────────────────────────────────────────────
+            const tableData = allProducts.map((p, idx) => [
+                String(idx + 1),
+                p.name,
+                p.barcode || p.sku || '—',
+                p.category?.name || '—',
+                p.subcategory?.name || '—',
+                formatCurrency(p.cost),
+                formatCurrency(p.price),
+                String(p.stock),
+                formatCurrency(p.cost * p.stock),
+                formatCurrency(p.price * p.stock),
+                p.stock === 0 ? 'AGOTADO' : p.stock <= (p.minStock || 5) ? 'BAJO' : 'OK',
+            ]);
+
+            autoTable(doc, {
+                startY: summaryY + 58,
+                head: [['#', 'Producto', 'SKU/Cód.', 'Categoría', 'Subcategoría', 'Costo U.', 'Precio U.', 'Stock', 'Val. Costo', 'Val. Venta', 'Estado']],
+                body: tableData,
+                styles: { fontSize: 7.5, cellPadding: 4, font: 'helvetica', lineColor: [226, 232, 240], lineWidth: 0.3 },
+                headStyles: { fillColor: [79, 70, 229], textColor: 255, fontStyle: 'bold', fontSize: 8, halign: 'center' },
+                alternateRowStyles: { fillColor: [248, 250, 252] },
+                columnStyles: {
+                    0: { halign: 'center', cellWidth: 22 },
+                    1: { cellWidth: 110, fontStyle: 'bold' },
+                    2: { halign: 'center', cellWidth: 62, font: 'courier' },
+                    3: { cellWidth: 70 },
+                    4: { cellWidth: 70 },
+                    5: { halign: 'right', cellWidth: 50 },
+                    6: { halign: 'right', cellWidth: 50 },
+                    7: { halign: 'center', cellWidth: 32 },
+                    8: { halign: 'right', cellWidth: 60 },
+                    9: { halign: 'right', cellWidth: 60, textColor: [16, 185, 129], fontStyle: 'bold' },
+                    10: { halign: 'center', cellWidth: 40 },
+                },
+                didDrawCell: (data) => {
+                    if (data.section === 'body' && data.column.index === 10) {
+                        const val = data.cell.raw as string;
+                        if (val === 'AGOTADO') {
+                            data.cell.styles.textColor = [239, 68, 68];
+                            data.cell.styles.fontStyle = 'bold';
+                        } else if (val === 'BAJO') {
+                            data.cell.styles.textColor = [245, 158, 11];
+                            data.cell.styles.fontStyle = 'bold';
+                        } else {
+                            data.cell.styles.textColor = [16, 185, 129];
+                            data.cell.styles.fontStyle = 'bold';
+                        }
+                    }
+                },
+                margin: { left: 32, right: 32 },
+                didDrawPage: (data) => {
+                    // Footer on each page
+                    const footerY = doc.internal.pageSize.getHeight() - 18;
+                    doc.setFont('helvetica', 'normal');
+                    doc.setFontSize(7);
+                    doc.setTextColor(148, 163, 184);
+                    doc.text(`ERP-STORE-FAST · Reporte de Inventario · ${today}`, 32, footerY);
+                    doc.text(`Pág. ${data.pageNumber}`, pageW - 32, footerY, { align: 'right' });
+                },
+            });
+
+            doc.save(`inventario_productos_${new Date().toISOString().split('T')[0]}.pdf`);
+        } catch (err) {
+            console.error('Error generando PDF:', err);
+        } finally {
+            setIsExportingPDF(false);
+        }
+    };
+    // ───────────────────────────────────────────────────────────────────────────
 
     return (
         <div className="space-y-6 animate-fade-in pb-10">
@@ -306,7 +444,21 @@ export default function ReportsPage() {
             )}
 
             {activeTab === 'inventory' && (
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 animate-fade-in">
+                <div className="space-y-6 animate-fade-in">
+                    {/* Download button row */}
+                    <div className="flex justify-end">
+                        <button
+                            onClick={handleExportInventoryPDF}
+                            disabled={isExportingPDF}
+                            className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-70 text-white px-5 py-2.5 rounded-xl font-bold text-sm shadow-lg shadow-indigo-600/25 transition-all active:scale-95"
+                        >
+                            {isExportingPDF
+                                ? <><Loader2 size={16} className="animate-spin" /> Generando PDF...</>
+                                : <><Download size={16} /> Descargar Inventario PDF</>}
+                        </button>
+                    </div>
+
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                     <GlassCard className="p-6 border-0 h-[400px] flex flex-col relative">
                         <div className="flex justify-between items-start mb-2">
                             <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2">
@@ -366,6 +518,7 @@ export default function ReportsPage() {
                             </BarChart>
                         </ResponsiveContainer>
                     </GlassCard>
+                    </div>
                 </div>
             )}
 
