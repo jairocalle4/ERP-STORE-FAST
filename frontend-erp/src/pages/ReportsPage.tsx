@@ -82,6 +82,102 @@ export default function ReportsPage() {
 
     const formatCurrency = (value: number) => `$${value.toFixed(2)}`;
 
+    // ─── PDF Export: sales transactions ────────────────────────────────────────
+    const handleExportTransactionsPDF = () => {
+        if (!salesProfit.length) return;
+
+        const doc = new jsPDF({ orientation: 'landscape', unit: 'pt', format: 'a4' });
+        const pageW = doc.internal.pageSize.getWidth();
+        const today = new Date().toLocaleDateString('es-EC', { year: 'numeric', month: 'long', day: 'numeric' });
+        const rangeLabel = `${new Date(dateRange.start).toLocaleDateString('es-EC')} — ${new Date(dateRange.end).toLocaleDateString('es-EC')}`;
+
+        // Header bar
+        doc.setFillColor(79, 70, 229);
+        doc.rect(0, 0, pageW, 54, 'F');
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(17);
+        doc.setTextColor(255, 255, 255);
+        doc.text('DETALLE DE TRANSACCIONES DE VENTAS', 32, 28);
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(9);
+        doc.text(`Período: ${rangeLabel}   |   Generado: ${today}`, 32, 45);
+
+        // Summary KPI strip
+        const totalRevenue = salesProfit.reduce((s, r) => s + r.totalRevenue, 0);
+        const totalCost    = salesProfit.reduce((s, r) => s + r.totalCost, 0);
+        const totalProfit  = salesProfit.reduce((s, r) => s + r.grossProfit, 0);
+        const totalQty     = salesProfit.reduce((s, r) => s + r.totalQuantity, 0);
+        const kpis = [
+            { label: 'Total Transacciones', value: String(salesProfit.length) },
+            { label: 'Unidades Vendidas',   value: String(totalQty) },
+            { label: 'Total Ingresos',      value: formatCurrency(totalRevenue) },
+            { label: 'Total Costo',         value: formatCurrency(totalCost) },
+            { label: 'Ganancia Bruta',      value: formatCurrency(totalProfit) },
+        ];
+        const summaryY = 66;
+        const cW = (pageW - 64) / kpis.length;
+        kpis.forEach((k, i) => {
+            const x = 32 + i * cW;
+            doc.setFillColor(241, 245, 249);
+            doc.roundedRect(x, summaryY, cW - 8, 38, 5, 5, 'F');
+            doc.setFont('helvetica', 'bold');
+            doc.setFontSize(13);
+            doc.setTextColor(30, 41, 59);
+            doc.text(k.value, x + (cW - 8) / 2, summaryY + 17, { align: 'center' });
+            doc.setFont('helvetica', 'normal');
+            doc.setFontSize(7.5);
+            doc.setTextColor(100, 116, 139);
+            doc.text(k.label.toUpperCase(), x + (cW - 8) / 2, summaryY + 30, { align: 'center' });
+        });
+
+        // Table
+        const tableBody = salesProfit.map((item, idx) => [
+            String(idx + 1),
+            item.noteNumber || '—',
+            formatDate(item.date),
+            item.employeeName || '—',
+            item.productNames || '—',
+            String(item.totalQuantity),
+            item.paymentMethod || '—',
+            formatCurrency(item.totalRevenue),
+            formatCurrency(item.totalCost),
+            formatCurrency(item.grossProfit),
+            item.marginPercentage != null ? `${item.marginPercentage.toFixed(1)}%` : '—',
+        ]);
+
+        autoTable(doc, {
+            startY: summaryY + 50,
+            head: [['#', 'N° Nota', 'Fecha', 'Vendedor', 'Productos', 'Cant.', 'Pago', 'Total Venta', 'Costo', 'Ganancia', 'Margen']],
+            body: tableBody,
+            styles: { fontSize: 7.5, cellPadding: 4, font: 'helvetica', lineColor: [226, 232, 240], lineWidth: 0.3 },
+            headStyles: { fillColor: [79, 70, 229], textColor: 255, fontStyle: 'bold', fontSize: 8, halign: 'center' },
+            alternateRowStyles: { fillColor: [248, 250, 252] },
+            columnStyles: {
+                0:  { halign: 'center', cellWidth: 20 },
+                1:  { halign: 'center', cellWidth: 52, fontStyle: 'bold', textColor: [79, 70, 229] },
+                2:  { cellWidth: 70, fontSize: 7 },
+                3:  { cellWidth: 62 },
+                4:  { cellWidth: 115 },
+                5:  { halign: 'center', cellWidth: 30 },
+                6:  { cellWidth: 54 },
+                7:  { halign: 'right', cellWidth: 55, fontStyle: 'bold' },
+                8:  { halign: 'right', cellWidth: 50, textColor: [239, 68, 68] },
+                9:  { halign: 'right', cellWidth: 55, textColor: [16, 185, 129], fontStyle: 'bold' },
+                10: { halign: 'center', cellWidth: 40 },
+            },
+            margin: { left: 32, right: 32 },
+            didDrawPage: (data) => {
+                const footerY = doc.internal.pageSize.getHeight() - 18;
+                doc.setFont('helvetica', 'normal');
+                doc.setFontSize(7);
+                doc.setTextColor(148, 163, 184);
+                doc.text(`ERP-STORE-FAST · Transacciones de Ventas · ${today}`, 32, footerY);
+                doc.text(`Pág. ${data.pageNumber}`, pageW - 32, footerY, { align: 'right' });
+            },
+        });
+
+        doc.save(`transacciones_ventas_${dateRange.start}_${dateRange.end}.pdf`);
+    };
     // ─── PDF Export: full product inventory ────────────────────────────────────
     const handleExportInventoryPDF = async () => {
         setIsExportingPDF(true);
@@ -524,10 +620,24 @@ export default function ReportsPage() {
 
             {activeTab === 'details' && (
                 <GlassCard className="p-6 border-0 animate-fade-in">
-                    <div className="flex justify-between items-center mb-6">
-                        <h3 className="text-lg font-bold text-slate-800">Detalle de Operaciones</h3>
-                        <button className="flex items-center gap-2 text-rose-600 bg-rose-50 px-4 py-2 rounded-lg font-bold hover:bg-rose-100 transition-colors border border-rose-100">
-                            <FileText size={18} />
+                    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-6">
+                        <div>
+                            <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2">
+                                <FileText size={20} className="text-indigo-600" />
+                                Detalle de Transacciones
+                            </h3>
+                            <p className="text-xs text-slate-400 font-medium mt-1">
+                                Registro línea por línea de cada venta: vendedor, productos, ingresos, costo y ganancia bruta —
+                                período <span className="text-indigo-500 font-bold">{new Date(dateRange.start).toLocaleDateString('es-EC')} al {new Date(dateRange.end).toLocaleDateString('es-EC')}</span>
+                                · <span className="font-bold text-slate-600">{salesProfit.length} registros</span>
+                            </p>
+                        </div>
+                        <button
+                            onClick={handleExportTransactionsPDF}
+                            disabled={!salesProfit.length}
+                            className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white px-4 py-2.5 rounded-xl font-bold text-sm shadow-lg shadow-indigo-600/20 transition-all active:scale-95 whitespace-nowrap"
+                        >
+                            <Download size={16} />
                             Exportar PDF
                         </button>
                     </div>

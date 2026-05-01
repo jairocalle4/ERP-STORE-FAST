@@ -154,10 +154,10 @@ export default function ProductDetailsClient({ id }: { id: string }) {
         <div className="min-h-screen flex flex-col bg-slate-50">
             <Navbar />
 
-            <main className="flex-grow pt-24 md:pt-32 pb-24 px-4 sm:px-6">
+            <main className="flex-grow pt-16 md:pt-20 pb-24 px-4 sm:px-6">
                 <div className="max-w-7xl mx-auto">
                     {/* Navigation Header */}
-                    <div className="flex items-center gap-4 mb-8">
+                    <div className="flex items-center gap-4 mb-3">
                         <button
                             onClick={() => router.back()}
                             className="w-10 h-10 rounded-xl bg-white border border-slate-100 flex items-center justify-center text-slate-500 hover:bg-primary hover:text-white transition-all shadow-sm group"
@@ -178,7 +178,7 @@ export default function ProductDetailsClient({ id }: { id: string }) {
                     <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12">
                         {/* Left Column: Gallery (7 cols) */}
                         <div className="lg:col-span-7 space-y-4">
-                            <div className="relative aspect-square md:aspect-[4/3] lg:aspect-square bg-white rounded-[2rem] md:rounded-[3rem] shadow-xl shadow-slate-200/50 overflow-hidden border border-white group">
+                            <div className="relative aspect-square md:aspect-[4/3] lg:aspect-square bg-white rounded-xl md:rounded-2xl shadow-md shadow-slate-200/50 overflow-hidden border border-slate-100 group">
                                 <div
                                     ref={carouselRef}
                                     onScroll={handleScroll}
@@ -189,7 +189,7 @@ export default function ProductDetailsClient({ id }: { id: string }) {
                                             <img
                                                 src={img.url}
                                                 alt={product.name}
-                                                className="max-w-full max-h-full object-contain p-8 md:p-12 pointer-events-none select-none transition-transform duration-500 group-hover:scale-105"
+                                                className="max-w-full max-h-full object-contain p-2 md:p-3 pointer-events-none select-none transition-transform duration-500 group-hover:scale-105"
                                                 draggable="false"
                                             />
                                         </div>
