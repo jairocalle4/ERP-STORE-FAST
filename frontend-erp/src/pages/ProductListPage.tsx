@@ -2,11 +2,12 @@ import { useEffect, useState } from 'react';
 import api from '../services/api';
 
 import { Plus, Edit2, Trash2, Search, Filter, Package, Eye, RefreshCw, ArrowUpDown, History, ChevronLeft, ChevronRight } from 'lucide-react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { GlassCard } from '../components/common/GlassCard';
 import { productService, type Product } from '../services/product.service';
 import ConfirmModal from '../components/modals/ConfirmModal';
 import KardexModal from '../components/inventory/KardexModal';
+import ProductDetailsModal from '../components/modals/ProductDetailsModal';
 import { useNotificationStore } from '../store/useNotificationStore';
 
 interface Category {
@@ -20,25 +21,39 @@ interface Subcategory {
     categoryId: number;
 }
 
+// --- Session storage helpers ---
+const SESSION_KEY = 'productList_filters';
+
+function saveFilters(data: object) {
+    try { sessionStorage.setItem(SESSION_KEY, JSON.stringify(data)); } catch {}
+}
+
+function loadFilters() {
+    try {
+        const raw = sessionStorage.getItem(SESSION_KEY);
+        return raw ? JSON.parse(raw) : null;
+    } catch { return null; }
+}
+
 export default function ProductListPage() {
-    const location = useLocation();
-    const queryParams = new URLSearchParams(location.search);
-    const initialStockFilter = queryParams.get('stock') || 'all';
+    const saved = loadFilters();
 
     const [products, setProducts] = useState<Product[]>([]);
     const [loading, setLoading] = useState(true);
     const addNotification = useNotificationStore(s => s.addNotification);
 
-    // Filters State
-    const [searchTerm, setSearchTerm] = useState('');
-    const [categoryId, setCategoryId] = useState<number>(0);
-    const [subcategoryId, setSubcategoryId] = useState<number>(0);
-    const [stockFilter, setStockFilter] = useState<string>(initialStockFilter); // all, low, out, available
-    const [statusFilter, setStatusFilter] = useState<string>('all'); // all, active, inactive
-    const [sortConfig, setSortConfig] = useState<{ key: 'name' | 'price' | 'stock', direction: 'asc' | 'desc' }>({ key: 'name', direction: 'asc' });
+    // Filters State — restored from session if available
+    const [searchTerm, setSearchTerm] = useState<string>(saved?.searchTerm ?? '');
+    const [categoryId, setCategoryId] = useState<number>(saved?.categoryId ?? 0);
+    const [subcategoryId, setSubcategoryId] = useState<number>(saved?.subcategoryId ?? 0);
+    const [stockFilter, setStockFilter] = useState<string>(saved?.stockFilter ?? 'all');
+    const [statusFilter, setStatusFilter] = useState<string>(saved?.statusFilter ?? 'all');
+    const [sortConfig, setSortConfig] = useState<{ key: 'name' | 'price' | 'stock', direction: 'asc' | 'desc' }>(
+        saved?.sortConfig ?? { key: 'name', direction: 'asc' }
+    );
 
-    // Pagination State
-    const [currentPage, setCurrentPage] = useState(1);
+    // Pagination State — restored from session if available
+    const [currentPage, setCurrentPage] = useState<number>(saved?.currentPage ?? 1);
     const [totalPages, setTotalPages] = useState(1);
     const [totalItems, setTotalItems] = useState(0);
     const pageSize = 20;
@@ -56,6 +71,15 @@ export default function ProductListPage() {
     const [kardexProductId, setKardexProductId] = useState<number | null>(null);
     const [kardexProductName, setKardexProductName] = useState<string>('');
     const [isKardexOpen, setIsKardexOpen] = useState(false);
+
+    // Product Details Modal State
+    const [detailProduct, setDetailProduct] = useState<Product | null>(null);
+    const [isDetailOpen, setIsDetailOpen] = useState(false);
+
+    // Persist filters to sessionStorage whenever they change
+    useEffect(() => {
+        saveFilters({ searchTerm, categoryId, subcategoryId, stockFilter, statusFilter, sortConfig, currentPage });
+    }, [searchTerm, categoryId, subcategoryId, stockFilter, statusFilter, sortConfig, currentPage]);
 
     useEffect(() => {
         fetchCategories();
@@ -75,7 +99,7 @@ export default function ProductListPage() {
     }, [categoryId]);
 
     const fetchProducts = async (page: number = 1) => {
-        if (products.length === 0) setLoading(true); // Solo mostrar loader gigante en la primera carga
+        if (products.length === 0) setLoading(true);
         try {
             const data = await productService.getAll(statusFilter === 'all' || statusFilter === 'inactive', page, pageSize, searchTerm, categoryId);
             setProducts(data?.items || []);
@@ -118,7 +142,7 @@ export default function ProductListPage() {
             setDeleteId(null);
         } catch (err: any) {
             console.error(err);
-            setIsDeleteModalOpen(false); // Close modal to show message
+            setIsDeleteModalOpen(false);
             let errorMessage = 'Error al eliminar producto.';
             if (err.response && err.response.data) {
                 if (typeof err.response.data === 'string') {
@@ -139,6 +163,11 @@ export default function ProductListPage() {
         setKardexProductId(id);
         setKardexProductName(name);
         setIsKardexOpen(true);
+    };
+
+    const handleDetailClick = (product: Product) => {
+        setDetailProduct(product);
+        setIsDetailOpen(true);
     };
 
     // Filter & Sort Logic
@@ -196,6 +225,8 @@ export default function ProductListPage() {
         setStockFilter('all');
         setStatusFilter('all');
         setSortConfig({ key: 'name', direction: 'asc' });
+        setCurrentPage(1);
+        try { sessionStorage.removeItem(SESSION_KEY); } catch {}
     };
 
     return (
@@ -377,7 +408,7 @@ export default function ProductListPage() {
                                     </tr>
                                 ) : (
                                     sortedProducts.map((p) => (
-                                        <tr key={p.id} className="transition-colors duration-200 group hover:bg-slate-50/50">
+                                        <tr key={p.id} className="transition-colors duration-200 hover:bg-slate-50/50">
                                             <td className="font-semibold text-slate-700 flex items-center gap-3">
                                                 <div className="h-12 w-12 rounded-xl bg-white border border-indigo-100 p-1 flex-shrink-0 shadow-sm">
                                                     {p.images && p.images.length > 0 ? (
@@ -425,27 +456,27 @@ export default function ProductListPage() {
                                                 </span>
                                             </td>
                                             <td className="text-right">
-                                                <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                                    <Link
-                                                        to={`/products/${p.id}/details`}
-                                                        className="p-2 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors"
+                                                <div className="flex items-center justify-end gap-1">
+                                                    <button
+                                                        onClick={() => handleDetailClick(p)}
+                                                        className="p-2 text-slate-500 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors"
                                                         title="Ver Detalle"
                                                     >
                                                         <Eye size={16} />
-                                                    </Link>
-                                                    <Link to={`/products/edit/${p.id}`} className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors">
+                                                    </button>
+                                                    <Link to={`/products/edit/${p.id}`} className="p-2 text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors">
                                                         <Edit2 size={16} />
                                                     </Link>
                                                     <button
                                                         onClick={() => handleKardexClick(p.id, p.name)}
-                                                        className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                                                        className="p-2 text-slate-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
                                                         title="Ver Historial (Kardex)"
                                                     >
                                                         <History size={16} />
                                                     </button>
                                                     <button
                                                         onClick={() => handleDeleteClick(p.id)}
-                                                        className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors"
+                                                        className="p-2 text-slate-500 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors"
                                                     >
                                                         <Trash2 size={16} />
                                                     </button>
@@ -505,6 +536,12 @@ export default function ProductListPage() {
                 onClose={() => setIsKardexOpen(false)}
                 productId={kardexProductId}
                 productName={kardexProductName}
+            />
+
+            <ProductDetailsModal
+                isOpen={isDetailOpen}
+                onClose={() => setIsDetailOpen(false)}
+                product={detailProduct}
             />
         </>
     );

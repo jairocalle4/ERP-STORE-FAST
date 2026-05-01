@@ -118,7 +118,7 @@ export default function ExpenseCategoriesModal({ isOpen, onClose, onUpdate }: Ex
                                 </div>
                                 <button
                                     onClick={() => handleDelete(cat.id)}
-                                    className="p-2 text-slate-300 hover:text-rose-500 hover:bg-rose-50 rounded-lg transition-colors opacity-0 group-hover:opacity-100"
+                                    className="p-2 text-slate-400 hover:text-rose-500 hover:bg-rose-50 rounded-lg transition-colors"
                                     title="Eliminar"
                                 >
                                     <Trash2 size={18} />

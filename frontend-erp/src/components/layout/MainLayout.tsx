@@ -322,7 +322,7 @@ export default function MainLayout() {
                                                             </div>
                                                             <button
                                                                 onClick={(e) => { e.stopPropagation(); deleteNotif(n.id); }}
-                                                                className="opacity-0 group-hover:opacity-100 p-1.5 text-slate-300 hover:text-rose-500 hover:bg-rose-50 rounded-lg transition-all"
+                                                                className="p-1.5 text-slate-300 hover:text-rose-500 hover:bg-rose-50 rounded-lg transition-all"
                                                             >
                                                                 <Trash2 size={13} />
                                                             </button>

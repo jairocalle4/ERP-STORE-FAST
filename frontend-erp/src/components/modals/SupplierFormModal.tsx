@@ -127,8 +127,8 @@ export function SupplierFormModal({ isOpen, onClose, onSuccess, supplier }: Prop
     };
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-indigo-950/40 backdrop-blur-sm animate-fade-in">
-            <div className="w-full max-w-2xl animate-scale-up">
+        <div className="fixed inset-0 z-50 flex items-start justify-center p-4 py-8 bg-indigo-950/40 backdrop-blur-sm animate-fade-in overflow-y-auto">
+            <div className="w-full max-w-2xl animate-scale-up my-auto">
                 <GlassCard className="overflow-hidden border-indigo-200/50 shadow-2xl">
                     <div className="flex justify-between items-center p-6 border-b border-indigo-50 bg-indigo-50/30">
                         <div>
