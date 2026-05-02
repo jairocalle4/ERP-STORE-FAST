@@ -373,7 +373,6 @@ export default function ProductListPage() {
                                             <ArrowUpDown size={12} className={`transition-opacity ${sortConfig.key === 'name' ? 'opacity-100' : 'opacity-0 group-hover:opacity-50'}`} />
                                         </div>
                                     </th>
-                                    <th>Categoría</th>
                                     <th className="cursor-pointer group" onClick={() => toggleSort('price')}>
                                         <div className="flex items-center gap-2">
                                             Precio
@@ -419,18 +418,16 @@ export default function ProductListPage() {
                                                 </div>
                                                 <div>
                                                     <span className="block text-slate-800 font-bold">{p.name}</span>
-                                                </div>
-                                            </td>
-                                            <td>
-                                                <div className="flex flex-col items-start gap-1">
-                                                    <span className="text-sm font-bold text-slate-700">
-                                                        {p.category?.name || 'N/A'}
-                                                    </span>
-                                                    {p.subcategory && (
-                                                        <span className="bg-indigo-50 text-indigo-600 px-2 py-0.5 rounded-md text-[10px] font-bold border border-indigo-100 uppercase tracking-wide">
-                                                            {p.subcategory.name}
+                                                    <div className="flex items-center gap-2 mt-1">
+                                                        <span className="bg-slate-100 text-slate-600 px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wide">
+                                                            {p.category?.name || 'N/A'}
                                                         </span>
-                                                    )}
+                                                        {p.subcategory && (
+                                                            <span className="bg-indigo-50 text-indigo-600 px-2 py-0.5 rounded-md text-[10px] font-bold border border-indigo-100 uppercase tracking-wide">
+                                                                {p.subcategory.name}
+                                                            </span>
+                                                        )}
+                                                    </div>
                                                 </div>
                                             </td>
                                             <td className="font-bold text-slate-800 text-lg">${p.price.toFixed(2)}</td>

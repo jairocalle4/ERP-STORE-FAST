@@ -272,7 +272,17 @@ export default function ProductFormPage() {
                                                 type="checkbox"
                                                 className="sr-only peer"
                                                 checked={formData.isService}
-                                                onChange={(e) => setFormData({ ...formData, isService: e.target.checked })}
+                                                onChange={(e) => {
+                                                    const isService = e.target.checked;
+                                                    setFormData({
+                                                        ...formData,
+                                                        isService,
+                                                        cost: isService ? 0 : formData.cost,
+                                                        discountPercentage: isService ? 0 : formData.discountPercentage,
+                                                        stock: isService ? 0 : formData.stock,
+                                                        minStock: isService ? 0 : formData.minStock
+                                                    });
+                                                }}
                                             />
                                             <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
                                         </label>
@@ -363,23 +373,25 @@ export default function ProductFormPage() {
                             <GlassCard>
                                 <h2 className="text-xl font-bold mb-6 text-indigo-900 border-b border-indigo-100 pb-2">Precios e Inventario</h2>
                                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-4">
-                                    <div>
-                                        <label className="block text-sm font-semibold text-indigo-900/70 mb-2">
-                                            Costo Compra ($) <span className="text-rose-500">*</span>
-                                        </label>
-                                        <input
-                                            type="number" step="0.01"
-                                            value={formData.cost}
-                                            onChange={e => {
-                                                const val = e.target.value === '' ? 0 : parseFloat(e.target.value);
-                                                setFormData({ ...formData, cost: val });
-                                                if (errors.cost) setErrors({ ...errors, cost: '' });
-                                            }}
-                                            className={`w-full px-4 py-3 bg-white/50 border rounded-xl focus:ring-2 outline-none transition-all text-indigo-950 font-mono ${errors.cost ? 'border-rose-400 focus:ring-rose-200' : 'border-indigo-100 focus:ring-indigo-500/50 focus:border-indigo-500'}`}
-                                        />
-                                        {errors.cost && <p className="text-xs text-rose-500 font-bold mt-1 ml-1">{errors.cost}</p>}
-                                    </div>
-                                    <div>
+                                    {!formData.isService && (
+                                        <div className="animate-scale-in">
+                                            <label className="block text-sm font-semibold text-indigo-900/70 mb-2">
+                                                Costo Compra ($) <span className="text-rose-500">*</span>
+                                            </label>
+                                            <input
+                                                type="number" step="0.01"
+                                                value={formData.cost}
+                                                onChange={e => {
+                                                    const val = e.target.value === '' ? 0 : parseFloat(e.target.value);
+                                                    setFormData({ ...formData, cost: val });
+                                                    if (errors.cost) setErrors({ ...errors, cost: '' });
+                                                }}
+                                                className={`w-full px-4 py-3 bg-white/50 border rounded-xl focus:ring-2 outline-none transition-all text-indigo-950 font-mono ${errors.cost ? 'border-rose-400 focus:ring-rose-200' : 'border-indigo-100 focus:ring-indigo-500/50 focus:border-indigo-500'}`}
+                                            />
+                                            {errors.cost && <p className="text-xs text-rose-500 font-bold mt-1 ml-1">{errors.cost}</p>}
+                                        </div>
+                                    )}
+                                    <div className={`transition-all duration-300 ${formData.isService ? 'md:col-span-3' : ''}`}>
                                         <label className="block text-sm font-semibold text-indigo-900/70 mb-2">
                                             Precio Venta ($) <span className="text-rose-500">*</span>
                                         </label>
@@ -395,28 +407,30 @@ export default function ProductFormPage() {
                                         />
                                         {errors.price && <p className="text-xs text-rose-500 font-bold mt-1 ml-1">{errors.price}</p>}
                                     </div>
-                                    <div>
-                                        <label className="block text-sm font-semibold text-indigo-900/70 mb-2">
-                                            Descuento (%)
-                                        </label>
-                                        <input
-                                            type="number"
-                                            value={formData.discountPercentage}
-                                            onChange={e => {
-                                                const val = e.target.value === '' ? 0 : parseInt(e.target.value);
-                                                setFormData({ ...formData, discountPercentage: val });
-                                            }}
-                                            className="w-full px-4 py-3 bg-white/50 border border-indigo-100 rounded-xl focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 outline-none transition-all text-indigo-950 font-mono"
-                                            placeholder="0"
-                                            min="0"
-                                            max="100"
-                                        />
-                                    </div>
+                                    {!formData.isService && (
+                                        <div className="animate-scale-in">
+                                            <label className="block text-sm font-semibold text-indigo-900/70 mb-2">
+                                                Descuento (%)
+                                            </label>
+                                            <input
+                                                type="number"
+                                                value={formData.discountPercentage}
+                                                onChange={e => {
+                                                    const val = e.target.value === '' ? 0 : parseInt(e.target.value);
+                                                    setFormData({ ...formData, discountPercentage: val });
+                                                }}
+                                                className="w-full px-4 py-3 bg-white/50 border border-indigo-100 rounded-xl focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 outline-none transition-all text-indigo-950 font-mono"
+                                                placeholder="0"
+                                                min="0"
+                                                max="100"
+                                            />
+                                        </div>
+                                    )}
                                 </div>
                                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                                     {!formData.isService && (
                                         <>
-                                            <div>
+                                            <div className="animate-scale-in">
                                                 <label className="block text-sm font-semibold text-indigo-900/70 mb-2">
                                                     {isEdit ? 'Stock Actual' : 'Stock Inicial'} <span className="text-rose-500">*</span>
                                                 </label>
@@ -438,7 +452,7 @@ export default function ProductFormPage() {
                                                     <p className="text-xs text-rose-500 font-bold mt-1 ml-1">{errors.stock}</p>
                                                 )}
                                             </div>
-                                            <div>
+                                            <div className="animate-scale-in">
                                                 <label className="block text-sm font-semibold text-indigo-900/70 mb-2">
                                                     Stock Mínimo <span className="text-rose-500">*</span>
                                                 </label>
