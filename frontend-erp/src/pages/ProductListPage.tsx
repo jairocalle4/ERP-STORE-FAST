@@ -432,15 +432,17 @@ export default function ProductListPage() {
                                             </td>
                                             <td className="font-bold text-slate-800 text-lg">${p.price.toFixed(2)}</td>
                                             <td>
-                                                <span className={`px-3 py-1 rounded-lg text-xs font-bold border ${p.stock > (p.minStock || 5)
-                                                    ? 'bg-emerald-50 text-emerald-600 border-emerald-100'
-                                                    : p.stock > 0
-                                                        ? 'bg-amber-50 text-amber-600 border-amber-100 animate-pulse'
-                                                        : 'bg-rose-50 text-rose-600 border-rose-100'
+                                                <span className={`px-3 py-1 rounded-lg text-xs font-bold border ${p.isService
+                                                    ? 'bg-blue-50 text-blue-600 border-blue-100 text-lg leading-none'
+                                                    : p.stock > (p.minStock || 5)
+                                                        ? 'bg-emerald-50 text-emerald-600 border-emerald-100'
+                                                        : p.stock > 0
+                                                            ? 'bg-amber-50 text-amber-600 border-amber-100 animate-pulse'
+                                                            : 'bg-rose-50 text-rose-600 border-rose-100'
                                                     }`}>
-                                                    {p.stock}
+                                                    {p.isService ? '∞' : p.stock}
                                                 </span>
-                                                {p.stock > 0 && p.stock <= (p.minStock || 5) && (
+                                                {!p.isService && p.stock > 0 && p.stock <= (p.minStock || 5) && (
                                                     <span className="block text-[8px] text-amber-600 font-black uppercase mt-1">Reponer pronto</span>
                                                 )}
                                             </td>
