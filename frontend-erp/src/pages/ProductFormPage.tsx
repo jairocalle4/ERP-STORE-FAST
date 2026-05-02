@@ -50,6 +50,7 @@ export default function ProductFormPage() {
         categoryId: 0,
         subcategoryId: 0,
         isActive: true,
+        isService: false,
         videoUrl: '',
         minStock: 3,
         discountPercentage: 0
@@ -116,6 +117,7 @@ export default function ProductFormPage() {
                 categoryId: data.categoryId,
                 subcategoryId: data.subcategoryId || 0,
                 isActive: data.isActive,
+                isService: data.isService || false,
                 videoUrl: data.videoUrl || '',
                 minStock: data.minStock || 3,
                 discountPercentage: data.discountPercentage || 0
@@ -206,10 +208,10 @@ export default function ProductFormPage() {
                 ...formData,
                 price: Number(formData.price),
                 cost: Number(formData.cost),
-                stock: Number(formData.stock),
+                stock: formData.isService ? 0 : Number(formData.stock),
                 categoryId: Number(formData.categoryId),
                 subcategoryId: formData.subcategoryId ? Number(formData.subcategoryId) : null,
-                minStock: Number(formData.minStock),
+                minStock: formData.isService ? 0 : Number(formData.minStock),
                 discountPercentage: Number(formData.discountPercentage),
                 images: images
             };
@@ -259,6 +261,23 @@ export default function ProductFormPage() {
                             <GlassCard>
                                 <h2 className="text-xl font-bold mb-6 text-indigo-900 border-b border-indigo-100 pb-2">Información Básica</h2>
                                 <div className="grid grid-cols-1 gap-6">
+                                    {/* Is Service Toggle */}
+                                    <div className="flex items-center justify-between bg-indigo-50/50 p-4 rounded-2xl border border-indigo-100">
+                                        <div>
+                                            <h3 className="font-bold text-indigo-900">Es un Servicio</h3>
+                                            <p className="text-xs text-indigo-700/70 mt-0.5">No maneja stock (infinito) y no se muestra en la tienda online.</p>
+                                        </div>
+                                        <label className="relative inline-flex items-center cursor-pointer">
+                                            <input
+                                                type="checkbox"
+                                                className="sr-only peer"
+                                                checked={formData.isService}
+                                                onChange={(e) => setFormData({ ...formData, isService: e.target.checked })}
+                                            />
+                                            <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
+                                        </label>
+                                    </div>
+
                                     <div>
                                         <label className="label-premium">
                                             Nombre del Producto <span className="text-rose-500">*</span>
@@ -395,44 +414,48 @@ export default function ProductFormPage() {
                                     </div>
                                 </div>
                                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                                    <div>
-                                        <label className="block text-sm font-semibold text-indigo-900/70 mb-2">
-                                            {isEdit ? 'Stock Actual' : 'Stock Inicial'} <span className="text-rose-500">*</span>
-                                        </label>
-                                        <input
-                                            type="number"
-                                            value={formData.stock}
-                                            readOnly={isEdit}
-                                            onChange={e => {
-                                                if (isEdit) return;
-                                                const val = e.target.value === '' ? 0 : parseInt(e.target.value);
-                                                setFormData({ ...formData, stock: val });
-                                                if (errors.stock) setErrors({ ...errors, stock: '' });
-                                            }}
-                                            className={`w-full px-4 py-3 border rounded-xl focus:ring-2 outline-none transition-all font-mono ${isEdit ? 'bg-slate-100/50 text-slate-500 cursor-not-allowed border-slate-200' : 'bg-white/50 border-indigo-100 focus:ring-indigo-500/50 focus:border-indigo-500 text-indigo-950'} ${errors.stock ? 'border-rose-400 focus:ring-rose-200' : ''}`}
-                                        />
-                                        {isEdit ? (
-                                            <p className="text-[10px] text-slate-400 mt-1 font-bold italic">* El stock se gestiona mediante Compras o Ajustes</p>
-                                        ) : errors.stock && (
-                                            <p className="text-xs text-rose-500 font-bold mt-1 ml-1">{errors.stock}</p>
-                                        )}
-                                    </div>
-                                    <div>
-                                        <label className="block text-sm font-semibold text-indigo-900/70 mb-2">
-                                            Stock Mínimo <span className="text-rose-500">*</span>
-                                        </label>
-                                        <input
-                                            type="number"
-                                            value={formData.minStock}
-                                            onChange={e => {
-                                                const val = e.target.value === '' ? 0 : parseInt(e.target.value);
-                                                setFormData({ ...formData, minStock: val });
-                                            }}
-                                            className="w-full px-4 py-3 bg-white/50 border border-indigo-100 rounded-xl focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 outline-none transition-all text-indigo-950 font-mono"
-                                            placeholder="Ej: 3"
-                                        />
-                                        <p className="text-[10px] text-slate-400 mt-1 italic">Nivel para alerta de stock bajo</p>
-                                    </div>
+                                    {!formData.isService && (
+                                        <>
+                                            <div>
+                                                <label className="block text-sm font-semibold text-indigo-900/70 mb-2">
+                                                    {isEdit ? 'Stock Actual' : 'Stock Inicial'} <span className="text-rose-500">*</span>
+                                                </label>
+                                                <input
+                                                    type="number"
+                                                    value={formData.stock}
+                                                    readOnly={isEdit}
+                                                    onChange={e => {
+                                                        if (isEdit) return;
+                                                        const val = e.target.value === '' ? 0 : parseInt(e.target.value);
+                                                        setFormData({ ...formData, stock: val });
+                                                        if (errors.stock) setErrors({ ...errors, stock: '' });
+                                                    }}
+                                                    className={`w-full px-4 py-3 border rounded-xl focus:ring-2 outline-none transition-all font-mono ${isEdit ? 'bg-slate-100/50 text-slate-500 cursor-not-allowed border-slate-200' : 'bg-white/50 border-indigo-100 focus:ring-indigo-500/50 focus:border-indigo-500 text-indigo-950'} ${errors.stock ? 'border-rose-400 focus:ring-rose-200' : ''}`}
+                                                />
+                                                {isEdit ? (
+                                                    <p className="text-[10px] text-slate-400 mt-1 font-bold italic">* El stock se gestiona mediante Compras o Ajustes</p>
+                                                ) : errors.stock && (
+                                                    <p className="text-xs text-rose-500 font-bold mt-1 ml-1">{errors.stock}</p>
+                                                )}
+                                            </div>
+                                            <div>
+                                                <label className="block text-sm font-semibold text-indigo-900/70 mb-2">
+                                                    Stock Mínimo <span className="text-rose-500">*</span>
+                                                </label>
+                                                <input
+                                                    type="number"
+                                                    value={formData.minStock}
+                                                    onChange={e => {
+                                                        const val = e.target.value === '' ? 0 : parseInt(e.target.value);
+                                                        setFormData({ ...formData, minStock: val });
+                                                    }}
+                                                    className="w-full px-4 py-3 bg-white/50 border border-indigo-100 rounded-xl focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 outline-none transition-all text-indigo-950 font-mono"
+                                                    placeholder="Ej: 3"
+                                                />
+                                                <p className="text-[10px] text-slate-400 mt-1 italic">Nivel para alerta de stock bajo</p>
+                                            </div>
+                                        </>
+                                    )}
                                     <div>
                                         <label className="block text-sm font-semibold text-indigo-900/70 mb-2">Código Barras</label>
                                         <input

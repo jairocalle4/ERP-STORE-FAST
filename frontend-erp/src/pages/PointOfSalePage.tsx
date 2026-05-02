@@ -104,7 +104,7 @@ export default function PointOfSalePage() {
     }, [products, searchTerm, selectedCategory]);
 
     const addToCart = (product: Product) => {
-        if (product.stock <= 0) {
+        if (!product.isService && product.stock <= 0) {
             addNotification('Producto sin stock disponible', 'error');
             return;
         }
@@ -112,7 +112,7 @@ export default function PointOfSalePage() {
         setCart(prev => {
             const existing = prev.find(item => item.product.id === product.id);
             if (existing) {
-                if (existing.quantity >= product.stock) {
+                if (!product.isService && existing.quantity >= product.stock) {
                     addNotification('Máximo stock alcanzado', 'warning');
                     return prev;
                 }
@@ -134,7 +134,7 @@ export default function PointOfSalePage() {
         setCart(prev => prev.map(item => {
             if (item.product.id === productId) {
                 const newQty = Math.max(1, item.quantity + delta);
-                if (delta > 0 && newQty > item.product.stock) {
+                if (!item.product.isService && delta > 0 && newQty > item.product.stock) {
                     addNotification('Stock insuficiente', 'warning');
                     return item;
                 }
@@ -327,7 +327,7 @@ export default function PointOfSalePage() {
                                             <div
                                                 key={product.id}
                                                 onClick={() => addToCart(product)}
-                                                className={`group relative bg-white/60 border-2 rounded-3xl p-4 transition-all hover:-translate-y-1 cursor-pointer overflow-hidden ${product.stock <= 0
+                                                className={`group relative bg-white/60 border-2 rounded-3xl p-4 transition-all hover:-translate-y-1 cursor-pointer overflow-hidden ${(!product.isService && product.stock <= 0)
                                                     ? 'opacity-60 grayscale border-slate-100 cursor-not-allowed'
                                                     : inCart
                                                         ? 'border-indigo-500 bg-white ring-4 ring-indigo-500/5'
@@ -347,7 +347,7 @@ export default function PointOfSalePage() {
                                                         <Package className="text-slate-200" size={32} />
                                                     )}
 
-                                                    {product.stock <= 5 && product.stock > 0 && (
+                                                    {!product.isService && product.stock <= 5 && product.stock > 0 && (
                                                         <div className="absolute bottom-2 left-2 px-2 py-0.5 bg-amber-500 text-white text-[10px] font-black rounded-lg uppercase tracking-wider">
                                                             Stock Bajo
                                                         </div>
@@ -359,9 +359,9 @@ export default function PointOfSalePage() {
                                                     <div className="flex justify-between items-end gap-2">
                                                         <div>
                                                             <div className="flex items-center gap-1.5">
-                                                                <Package size={12} className={product.stock <= 5 ? 'text-rose-500' : 'text-indigo-500'} />
-                                                                <p className={`text-[11px] font-bold ${product.stock <= 5 ? 'text-rose-500' : 'text-slate-600'}`}>
-                                                                    Stock: {product.stock}
+                                                                <Package size={12} className={product.isService ? 'text-blue-500' : (product.stock <= 5 ? 'text-rose-500' : 'text-indigo-500')} />
+                                                                <p className={`text-[11px] font-bold ${product.isService ? 'text-blue-600' : (product.stock <= 5 ? 'text-rose-500' : 'text-slate-600')}`}>
+                                                                    {product.isService ? 'Servicio (∞)' : `Stock: ${product.stock}`}
                                                                 </p>
                                                             </div>
                                                             <p className="text-lg font-black text-slate-900">${product.price.toFixed(2)}</p>
@@ -435,59 +435,71 @@ export default function PointOfSalePage() {
                         </div>
 
 
-                        {/* Consumidor Final Toggle */}
+                        {/* Consumidor Final Toggle & Selected Client */}
                         <div className="p-6 border-b border-indigo-100/30 shrink-0">
-                            <div className="flex items-center justify-between bg-white p-4 rounded-3xl border border-indigo-50 shadow-sm">
-                                <div className="flex items-center gap-3">
-                                    <div className={`w-8 h-8 rounded-xl flex items-center justify-center transition-colors ${selectedClient?.cedulaRuc === '9999999999' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/30' : 'bg-slate-100 text-slate-400'}`}>
-                                        <User size={14} />
+                            {(!selectedClient || selectedClient.cedulaRuc === '9999999999') && (
+                                <div className="flex items-center justify-between bg-white p-4 rounded-3xl border border-indigo-50 shadow-sm">
+                                    <div className="flex items-center gap-3">
+                                        <div className={`w-8 h-8 rounded-xl flex items-center justify-center transition-colors ${selectedClient?.cedulaRuc === '9999999999' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/30' : 'bg-slate-100 text-slate-400'}`}>
+                                            <User size={14} />
+                                        </div>
+                                        <p className="text-sm font-bold text-slate-800">Consumidor Final</p>
                                     </div>
-                                    <p className="text-sm font-bold text-slate-800">Consumidor Final</p>
+                                    <div className="flex items-center gap-2">
+                                        {cart.length > 0 && (
+                                            <button
+                                                type="button"
+                                                onClick={() => setCart([])}
+                                                className="text-[10px] font-black text-rose-400 hover:text-rose-600 px-2 py-1 bg-rose-50 hover:bg-rose-100 rounded-lg transition-colors uppercase tracking-wider"
+                                            >
+                                                Vaciar todo
+                                            </button>
+                                        )}
+                                        <label className="relative inline-flex items-center cursor-pointer">
+                                            <input
+                                                type="checkbox"
+                                                className="sr-only peer"
+                                                checked={selectedClient?.cedulaRuc === '9999999999'}
+                                                onChange={(e) => {
+                                                    if (e.target.checked) {
+                                                        const cf = clients.find(c => c.cedulaRuc === '9999999999');
+                                                        if (cf) setSelectedClient(cf);
+                                                    } else {
+                                                        setSelectedClient(null);
+                                                        setClientSearch('');
+                                                    }
+                                                }}
+                                            />
+                                            <div className="w-12 h-7 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-indigo-600"></div>
+                                        </label>
+                                    </div>
                                 </div>
-                                <div className="flex items-center gap-2">
-                                    {cart.length > 0 && (
-                                        <button
-                                            type="button"
-                                            onClick={() => setCart([])}
-                                            className="text-[10px] font-black text-rose-400 hover:text-rose-600 px-2 py-1 bg-rose-50 hover:bg-rose-100 rounded-lg transition-colors uppercase tracking-wider"
-                                        >
-                                            Vaciar todo
-                                        </button>
-                                    )}
-                                    <label className="relative inline-flex items-center cursor-pointer">
-                                        <input
-                                            type="checkbox"
-                                            className="sr-only peer"
-                                            checked={selectedClient?.cedulaRuc === '9999999999'}
-                                            onChange={(e) => {
-                                                if (e.target.checked) {
-                                                    const cf = clients.find(c => c.cedulaRuc === '9999999999');
-                                                    if (cf) setSelectedClient(cf);
-                                                } else {
-                                                    // Switch to manual client selection — clear client
-                                                    setSelectedClient(null);
-                                                    setClientSearch('');
-                                                }
-                                            }}
-                                        />
-                                        <div className="w-12 h-7 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-indigo-600"></div>
-                                    </label>
-                                </div>
-                            </div>
+                            )}
 
                             {/* Selected non-CF client display */}
                             {selectedClient && selectedClient.cedulaRuc !== '9999999999' && (
-                                <div className="mt-3 flex items-center gap-3 bg-emerald-50 p-3 rounded-2xl border border-emerald-100 shadow-sm animate-scale-in">
-                                    <div className="w-8 h-8 rounded-lg bg-emerald-100 flex items-center justify-center text-emerald-600">
+                                <div className="flex items-center gap-3 bg-emerald-50 p-3 rounded-2xl border border-emerald-100 shadow-sm animate-scale-in">
+                                    <div className="w-8 h-8 rounded-lg bg-emerald-100 flex items-center justify-center text-emerald-600 shrink-0">
                                         <User size={14} />
                                     </div>
                                     <div className="grow min-w-0">
                                         <p className="text-[11px] font-black text-slate-800 truncate uppercase tracking-tight">{selectedClient?.name}</p>
                                         <p className="text-[9px] font-bold text-emerald-500 tracking-widest">{selectedClient?.cedulaRuc}</p>
                                     </div>
-                                    <button onClick={() => { setSelectedClient(null); setClientSearch(''); }} className="p-1.5 text-slate-300 hover:text-rose-500 hover:bg-rose-50 rounded-lg transition-all">
-                                        <X size={14} />
-                                    </button>
+                                    <div className="flex items-center gap-2 shrink-0">
+                                        {cart.length > 0 && (
+                                            <button
+                                                type="button"
+                                                onClick={() => setCart([])}
+                                                className="text-[10px] font-black text-rose-400 hover:text-rose-600 px-2 py-1 bg-white hover:bg-rose-50 rounded-lg transition-colors uppercase tracking-wider shadow-sm border border-rose-100"
+                                            >
+                                                Vaciar todo
+                                            </button>
+                                        )}
+                                        <button onClick={() => { setSelectedClient(null); setClientSearch(''); }} className="p-1.5 text-slate-300 hover:text-rose-500 hover:bg-rose-50 rounded-lg transition-all">
+                                            <X size={14} />
+                                        </button>
+                                    </div>
                                 </div>
                             )}
 

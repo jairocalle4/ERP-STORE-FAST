@@ -46,6 +46,12 @@ public class ProductsController : ControllerBase
         {
             query = query.Where(p => p.IsActive);
         }
+
+        // Hide services from PWA (anonymous users)
+        if (!User.Identity?.IsAuthenticated ?? true)
+        {
+            query = query.Where(p => !p.IsService);
+        }
  
         if (categoryId.HasValue)
         {

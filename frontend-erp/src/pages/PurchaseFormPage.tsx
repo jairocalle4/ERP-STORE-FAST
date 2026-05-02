@@ -74,7 +74,7 @@ export default function PurchaseFormPage() {
                 api.get('/products/next-sku')
             ]);
             setSuppliers(suppliersData.items);
-            setProducts(productsData.items);
+            setProducts(productsData.items.filter((p: any) => !p.isService));
             setCategories(catRes.data.items);
             const autoSku = skuRes.data?.nextSku ?? '';
             setNextSku(autoSku);

@@ -117,39 +117,42 @@ public class SalesController : ControllerBase
                 var product = await _context.Products.FindAsync(detailDto.ProductId);
                 if (product == null) continue;
 
-                if (product.Stock < detailDto.Quantity)
+                if (!product.IsService)
                 {
-                    return BadRequest($"Stock insuficiente para {product.Name}");
-                }
-
-                // Update Stock
-                product.Stock -= detailDto.Quantity;
-
-                // LOW STOCK ALERT
-                if (product.Stock <= product.MinStock)
-                {
-                    var today = DateTime.UtcNow.Date;
-                    
-                    // Check if alert already exists for TODAY
-                    var existingAlert = await _context.Notifications
-                        .AnyAsync(n => n.Link == "/products?stock=low" && 
-                                       n.Title.Contains(product.Name) && 
-                                       n.CreatedAt.Date == today);
-                    
-                    if (!existingAlert)
+                    if (product.Stock < detailDto.Quantity)
                     {
-                        var notification = new Notification
-                        {
-                            Title = $"Stock Bajo: {product.Name}",
-                            Message = $"El producto {product.Name} ha llegado a su nivel mínimo ({product.Stock} restantes).",
-                            Type = "Warning",
-                            Link = "/products?stock=low",
-                            CreatedAt = DateTime.UtcNow
-                        };
-                        _context.Notifications.Add(notification);
+                        return BadRequest($"Stock insuficiente para {product.Name}");
+                    }
+
+                    // Update Stock
+                    product.Stock -= detailDto.Quantity;
+
+                    // LOW STOCK ALERT
+                    if (product.Stock <= product.MinStock)
+                    {
+                        var today = DateTime.UtcNow.Date;
                         
-                        // Collect for background email sending
-                        lowStockItems.Add((product.Name, product.MinStock, product.Stock));
+                        // Check if alert already exists for TODAY
+                        var existingAlert = await _context.Notifications
+                            .AnyAsync(n => n.Link == "/products?stock=low" && 
+                                           n.Title.Contains(product.Name) && 
+                                           n.CreatedAt.Date == today);
+                        
+                        if (!existingAlert)
+                        {
+                            var notification = new Notification
+                            {
+                                Title = $"Stock Bajo: {product.Name}",
+                                Message = $"El producto {product.Name} ha llegado a su nivel mínimo ({product.Stock} restantes).",
+                                Type = "Warning",
+                                Link = "/products?stock=low",
+                                CreatedAt = DateTime.UtcNow
+                            };
+                            _context.Notifications.Add(notification);
+                            
+                            // Collect for background email sending
+                            lowStockItems.Add((product.Name, product.MinStock, product.Stock));
+                        }
                     }
                 }
 
@@ -173,14 +176,18 @@ public class SalesController : ControllerBase
             // RECORD INVENTORY MOVEMENTS (KARDEX)
             foreach (var detail in sale.SaleDetails)
             {
-                await _inventoryService.RegisterMovementAsync(
-                    detail.ProductId, 
-                    "Venta", 
-                    -detail.Quantity, // OUT
-                    sale.EmployeeId, 
-                    $"Venta #{sale.NoteNumber}", 
-                    saleId: sale.Id
-                );
+                var product = await _context.Products.FindAsync(detail.ProductId);
+                if (product != null && !product.IsService)
+                {
+                    await _inventoryService.RegisterMovementAsync(
+                        detail.ProductId, 
+                        "Venta", 
+                        -detail.Quantity, // OUT
+                        sale.EmployeeId, 
+                        $"Venta #{sale.NoteNumber}", 
+                        saleId: sale.Id
+                    );
+                }
             }
             await _context.SaveChangesAsync();
             await transaction.CommitAsync();
@@ -234,7 +241,7 @@ public class SalesController : ControllerBase
             foreach (var detail in sale.SaleDetails)
             {
                 var product = await _context.Products.FindAsync(detail.ProductId);
-                if (product != null)
+                if (product != null && !product.IsService)
                 {
                     product.Stock += detail.Quantity;
                 }
@@ -246,14 +253,18 @@ public class SalesController : ControllerBase
             // RECORD INVENTORY MOVEMENTS (KARDEX)
             foreach (var detail in sale.SaleDetails)
             {
-                await _inventoryService.RegisterMovementAsync(
-                    detail.ProductId, 
-                    "AnulacionVenta", 
-                    detail.Quantity, // IN (Restore)
-                    GetCurrentUserId(), 
-                    $"Anulación Venta #{sale.NoteNumber}", 
-                    saleId: sale.Id
-                );
+                var product = await _context.Products.FindAsync(detail.ProductId);
+                if (product != null && !product.IsService)
+                {
+                    await _inventoryService.RegisterMovementAsync(
+                        detail.ProductId, 
+                        "AnulacionVenta", 
+                        detail.Quantity, // IN (Restore)
+                        GetCurrentUserId(), 
+                        $"Anulación Venta #{sale.NoteNumber}", 
+                        saleId: sale.Id
+                    );
+                }
             }
             await _context.SaveChangesAsync();
 
@@ -289,7 +300,7 @@ public class SalesController : ControllerBase
                 foreach (var detail in sale.SaleDetails)
                 {
                     var product = await _context.Products.FindAsync(detail.ProductId);
-                    if (product != null)
+                    if (product != null && !product.IsService)
                     {
                         product.Stock += detail.Quantity;
                         
