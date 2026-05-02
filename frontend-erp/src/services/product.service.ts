@@ -25,6 +25,7 @@ export interface Product {
     category?: { name: string };
     subcategory?: { name: string };
     images: ProductImage[];
+    isService?: boolean;
 }
 
 export const productService = {
